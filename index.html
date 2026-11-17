@@ -136,6 +136,17 @@ select{appearance:none}
   </div>
   <div class="lab">Note</div>
   <textarea id="eNote" rows="1" placeholder="—"></textarea>
+  <div id="eMailBox" style="display:none">
+    <div class="lab">Mail</div>
+    <input id="eTo" placeholder="à (adresse mail)">
+    <input id="eSubj" placeholder="objet">
+    <textarea id="eBody" rows="7" style="line-height:1.5"></textarea>
+    <div class="foot" style="margin-top:16px">
+      <div class="l"><button id="eReMail">réécrire</button><button id="eCopy">copier</button></div>
+      <button class="ok" id="eSend">envoyer le mail</button>
+    </div>
+  </div>
+  <button id="eMk" style="margin-top:18px;font-size:14px;color:rgb(var(--glow))">✉ préparer un mail</button>
   <div class="foot">
     <div class="l"><button id="eCal">agenda</button><button id="eShare">envoyer</button><button id="eDel" class="del">supprimer</button></div>
     <button class="ok" id="eSave">OK</button>
@@ -152,6 +163,13 @@ select{appearance:none}
   <textarea id="sCh" rows="6"></textarea>
   <div class="lab">Mon équipe</div>
   <input id="sTeam">
+  <div class="lab">Contacts clés — Prénom : adresse mail : rôle</div>
+  <textarea id="sContacts" rows="4"></textarea>
+  <div class="lab">Ma façon d'écrire mes mails</div>
+  <textarea id="sStyle" rows="8"></textarea>
+  <div class="lab">Fin de dictée</div>
+  <select id="sSil"><option value="0">je touche le rond pour finir</option><option value="2">après 2 s de silence</option><option value="3">après 3 s de silence</option><option value="5">après 5 s de silence</option></select>
+  <p class="small">Tu peux aussi finir en disant « c'est tout » ou « terminé ».</p>
   <p class="small" id="sLearn"></p>
   <div class="foot" style="flex-wrap:wrap;gap:16px">
     <div class="l" style="flex-wrap:wrap"><button id="sNotif">rappels</button><button id="sExp">sauvegarder</button><button id="sImp">restaurer</button><button id="sForget">oublier mes corrections</button></div>
@@ -177,8 +195,19 @@ Il fait : installations, SAV, VPI (visites techniques), préparation et suivi de
 Christelle (assistante commerciale) = demandes et commandes de matériel. Loïc = responsable d'agence, à qui il fait des points projet. Techniciens : Sébastien, Stéphane, Cédric, Matéo, Dylan.
 Il fonctionne à la réactivité : il faut lui dire clairement ce qui passe en premier. Un client qui attend, un appel à passer ou du matériel qui bloque un chantier passent avant le reste.`;
 
+const DEFAULT_CONTACTS = `Christelle :  : assistante commerciale — demandes et préparation de matériel, commandes
+Loïc :  : responsable d'agence — points projet, comptes rendus, infos importantes`;
+const DEFAULT_STYLE = `Mails courts, simples et naturels, comme je parle. Tutoiement avec les collègues. Pas de formules lourdes ni de « je me permets ».
+Trame :
+Bonjour <prénom>,
+
+<1 à 3 phrases directes : ce que je demande ou ce que je signale, avec le chantier, les quantités/références et la date souhaitée si je les ai dites>
+
+Merci,
+Raphaël`;
+
 let S = LS.get("zap_state", null) || { items: [], doneDays: [] };
-let CFG = Object.assign({ key: "", ch: DEFAULT_CH, team: DEFAULT_TEAM, profile: DEFAULT_PROFILE, learn: [] }, LS.get("zap_cfg", {}));
+let CFG = Object.assign({ key: "", ch: DEFAULT_CH, team: DEFAULT_TEAM, profile: DEFAULT_PROFILE, learn: [], contacts: DEFAULT_CONTACTS, style: DEFAULT_STYLE, silence: 3 }, LS.get("zap_cfg", {}));
 if (!CFG.profile) CFG.profile = DEFAULT_PROFILE;
 const save = () => LS.set("zap_state", S);
 const saveCfg = () => LS.set("zap_cfg", CFG);
@@ -206,6 +235,24 @@ function chantiers(){
   });
 }
 const team = () => (CFG.team || "").split(",").map(t => t.trim()).filter(Boolean);
+function contacts(){
+  return (CFG.contacts || "").split("\n").map(l => l.trim()).filter(Boolean).map(l => {
+    const [name, email, role] = l.split(":").map(x => (x || "").trim());
+    return { name, email, role: role || "" };
+  }).filter(c => c.name);
+}
+const findContact = n => { const k = norm(n).split(" ")[0]; return contacts().find(c => norm(c.name).split(" ")[0] === k) || null; };
+function localMail(seg, title){
+  const n = norm(seg);
+  const c = contacts().find(c => n.includes(norm(c.name).split(" ")[0]));
+  if (!c) return null;
+  if (!/\b(mail|ecri\w*|envoy\w*|demand\w*|previen\w*|informe\w*|dis a|dire a|compte[- ]rendu|cr)\b/.test(n)) return null;
+  let ask = title.replace(new RegExp("^(envoyer un mail|faire un mail|ecrire|écrire|mail|demander|prévenir|prevenir|informer|dire)\\s+(a|à)?\\s*" + c.name.split(" ")[0] + "\\s*(pour|de|que|qu')?\\s*", "i"), "").trim();
+  const subj = ask.charAt(0).toUpperCase() + ask.slice(1);
+  const first = (ask.split(" ")[0] || "").toLowerCase();
+  const line = /(er|ir|re)$/.test(first) ? "Peux-tu " + ask.charAt(0).toLowerCase() + ask.slice(1) + " ?" : subj + (/[.?!]$/.test(subj) ? "" : ".");
+  return { to: c.name, subject: subj, body: `Bonjour ${c.name.split(" ")[0]},\n\n${line}\n\nMerci,\nRaphaël` };
+}
 
 /* ===== local parser ===== */
 function parseWhen(t){
@@ -262,7 +309,9 @@ function localParse(text){
     else if (/\b(important|rapidement|surtout|pas oublier|absolument|priorit\w*)\b/.test(n)) u = 2;
     if (w.due && w.due < today()) u = 3;
     if (cat === "appel" && u < 2) u = 2;
-    return { title: cleanTitle(seg), cat, ch, u, due: w.due, time: w.time, note: "" };
+    const title = cleanTitle(seg), mail = localMail(seg, title);
+    if (mail) cat = "mail";
+    return { title, cat, ch, u, due: w.due, time: w.time, note: "", mail };
   });
 }
 
@@ -270,7 +319,8 @@ function localParse(text){
 async function aiParse(text){
   const d = new Date();
   const learn = (CFG.learn || []).slice(-25).map(l => `- « ${l.t} » → type ${l.cat}, chantier ${l.ch || "aucun"}, urgence ${l.u}${l.slot ? ", moment " + l.slot : ""}`).join("\n");
-  const open = S.items.filter(i => !i.done).slice(0, 40).map(i => `- ${i.title}${i.ch ? " [" + i.ch + "]" : ""}`).join("\n");
+  const open = S.items.filter(i => !i.done).slice(0, 40).map(i => `- id=${i.id} : ${i.title}${i.ch ? " [" + i.ch + "]" : ""}${i.due ? " (" + i.due + (i.time ? " " + i.time : "") + ")" : ""}`).join("\n");
+  const ctc = contacts().map(c => `- ${c.name}${c.role ? " : " + c.role : ""}`).join("\n");
   const sys = `Tu es l'assistant d'organisation personnel de Raphaël. Il dicte en vrac, sans ponctuation, avec des erreurs de reconnaissance vocale. Tu transformes ce qu'il dit en actions claires, rangées.
 
 QUI IL EST
@@ -280,7 +330,13 @@ Chantiers connus : ${chantiers().map(c => c.name).join(", ")}.
 Équipe / contacts : ${CFG.team}.
 Maintenant : ${WD[d.getDay()]} ${ymd(d)}, ${nowHM()}.
 ${learn ? "\nSES CORRECTIONS PASSÉES (respecte sa façon de classer) :\n" + learn : ""}
-${open ? "\nDÉJÀ DANS SA LISTE (ne crée pas de doublon) :\n" + open : ""}
+${open ? "\nDÉJÀ DANS SA LISTE (avec leur id) :\n" + open : ""}
+
+CONTACTS CLÉS À QUI IL ÉCRIT :
+${ctc || "(aucun)"}
+
+SA FAÇON D'ÉCRIRE SES MAILS :
+${CFG.style}
 
 RÈGLES
 - Découpe en actions distinctes. N'invente rien. Corrige les erreurs évidentes de dictée (noms de chantiers, de personnes, matériel).
@@ -288,7 +344,9 @@ RÈGLES
 - u : 3 = aujourd'hui / bloquant / client qui attend ; 2 = cette semaine, important ; 1 = quand il pourra.
 - Place chaque action dans un moment réaliste de sa journée via due (YYYY-MM-DD) et time (HH:MM) : matin 09:00, après-midi 14:00, fin de journée 17:30. Un appel urgent sans heure → dès que possible aujourd'hui. Sans indice de date et pas urgent → due null.
 - note : détail utile (référence, quantité, nom) ou "".
-Réponds UNIQUEMENT en JSON : {"items":[{"title":"","cat":"appel|mail|materiel|equipe|chantier|remarque","ch":"","u":1,"due":null,"time":null,"note":""}]}`;
+- MAILS : s'il demande d'écrire, d'envoyer, de demander, de prévenir ou de faire un compte rendu à un contact clé (ex. « demande à Christelle… », « mail à Loïc pour… »), mets cat "mail" et ajoute "mail":{"to":"prénom du contact","subject":"objet court et clair (avec le chantier si connu)","body":"le mail complet, rédigé exactement dans SA façon d'écrire, avec seulement ce qu'il a dit"}. Pas de signature longue, termine par « Raphaël ». N'invente ni quantité, ni référence, ni date.
+- MODIFICATIONS : s'il parle d'une tâche DÉJÀ dans sa liste (« le truc Arvato c'est pour jeudi », « c'est fait pour Christelle », « annule le rappel Berner »), ne crée pas de nouvelle action : ajoute une entrée dans "updates" avec l'id et seulement les champs qui changent (title, u, due, time, note, ch, done:true, delete:true).
+Réponds UNIQUEMENT en JSON : {"items":[{"title":"","cat":"appel|mail|materiel|equipe|chantier|remarque","ch":"","u":1,"due":null,"time":null,"note":"","mail":null}],"updates":[{"id":"","due":"…"}]}`;
   const r = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: { "content-type": "application/json", "x-api-key": CFG.key, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
@@ -298,16 +356,48 @@ Réponds UNIQUEMENT en JSON : {"items":[{"title":"","cat":"appel|mail|materiel|e
   const j = await r.json();
   const raw = (j.content || []).map(c => c.text || "").join("");
   const obj = JSON.parse(raw.slice(raw.indexOf("{"), raw.lastIndexOf("}") + 1));
-  return (obj.items || []).map(it => ({
+  const items = (obj.items || []).map(it => ({
     title: it.title || "", cat: CATS[it.cat] ? it.cat : "remarque", ch: it.ch || "",
-    u: [1, 2, 3].includes(+it.u) ? +it.u : 1, due: it.due || null, time: it.time || null, note: it.note || "", ai: true
+    u: [1, 2, 3].includes(+it.u) ? +it.u : 1, due: it.due || null, time: it.time || null, note: it.note || "", ai: true,
+    mail: it.mail && it.mail.body ? { to: it.mail.to || "", subject: it.mail.subject || it.title, body: it.mail.body } : null
   })).filter(it => it.title);
+  return { items, updates: Array.isArray(obj.updates) ? obj.updates.filter(u => u && u.id) : [] };
+}
+async function aiMail(it){
+  const sys = `Tu rédiges un mail pour Raphaël.\n\nQUI IL EST\n${CFG.profile}\n\nCONTACTS :\n${contacts().map(c => "- " + c.name + (c.role ? " : " + c.role : "")).join("\n")}\n\nSA FAÇON D'ÉCRIRE :\n${CFG.style}\n\nN'invente ni quantité, ni référence, ni date. Réponds UNIQUEMENT en JSON : {"to":"prénom","subject":"","body":""}`;
+  const r = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-api-key": CFG.key, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
+    body: JSON.stringify({ model: "claude-haiku-5-5", max_tokens: 800, system: sys, messages: [{ role: "user", content: `Tâche : ${it.title}${it.ch ? "\nChantier : " + it.ch : ""}${it.note ? "\nNote : " + it.note : ""}${it.raw ? "\nCe qu'il a dicté : " + it.raw : ""}` }] })
+  });
+  if (!r.ok) throw new Error("API " + r.status);
+  const raw = ((await r.json()).content || []).map(c => c.text || "").join("");
+  return JSON.parse(raw.slice(raw.indexOf("{"), raw.lastIndexOf("}") + 1));
+}
+function applyUpdates(ups){
+  let n = 0;
+  for (const u of ups) {
+    const it = S.items.find(i => i.id === u.id); if (!it) continue;
+    if (u.delete) { S.items.splice(S.items.indexOf(it), 1); n++; continue; }
+    if (u.done) { it.done = true; it.doneAt = Date.now(); if (!S.doneDays.includes(today())) S.doneDays.push(today()); }
+    ["title", "note", "ch", "due", "time"].forEach(k => { if (u[k] !== undefined) it[k] = u[k]; });
+    if ([1, 2, 3].includes(+u.u)) it.u = +u.u;
+    it.notified = false; n++;
+  }
+  return n;
 }
 
 async function capture(text, src){
   text = (text || "").trim(); if (!text) { idle(); return; }
-  let parsed = null, viaAI = false;
-  if (CFG.key) { ringState("think"); hint("je range…"); try { parsed = await aiParse(text); viaAI = true; } catch (e) { parsed = null; } }
+  let parsed = null, viaAI = false, upd = 0;
+  if (CFG.key) {
+    ringState("think"); hint("je range…");
+    try { const r = await aiParse(text); parsed = r.items; upd = applyUpdates(r.updates); viaAI = true; } catch (e) { parsed = null; }
+  }
+  if (viaAI && !parsed.length && upd) {
+    save(); flashOk(); idle(); render(); vib(18);
+    toast(upd === 1 ? "tâche mise à jour" : upd + " tâches mises à jour"); return;
+  }
   if (!parsed || !parsed.length) parsed = localParse(text);
   if (!parsed.length) parsed = [{ title: cleanTitle(text), cat: "remarque", ch: "", u: 1, due: null, time: null, note: "" }];
   const now = Date.now();
@@ -316,7 +406,8 @@ async function capture(text, src){
   flashOk(); idle(); render(added.map(a => a.id));
   vib(18);
   const ids = added.map(a => a.id);
-  toast(added.length === 1 ? "noté" : added.length + " choses notées", "annuler", () => { S.items = S.items.filter(i => !ids.includes(i.id)); save(); render(); });
+  const nm = added.filter(a => a.mail).length;
+  toast((added.length === 1 ? "noté" : added.length + " choses notées") + (nm ? ` · ${nm} mail${nm > 1 ? "s" : ""} prêt${nm > 1 ? "s" : ""}` : "") + (upd ? ` · ${upd} modifiée${upd > 1 ? "s" : ""}` : ""), "annuler", () => { S.items = S.items.filter(i => !ids.includes(i.id)); save(); render(); });
   if (CFG.key && !viaAI) setTimeout(() => toast("Claude injoignable · rangé par règles"), 2600);
 }
 
@@ -336,8 +427,9 @@ function bucket(i){
 }
 function whenLabel(i){
   const b = bucket(i), parts = [];
+  if (i.mail) parts.push("✉ mail prêt pour " + i.mail.to);
   if (i.ch) parts.push(i.ch);
-  if (i.cat !== "remarque" && i.cat !== "chantier") parts.push(CATS[i.cat]);
+  if (i.mail) {} else if (i.cat !== "remarque" && i.cat !== "chantier") parts.push(CATS[i.cat]);
   if (i.time && ["now","matin","aprem","soir","demain"].includes(b)) parts.push(i.time.replace(":", "h"));
   if (i.due && (b === "semaine" || b === "tard")) { const d = new Date(i.due + "T12:00"); parts.push(WD[d.getDay()] + " " + d.getDate()); }
   if (i.due && i.due < today()) parts.push("en retard");
@@ -429,10 +521,49 @@ function openEdit(it){
   $("eCh").innerHTML = `<option value="">—</option>` + names.map(n => `<option>${esc(n)}</option>`).join("");
   $("eTitle").value = it.title; $("eCat").value = it.cat; $("eCh").value = it.ch || "";
   $("eDate").value = it.due || ""; $("eTime").value = it.time || ""; $("eNote").value = it.note || "";
-  setU(it.u); show("edit");
+  setU(it.u); paintMail(); show("edit");
 }
+function paintMail(){
+  const m = cur && cur.mail;
+  $("eMailBox").style.display = m ? "" : "none"; $("eMk").style.display = m ? "none" : "";
+  if (!m) return;
+  const c = findContact(m.to || "");
+  $("eTo").value = m.email || (c && c.email) || "";
+  $("eTo").placeholder = "adresse de " + (m.to || "…") + (c && !c.email ? " (à ajouter dans ··· > contacts)" : "");
+  $("eSubj").value = m.subject || ""; $("eBody").value = m.body || "";
+}
+function keepMail(){ if (cur && cur.mail) Object.assign(cur.mail, { email: $("eTo").value.trim(), subject: $("eSubj").value, body: $("eBody").value }); }
+async function makeMail(){
+  if (!cur) return;
+  const draftIt = Object.assign({}, cur, { title: $("eTitle").value, ch: $("eCh").value, note: $("eNote").value });
+  let m = null;
+  if (CFG.key) { $("eMk").textContent = "Claude rédige…"; $("eReMail").textContent = "…"; try { m = await aiMail(draftIt); } catch (e) { toast("Claude injoignable"); } }
+  if (!m) m = localMail(draftIt.raw || draftIt.title, draftIt.title) || { to: (contacts()[0] || {}).name || "", subject: draftIt.title, body: `Bonjour,\n\n${draftIt.title}.\n\nMerci,\nRaphaël` };
+  cur.mail = { to: m.to || "", subject: m.subject || draftIt.title, body: m.body || "" };
+  cur.cat = "mail"; $("eCat").value = "mail";
+  $("eMk").textContent = "✉ préparer un mail"; $("eReMail").textContent = "réécrire";
+  save(); paintMail();
+}
+$("eMk").onclick = makeMail;
+$("eReMail").onclick = makeMail;
+$("eCopy").onclick = async () => { try { await navigator.clipboard.writeText($("eSubj").value + "\n\n" + $("eBody").value); toast("copié"); } catch (e) {} };
+$("eSend").onclick = () => {
+  if (!cur) return; keepMail();
+  const m = cur.mail, to = (m.email || "").trim();
+  const c = findContact(m.to || "");
+  if (to && c && !c.email) { CFG.contacts = CFG.contacts.split("\n").map(l => norm(l.split(":")[0]).trim() === norm(c.name) ? `${c.name} : ${to} : ${c.role}` : l).join("\n"); saveCfg(); }
+  location.href = `mailto:${encodeURIComponent(to).replace(/%40/g, "@")}?subject=${encodeURIComponent(m.subject || "")}&body=${encodeURIComponent(m.body || "")}`;
+  const it = cur;
+  setTimeout(() => {
+    it.done = true; it.doneAt = Date.now(); it.mail.sent = Date.now();
+    if (!S.doneDays.includes(today())) S.doneDays.push(today());
+    save(); hide(); render();
+    toast("mail parti → réglé", "annuler", () => { it.done = false; it.doneAt = null; save(); render(); });
+  }, 600);
+};
 $("eSave").onclick = () => {
   if (!cur) return;
+  keepMail();
   const d = draft();
   Object.assign(cur, { title: $("eTitle").value.trim() || cur.title, cat: $("eCat").value, ch: $("eCh").value, u: d.u, due: d.due, time: d.time, note: $("eNote").value.trim(), notified: false });
   if (cur.time && !cur.due) cur.due = today();
@@ -466,10 +597,11 @@ $("eShare").onclick = async () => {
 /* ===== settings ===== */
 $("bSet").onclick = () => {
   $("sKey").value = CFG.key || ""; $("sProfile").value = CFG.profile; $("sCh").value = CFG.ch; $("sTeam").value = CFG.team;
+  $("sContacts").value = CFG.contacts; $("sStyle").value = CFG.style; $("sSil").value = String(CFG.silence);
   const n = (CFG.learn || []).length; $("sLearn").textContent = n ? `Zap a retenu ${n} correction${n > 1 ? "s" : ""} de ta part.` : "Quand tu corriges un classement, Zap le retient pour la suite.";
   show("set");
 };
-$("sSave").onclick = () => { CFG.key = $("sKey").value.trim(); CFG.profile = $("sProfile").value.trim() || DEFAULT_PROFILE; CFG.ch = $("sCh").value; CFG.team = $("sTeam").value; saveCfg(); hide(); render(); toast(CFG.key ? "Claude est branché" : "enregistré"); };
+$("sSave").onclick = () => { CFG.key = $("sKey").value.trim(); CFG.profile = $("sProfile").value.trim() || DEFAULT_PROFILE; CFG.ch = $("sCh").value; CFG.team = $("sTeam").value; CFG.contacts = $("sContacts").value; CFG.style = $("sStyle").value.trim() || DEFAULT_STYLE; CFG.silence = +$("sSil").value; saveCfg(); hide(); render(); toast(CFG.key ? "Claude est branché" : "enregistré"); };
 $("sForget").onclick = () => { CFG.learn = []; saveCfg(); $("sLearn").textContent = "Corrections oubliées."; };
 $("sNotif").onclick = async () => {
   if (!("Notification" in window)) return toast("pas de notifications ici");
@@ -492,7 +624,7 @@ $("mask").onclick = hide;
 
 /* ===== voice ===== */
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-let rec = null, finalTxt = "", interim = "", listening = false, typing = false;
+let rec = null, finalTxt = "", interim = "", listening = false, typing = false, silT = null;
 const hint = t => { $("hint").textContent = t; };
 function ringState(s){ const r = $("ring"); r.classList.remove("on", "think", "ok"); if (s) r.classList.add(s); }
 function flashOk(){ ringState("ok"); setTimeout(() => { if (!listening) ringState(""); }, 900); }
@@ -512,6 +644,13 @@ function startListen(){
       if (r.isFinal) finalTxt += (finalTxt ? ". " : "") + r[0].transcript.trim(); else interim += r[0].transcript;
     }
     $("live").innerHTML = esc(finalTxt) + (interim ? ` <i>${esc(interim)}</i>` : "");
+    const all = (finalTxt + " " + interim).trim();
+    const endRx = /[\s.,]*(c'?est tout|termin[ée]|fin de la note|c'?est bon pour moi|over)[\s.!]*$/i;
+    if (endRx.test(norm(all).replace(/é/g, "e")) || endRx.test(all)) {
+      finalTxt = all.replace(endRx, "").trim(); interim = ""; clearTimeout(silT); validate(); return;
+    }
+    clearTimeout(silT);
+    if (CFG.silence > 0 && all) silT = setTimeout(() => { if (listening) validate(); }, CFG.silence * 1000);
   };
   rec.onend = () => { if (listening) { try { rec.start(); } catch (e) {} } };
   rec.onerror = e => { if (e.error === "not-allowed") { listening = false; idle(); toast("autorise le micro"); } };
@@ -520,7 +659,7 @@ function startListen(){
   try { rec.start(); } catch (e) {}
   vib(12);
 }
-function stopListen(){ listening = false; try { rec && rec.stop(); } catch (e) {} }
+function stopListen(){ listening = false; clearTimeout(silT); try { rec && rec.stop(); } catch (e) {} }
 function validate(){
   if (typing) { const t = $("typed").value; idle(); capture(t, "texte"); return; }
   const t = (finalTxt + " " + interim).trim(); stopListen(); $("acts").classList.remove("show"); capture(t, "voix");
