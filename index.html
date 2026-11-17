@@ -189,6 +189,7 @@ select{appearance:none}
   <input id="sTeam">
   <div class="lab">Contacts clés — Prénom : mail : téléphone : rôle</div>
   <textarea id="sContacts" rows="4"></textarea>
+  <button id="sPick" style="margin-top:10px;font-size:14px;color:rgb(var(--glow));display:none">＋ ajouter depuis mes contacts</button>
   <div class="lab">Ma façon d'écrire mes mails</div>
   <textarea id="sStyle" rows="8"></textarea>
   <div id="msBox" style="display:none">
@@ -786,9 +787,43 @@ function endSwipe(){
 document.addEventListener("pointerup", endSwipe);
 document.addEventListener("pointercancel", endSwipe);
 
+/* répertoire du téléphone (Contact Picker, Chrome Android) */
+const PICK = !!(navigator.contacts && navigator.contacts.select);
+function upsertContact(name, email, phone){
+  const all = contacts(), first = norm(name).split(" ")[0];
+  let c = all.find(x => norm(x.name).split(" ")[0] === first);
+  if (c) { if (email && !c.email) c.email = email; if (phone && !c.phone) c.phone = phone; }
+  else { c = { name, email: email || "", phone: phone || "", role: "" }; all.push(c); }
+  CFG.contacts = all.map(contactLine).join("\n"); saveCfg(); return c;
+}
+function fromPicked(k, wanted){
+  const full = (k.name && k.name[0]) || wanted || "";
+  const name = wanted && norm(full).includes(norm(wanted).split(" ")[0]) ? wanted : full.split(" ")[0] || full;
+  return upsertContact(name, (k.email || [])[0] || "", (k.tel || [])[0] || "");
+}
+async function pickOne(wanted){
+  try { const r = await navigator.contacts.select(["name", "email", "tel"], { multiple: false }); if (!r || !r.length) return null; const c = fromPicked(r[0], wanted); toast(`${c.name} ajouté à tes contacts Zap`); return c; }
+  catch (e) { return null; }
+}
+async function pickMany(){
+  try {
+    const r = await navigator.contacts.select(["name", "email", "tel"], { multiple: true });
+    (r || []).forEach(k => fromPicked(k));
+    $("sContacts").value = CFG.contacts; if (r && r.length) toast(`${r.length} contact${r.length > 1 ? "s" : ""} ajouté${r.length > 1 ? "s" : ""}`);
+  } catch (e) {}
+}
+
 function act(it){
   if (it.cat === "appel") {
     const c = contactOf(it), num = (c && c.phone) || ((it.title + " " + (it.note || "")).match(/(?:\+33|0)[1-9](?:[ .-]?\d{2}){4}/) || [])[0];
+    if (!num && PICK) {
+      toast(c ? `pas de numéro pour ${c.name}` : "à qui ?", "choisir le contact", async () => {
+        const k = await pickOne(c ? c.name : ""); if (!k || !k.phone) return;
+        S.pendingAck = { id: it.id, at: Date.now(), who: k.name }; save();
+        location.href = "tel:" + k.phone.replace(/[^\d+]/g, "");
+      });
+      return;
+    }
     S.pendingAck = { id: it.id, at: Date.now(), who: c ? c.name : "" }; save();
     if (!num) toast(c ? `pas de numéro pour ${c.name} — ajoute-le dans ··· contacts` : "aucun numéro trouvé");
     location.href = "tel:" + (num ? num.replace(/[^\d+]/g, "") : "");
@@ -938,9 +973,16 @@ $("eMk").onclick = makeMail;
 $("eReMail").onclick = makeMail;
 $("eCopy").onclick = async () => { try { await navigator.clipboard.writeText($("eSubj").value + "\n\n" + $("eBody").value); toast("copié"); } catch (e) {} };
 $("eSend").onclick = () => { if (!cur) return; keepMail(); sendMail(cur); };
-function sendMail(it){
+function sendMail(it, picked){
   const m = it.mail, c = findContact(m.to || "");
   const to = ((m.email || "") || (c && c.email) || "").trim();
+  if (!to && PICK && !picked) {
+    hide();
+    toast(`pas d'adresse pour ${m.to || "ce mail"}`, "choisir le contact", async () => {
+      const k = await pickOne(m.to || ""); if (k && k.email) m.email = k.email; save(); sendMail(it, true);
+    });
+    return;
+  }
   if (to && c && !c.email) setContact(c.name, { email: to });
   location.href = `mailto:${encodeURIComponent(to).replace(/%40/g, "@")}?subject=${encodeURIComponent(m.subject || "")}&body=${encodeURIComponent(m.body || "")}`;
   setTimeout(() => {
@@ -990,11 +1032,12 @@ const openSettings = () => {
   $("sKey").value = CFG.key || ""; $("sProfile").value = CFG.profile; $("sCh").value = CFG.ch; $("sTeam").value = CFG.team;
   $("sMsId").value = CFG.msId || ""; $("sCal").checked = CFG.calSync !== false;
   $("sMsState").textContent = MS.rt || MS.at ? `connecté : ${MS.user || "Outlook"} — Zap relève tes mails à l'ouverture (toutes les 20 min max) et via « mails » sous le rond.` : "Zap lit tes mails (sans jamais en envoyer ni en supprimer) et en tire les actions à faire. Il faut Claude branché.";
-  $("sContacts").value = CFG.contacts; $("sStyle").value = CFG.style; $("sSil").value = String(CFG.silence);
+  $("sContacts").value = CFG.contacts; $("sPick").style.display = PICK ? "" : "none"; $("sStyle").value = CFG.style; $("sSil").value = String(CFG.silence);
   const n = (CFG.learn || []).length; $("sLearn").textContent = n ? `Zap a retenu ${n} correction${n > 1 ? "s" : ""} de ta part.` : "Quand tu corriges un classement, Zap le retient pour la suite.";
   show("set");
 };
 $("sSave").onclick = () => { CFG.key = $("sKey").value.trim(); CFG.profile = $("sProfile").value.trim() || DEFAULT_PROFILE; CFG.ch = $("sCh").value; CFG.team = $("sTeam").value; CFG.contacts = $("sContacts").value; CFG.style = $("sStyle").value.trim() || DEFAULT_STYLE; CFG.silence = +$("sSil").value; CFG.msId = $("sMsId").value.trim(); CFG.calSync = $("sCal").checked; saveCfg(); paintMailBtn(); hide(); render(); toast(CFG.key ? "Claude est branché" : "enregistré"); };
+$("sPick").onclick = pickMany;
 $("sForget").onclick = () => { CFG.learn = []; saveCfg(); $("sLearn").textContent = "Corrections oubliées."; };
 $("sNotif").onclick = async () => {
   if (!("Notification" in window)) return toast("pas de notifications ici");
