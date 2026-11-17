@@ -212,7 +212,7 @@ body[data-space=perso]{--glow:120,190,255}
     <button class="ok" id="sSave">OK</button>
   </div>
   <input type="file" id="sFile" accept=".json" hidden>
-  <p class="small" style="margin-top:24px;text-align:center">Zap · Rc4st</p>
+  <p class="small" style="margin-top:24px;text-align:center">Zap v10 · Rc4st</p>
 </div>
 
 <div class="sheet" id="menu">
@@ -1257,7 +1257,7 @@ function handleShare(){
   if (parts.length) { history.replaceState(null, "", location.pathname); capture(parts.join(" — "), "partage"); }
   else if (p.get("quick")) { history.replaceState(null, "", location.pathname); startListen(); }
 }
-if ("serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("sw.js").catch(() => {});
+if ("serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).catch(() => {});
 const autoMail = () => { if (CFG.msId && MS.rt && CFG.key && Date.now() - (S.lastMailCheck || 0) > 20 * 60000) checkMail(false); };
 paintSpace(); render(); paintMailBtn();
 msHandleRedirect().then(was => { if (!was) { handleShare(); autoMail(); } paintMailBtn(); });
