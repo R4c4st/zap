@@ -162,6 +162,8 @@ body[data-space=perso]{--glow:120,190,255}
     <div><div class="lab">Date</div><input type="date" id="eDate"></div>
     <div><div class="lab">Heure</div><input type="time" id="eTime"></div>
   </div>
+  <div class="lab">Répéter</div>
+  <select id="eRec"><option value="">jamais</option><option value="jour">chaque jour</option><option value="ouvre">en semaine (lun–ven)</option><option value="semaine">chaque semaine</option><option value="mois">chaque mois</option><option value="an">chaque année</option></select>
   <div class="lab">Note</div>
   <textarea id="eNote" rows="1" placeholder="—"></textarea>
   <div id="eMailBox" style="display:none">
@@ -171,7 +173,7 @@ body[data-space=perso]{--glow:120,190,255}
     <textarea id="eBody" rows="7" style="line-height:1.5"></textarea>
     <div class="foot" style="margin-top:16px">
       <div class="l"><button id="eReMail">réécrire</button><button id="eCopy">copier</button></div>
-      <button class="ok" id="eSend">envoyer le mail</button>
+      <span style="display:flex;gap:8px"><button class="ok" id="eWa" style="display:none;background:#25d366;color:#05230f">WhatsApp</button><button class="ok" id="eSend">envoyer le mail</button></span>
     </div>
   </div>
   <button id="eMk" style="margin-top:18px;font-size:14px;color:rgb(var(--glow))">✉ préparer un message</button>
@@ -212,7 +214,7 @@ body[data-space=perso]{--glow:120,190,255}
     <button class="ok" id="sSave">OK</button>
   </div>
   <input type="file" id="sFile" accept=".json" hidden>
-  <p class="small" style="margin-top:24px;text-align:center">Zap v10 · Rc4st</p>
+  <p class="small" style="margin-top:24px;text-align:center">Zap v11 · Rc4st</p>
 </div>
 
 <div class="sheet" id="menu">
@@ -292,7 +294,7 @@ Object.assign(CFG, CFG.sp[SPACE]);
 const save = () => LS.set(SKEY(SPACE), S);
 const saveCfg = () => { CFG.sp[SPACE] = pickPer(); LS.set("zap_cfg", CFG); };
 
-const CATS_PRO = { appel: "appel", mail: "mail", materiel: "matériel", equipe: "équipe", chantier: "chantier", remarque: "remarque" };
+const CATS_PRO = { appel: "appel", message: "texto", mail: "mail", materiel: "matériel", equipe: "équipe", chantier: "chantier", remarque: "remarque" };
 const CATS_PERSO = { appel: "appel", message: "texto", mail: "mail", rdv: "rendez-vous", facture: "facture", courses: "courses", tache: "à faire", remarque: "remarque" };
 let CATS = SPACE === "perso" ? CATS_PERSO : CATS_PRO;
 const isList = i => i.cat === "courses";
@@ -350,6 +352,47 @@ function localMail(seg, title){
   return { to: c.name, subject: subj, body: `Bonjour ${c.name.split(" ")[0]},\n\n${line}\n\nMerci,\nRaphaël` };
 }
 
+/* ===== récurrence ===== */
+const REC = { jour: "chaque jour", ouvre: "en semaine", semaine: "chaque semaine", mois: "chaque mois", an: "chaque année" };
+function parseRec(n){
+  if (/\b(tous les jours|chaque jour|quotidien\w*|tous les soirs|tous les matins)\b/.test(n)) return "jour";
+  if (/\b(en semaine|du lundi au vendredi|jours ouvres|chaque jour ouvre)\b/.test(n)) return "ouvre";
+  if (/\b(toutes les semaines|chaque semaine|hebdo\w*|tous les (lundis|mardis|mercredis|jeudis|vendredis|samedis|dimanches)|chaque (lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche))\b/.test(n)) return "semaine";
+  if (/\b(tous les mois|chaque mois|mensuel\w*|de chaque mois|de tous les mois)\b/.test(n)) return "mois";
+  if (/\b(tous les ans|chaque annee|annuel\w*|chaque annee)\b/.test(n)) return "an";
+  return null;
+}
+function monthDayFromText(n){ const m = n.match(/\ble (\d{1,2}|1er) (de chaque mois|de tous les mois|du mois|chaque mois|tous les mois)\b/); return m ? (m[1] === "1er" ? 1 : +m[1]) : null; }
+function nextDue(it){
+  const base = new Date((it.due || today()) + "T12:00");
+  let d;
+  if (it.rec === "jour") d = addDays(1, base);
+  else if (it.rec === "ouvre") { d = addDays(1, base); while ([0, 6].includes(d.getDay())) d = addDays(1, d); }
+  else if (it.rec === "semaine") d = addDays(7, base);
+  else if (it.rec === "mois") { d = new Date(base); const day = it.recDay || base.getDate(); d.setDate(1); d.setMonth(d.getMonth() + 1); d.setDate(Math.min(day, new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate())); }
+  else if (it.rec === "an") { d = new Date(base); d.setFullYear(d.getFullYear() + 1); }
+  else return null;
+  if (ymd(d) < today()) { const c = Object.assign({}, it, { due: ymd(d) }); return nextDue(c); }
+  return ymd(d);
+}
+function applyRec(o, seg){
+  const n = norm(seg), r = parseRec(n); if (!r) return o;
+  o.rec = r;
+  if (r === "mois") { const md = monthDayFromText(n); if (md) { o.recDay = md; const t = new Date(); let d = new Date(t.getFullYear(), t.getMonth(), md, 12); if (ymd(d) < today()) d = new Date(t.getFullYear(), t.getMonth() + 1, md, 12); o.due = ymd(d); } }
+  if (!o.due) o.due = r === "jour" || r === "ouvre" ? today() : o.due || today();
+  if (o.u === 3 && !/urgent/.test(n)) o.u = 2;
+  o.title = o.title.replace(/\s*(tous les jours|chaque jour|en semaine|toutes les semaines|chaque semaine|tous les (lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche)s|chaque (lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche)|tous les mois|chaque mois|le (\d{1,2}|1er) (de chaque mois|de tous les mois|du mois)|tous les ans|chaque année)\s*/gi, " ").trim();
+  return o;
+}
+
+/* ===== messages (texto / WhatsApp) ===== */
+function localMsg(seg, title, n){
+  const c = contacts().find(c => n.includes(norm(c.name).split(" ")[0]));
+  const body = title.replace(/^(envoyer un (texto|sms|message|whatsapp)|envoyer|ecrire|écrire|dire|prevenir|prévenir|whatsapp)\s+(un (texto|sms|message|whatsapp)\s+)?(a|à)?\s*\S+\s*(pour|de|que|qu'|sur whatsapp)?\s*/i, "")
+    .replace(/^(pour\s+)?(lui|leur)\s+(dire|demander)\s+(que\s+|qu'|si\s+)?/i, "").replace(/\s*(sur|par|via) whatsapp\s*/i, " ").trim();
+  return { to: c ? c.name : "", subject: "", body: body.charAt(0).toUpperCase() + body.slice(1), via: /whatsapp|whats app|watsap/.test(n) ? "wa" : "sms" };
+}
+
 /* ===== local parser ===== */
 function dateFromText(n){
   const MN = MO.map(norm);
@@ -372,7 +415,7 @@ function parseWhen(t){
     const m = n.match(/\bdans (\d+|un|une|deux|trois) (jours?|semaines?)\b/);
     if (m) { const v = { un: 1, une: 1, deux: 2, trois: 3 }[m[1]] || +m[1]; date = addDays(m[2].startsWith("sem") ? v * 7 : v); }
     else if (dateFromText(n)) date = dateFromText(n);
-    else for (let i = 0; i < 7; i++) if (new RegExp("\\b" + WD[i] + "\\b").test(n)) {
+    else for (let i = 0; i < 7; i++) if (new RegExp("\\b" + WD[i] + "s?\\b").test(n)) {
       let diff = (i - new Date().getDay() + 7) % 7; if (diff === 0) diff = 7; date = addDays(diff); break;
     }
   }
@@ -413,7 +456,7 @@ function localParsePerso(text){
     let ch = ""; for (const c of chs) if (c.keys.some(k => n.includes(k))) { ch = c.name; break; }
     let cat = "tache";
     if (/^(remarque|note|info|idee)\b/.test(n)) cat = "remarque";
-    else if (/\b(texto|sms|message|whatsapp|envoyer un mot)\b/.test(n)) cat = "message";
+    else if (/\b(texto|sms|message|whatsapp|whats app|watsap|envoyer un mot)\b/.test(n)) cat = "message";
     else if (/\b(appel(er|le|les)?|rappel(er|le|les)?|telephon\w*|coup de fil|joindre)\b/.test(n)) cat = "appel";
     else if (/\b(mail|e-mail|email)\b/.test(n)) cat = "mail";
     else if (/\b(facture|payer|paiement|regler|impots?|loyer|prelevement|virement|rembourser|amende)\b/.test(n)) cat = "facture";
@@ -425,14 +468,8 @@ function localParsePerso(text){
     if (w.due && w.due < today()) u = 3;
     if ((cat === "facture" || cat === "appel") && u < 2) u = 2;
     const title = cleanTitle(seg);
-    let mail = null;
-    if (cat === "message") {
-      const c = contacts().find(c => n.includes(norm(c.name).split(" ")[0]));
-      const body = title.replace(/^(envoyer un (texto|sms|message)|ecrire|écrire|dire|prevenir|prévenir)\s+(a|à)?\s*\S+\s*(pour|de|que|qu')?\s*/i, "");
-      const b2 = body.replace(/^(pour\s+)?(lui|leur)\s+(dire|demander)\s+(que\s+|qu'|si\s+)?/i, "");
-      if (c) mail = { to: c.name, subject: "", body: b2.charAt(0).toUpperCase() + b2.slice(1) };
-    }
-    out.push({ title, cat, ch, u, due: w.due, time: w.time, note: "", mail });
+    const mail = cat === "message" ? localMsg(seg, title, n) : null;
+    out.push(applyRec({ title, cat, ch, u, due: w.due, time: w.time, note: "", mail }, seg));
   }
   return out;
 }
@@ -455,9 +492,11 @@ function localParse(text){
     else if (/\b(important|rapidement|surtout|pas oublier|absolument|priorit\w*)\b/.test(n)) u = 2;
     if (w.due && w.due < today()) u = 3;
     if (cat === "appel" && u < 2) u = 2;
-    const title = cleanTitle(seg), mail = localMail(seg, title);
+    const title = cleanTitle(seg);
+    if (/\b(texto|sms|whatsapp|whats app|watsap)\b/.test(n)) return applyRec({ title, cat: "message", ch, u, due: w.due, time: w.time, note: "", mail: localMsg(seg, title, n) }, seg);
+    const mail = localMail(seg, title);
     if (mail) cat = "mail";
-    return { title, cat, ch, u, due: w.due, time: w.time, note: "", mail };
+    return applyRec({ title, cat, ch, u, due: w.due, time: w.time, note: "", mail }, seg);
   });
 }
 
@@ -492,12 +531,13 @@ RÈGLES
 - note : détail utile (référence, quantité, nom) ou "".
 ${SPACE === "perso" ? `- VIE PRIVÉE : cat "rdv" pour un rendez-vous à prendre ou à honorer ; "facture" pour payer/régler (date limite dans due si dite) ; "tache" pour une chose à faire ; "remarque" pour une idée ou une info.
 - COURSES : chaque article à acheter = UNE entrée séparée, cat "courses", title = juste l'article avec la quantité si dite (« Lait », « 6 œufs »), sans verbe, due null.
-- TEXTOS : s'il veut envoyer un texto/message/SMS/WhatsApp à quelqu'un, cat "message" et "mail":{"to":"prénom","subject":"","body":"le texto, court, avec SES mots, comme il parle"}. "mail" seulement s'il dit mail.
 - "ch" contient le thème (Enfants, Maison, Voiture…) au lieu d'un chantier.
-` : ""}- MAILS : s'il demande d'écrire, d'envoyer, de demander, de prévenir ou de faire un compte rendu à un contact clé (ex. « demande à Christelle… », « mail à Loïc pour… »), mets cat "mail" et ajoute "mail":{"to":"prénom du contact","subject":"objet court et clair (avec le chantier si connu)","body":"le mail complet, rédigé exactement dans SA façon d'écrire, avec seulement ce qu'il a dit"}. Pas de signature longue, termine par « Raphaël ». N'invente ni quantité, ni référence, ni date.
+` : ""}- TEXTOS / WHATSAPP : s'il veut envoyer un texto, SMS, message ou WhatsApp à quelqu'un, cat "message" et "mail":{"to":"prénom","subject":"","body":"le message, court, avec SES mots, comme il parle","via":"wa" si WhatsApp sinon "sms"}. Si une heure/date est donnée, c'est le moment où il doit l'envoyer (due/time).
+- RÉCURRENCE : si c'est répétitif (« tous les lundis », « chaque mois le 5 », « tous les jours »), ajoute "rec":"jour|ouvre|semaine|mois|an" et mets la PROCHAINE occurrence dans due (et time si dite). "ouvre" = du lundi au vendredi. Le title ne contient pas la fréquence.
+- MAILS : s'il demande d'écrire, d'envoyer, de demander, de prévenir ou de faire un compte rendu à un contact clé (ex. « demande à Christelle… », « mail à Loïc pour… »), mets cat "mail" et ajoute "mail":{"to":"prénom du contact","subject":"objet court et clair (avec le chantier si connu)","body":"le mail complet, rédigé exactement dans SA façon d'écrire, avec seulement ce qu'il a dit"}. Pas de signature longue, termine par « Raphaël ». N'invente ni quantité, ni référence, ni date.
 - C'EST FAIT : s'il dit qu'une ou plusieurs choses sont faites, réglées, envoyées, appelées, commandées, livrées, bouclées (« Christelle c'est fait », « le devis Siebert est parti », « j'ai eu Berner »), retrouve CHAQUE tâche correspondante dans sa liste, même formulée autrement, et mets-la dans "updates" avec done:true. Il peut en citer plusieurs d'affilée. Ne crée JAMAIS de nouvelle tâche pour une chose déjà faite. Si une chose faite ne correspond à aucune tâche, ignore-la.
 - MODIFICATIONS : s'il parle d'une tâche DÉJÀ dans sa liste (« le truc Arvato c'est pour jeudi », « c'est fait pour Christelle », « annule le rappel Berner »), ne crée pas de nouvelle action : ajoute une entrée dans "updates" avec l'id et seulement les champs qui changent (title, u, due, time, note, ch, done:true, delete:true).
-Réponds UNIQUEMENT en JSON : {"items":[{"title":"","cat":"${Object.keys(CATS).join("|")}","ch":"","u":1,"due":null,"time":null,"note":"","mail":null}],"updates":[{"id":"","due":"…"}]}`;
+Réponds UNIQUEMENT en JSON : {"items":[{"title":"","cat":"${Object.keys(CATS).join("|")}","ch":"","u":1,"due":null,"time":null,"note":"","mail":null,"rec":null}],"updates":[{"id":"","due":"…"}]}`;
   const r = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: { "content-type": "application/json", "x-api-key": CFG.key, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
@@ -512,7 +552,8 @@ ICI CE NE SONT PAS DES DICTÉES : ce sont des mails qu'il a reçus. Extrais uniq
   const items = (obj.items || []).map(it => ({
     title: it.title || "", cat: CATS[it.cat] ? it.cat : "remarque", ch: it.ch || "",
     u: [1, 2, 3].includes(+it.u) ? +it.u : 1, due: it.due || null, time: it.time || null, note: it.note || "", ai: true,
-    mail: it.mail && it.mail.body ? { to: it.mail.to || "", subject: it.mail.subject || it.title, body: it.mail.body } : null
+    mail: it.mail && it.mail.body ? { to: it.mail.to || "", subject: it.mail.subject || (it.cat === "message" ? "" : it.title), body: it.mail.body, via: it.mail.via === "wa" ? "wa" : "sms" } : null,
+    rec: REC[it.rec] ? it.rec : null
   })).filter(it => it.title);
   return { items, updates: Array.isArray(obj.updates) ? obj.updates.filter(u => u && u.id) : [] };
 }
@@ -619,12 +660,13 @@ function bucket(i){
 }
 function whenLabel(i){
   const b = bucket(i), parts = [];
-  if (i.mail) parts.push((i.cat === "message" ? "✉ texto prêt pour " : "✉ mail prêt pour ") + i.mail.to);
+  if (i.mail) parts.push((i.cat === "message" ? (i.mail.via === "wa" ? "✉ WhatsApp prêt" : "✉ texto prêt") : "✉ mail prêt") + (i.mail.to ? " pour " + i.mail.to : ""));
   if (i.ch) parts.push(i.ch);
   if (i.mail || isList(i)) {} else if (!["remarque", "chantier", "tache"].includes(i.cat) && CATS[i.cat]) parts.push(CATS[i.cat]);
   if (i.time && ["now","matin","aprem","soir","demain"].includes(b)) parts.push(i.time.replace(":", "h"));
   if (i.due && (b === "semaine" || b === "tard")) { const d = new Date(i.due + "T12:00"); parts.push(WD[d.getDay()] + " " + d.getDate()); }
   if (i.due && i.due < today()) parts.push("en retard");
+  if (i.rec) parts.push("↻ " + REC[i.rec]);
   if (i.note) parts.push(i.note);
   return parts.join(" · ");
 }
@@ -633,7 +675,7 @@ function whenLabel(i){
 let showDone = false, showFar = false;
 const FAR = ["semaine", "tard"];
 const sortIn = (a, b) => (b.u - a.u) || ((a.due || "9") + (a.time || "99")).localeCompare((b.due || "9") + (b.time || "99")) || (b.created - a.created);
-function actLabel(i){ return isList(i) ? "pris" : i.cat === "appel" ? "appeler" : i.mail ? "envoyer" : (i.cat === "mail" || i.cat === "message") ? "rédiger" : "ouvrir"; }
+function actLabel(i){ return isList(i) ? "pris" : i.cat === "message" && i.mail && i.mail.via === "wa" ? "WhatsApp" : i.cat === "appel" ? "appeler" : i.mail ? "envoyer" : (i.cat === "mail" || i.cat === "message") ? "rédiger" : "ouvrir"; }
 function itHTML(i, fresh, nosw){
   const row = `<div class="it u${i.u}${i.done ? " done" : ""}" data-id="${i.id}"${fresh ? ' style="opacity:0;transform:translateY(8px)"' : ""}>
     <button class="dot" data-a="done" aria-label="réglé"></button>
@@ -890,6 +932,12 @@ async function pickMany(){
 function sendSms(it, picked){
   const m = it.mail || { to: "", body: "" }, c = findContact(m.to || "");
   const num = (m.phone || (c && c.phone) || "").replace(/[^\d+]/g, "");
+  if (m.via === "wa") {
+    const intl = num.replace(/^\+/, "").replace(/^0(\d{9})$/, "33$1");
+    location.href = `https://wa.me/${intl}?text=${encodeURIComponent(m.body || "")}`;
+    setTimeout(() => { markDone(it); hide(); render(); toast("WhatsApp parti · réglé", "annuler", () => { unDone(it); render(); }); }, 600);
+    return;
+  }
   if (!num && PICK && !picked) {
     hide();
     toast(`pas de numéro pour ${m.to || "ce texto"}`, "choisir le contact", async () => { const k = await pickOne(m.to || ""); if (k && k.phone) m.phone = k.phone; save(); sendSms(it, true); });
@@ -987,11 +1035,24 @@ $("hChips").onclick = e => { const b = e.target.closest("button"); if (b) { hCh 
 $("hClose").onclick = hide;
 function markDone(it){
   it.done = true; it.doneAt = Date.now();
+  if (it.rec && !it.nextId) {
+    const nd = nextDue(it);
+    if (nd) {
+      const nx = JSON.parse(JSON.stringify(it));
+      Object.assign(nx, { id: uid(), created: Date.now(), done: false, doneAt: null, due: nd, notified: false, evId: null, nextId: null });
+      if (nx.mail) delete nx.mail.sent;
+      it.nextId = nx.id; S.items.unshift(nx); calSync(nx);
+    }
+  }
   if (!S.doneDays.includes(today())) S.doneDays.push(today()); S.doneDays = S.doneDays.slice(-400);
   if (S.pendingAck && S.pendingAck.id === it.id) S.pendingAck = null;
   save(); calSync(it);
 }
-function unDone(it){ it.done = false; it.doneAt = null; save(); calSync(it); }
+function unDone(it){
+  it.done = false; it.doneAt = null;
+  if (it.nextId) { const nx = S.items.find(i => i.id === it.nextId); if (nx && !nx.done) { S.items.splice(S.items.indexOf(nx), 1); calDel(nx); } it.nextId = null; }
+  save(); calSync(it);
+}
 function done(it, row){
   const inHist = !!row.closest("#hist");
   if (!it.done) {
@@ -1033,6 +1094,7 @@ function openEdit(it){
   const names = [...new Set([...chantiers().map(c => c.name), ...S.items.map(i => i.ch).filter(Boolean)])];
   $("eCh").innerHTML = `<option value="">—</option>` + names.map(n => `<option>${esc(n)}</option>`).join("");
   $("eTitle").value = it.title; $("eCat").value = it.cat; $("eCh").value = it.ch || "";
+  $("eRec").value = it.rec || "";
   $("eDate").value = it.due || ""; $("eTime").value = it.time || ""; $("eNote").value = it.note || "";
   $("lCh").textContent = SPACE === "perso" ? "Thème" : "Chantier";
   setU(it.u); paintMail(); show("edit");
@@ -1045,7 +1107,8 @@ function paintMail(){
   $("eTo").value = sms ? (m.phone || (c && c.phone) || "") : (m.email || (c && c.email) || "");
   $("eTo").placeholder = (sms ? "numéro de " : "adresse de ") + (m.to || "…");
   $("eSubj").style.display = sms ? "none" : ""; $("eBody").rows = sms ? 4 : 7;
-  $("eSend").textContent = sms ? "envoyer le texto" : "envoyer le mail";
+  $("eSend").textContent = sms ? "texto" : "envoyer le mail";
+  $("eWa").style.display = sms ? "" : "none";
   $("eSubj").value = m.subject || ""; $("eBody").value = m.body || "";
 }
 function keepMail(){ if (cur && cur.mail) Object.assign(cur.mail, cur.cat === "message" ? { phone: $("eTo").value.trim(), body: $("eBody").value } : { email: $("eTo").value.trim(), subject: $("eSubj").value, body: $("eBody").value }); }
@@ -1063,7 +1126,8 @@ async function makeMail(){
 $("eMk").onclick = makeMail;
 $("eReMail").onclick = makeMail;
 $("eCopy").onclick = async () => { try { await navigator.clipboard.writeText($("eSubj").value + "\n\n" + $("eBody").value); toast("copié"); } catch (e) {} };
-$("eSend").onclick = () => { if (!cur) return; keepMail(); if (cur.cat === "message") sendSms(cur); else sendMail(cur); };
+$("eSend").onclick = () => { if (!cur) return; keepMail(); if (cur.cat === "message") { cur.mail.via = "sms"; sendSms(cur); } else sendMail(cur); };
+$("eWa").onclick = () => { if (!cur) return; keepMail(); cur.mail.via = "wa"; sendSms(cur); };
 function sendMail(it, picked){
   const m = it.mail, c = findContact(m.to || "");
   const to = ((m.email || "") || (c && c.email) || "").trim();
@@ -1085,7 +1149,8 @@ $("eSave").onclick = () => {
   if (!cur) return;
   keepMail();
   const d = draft();
-  Object.assign(cur, { title: $("eTitle").value.trim() || cur.title, cat: $("eCat").value, ch: $("eCh").value, u: d.u, due: d.due, time: d.time, note: $("eNote").value.trim(), notified: false });
+  Object.assign(cur, { title: $("eTitle").value.trim() || cur.title, cat: $("eCat").value, ch: $("eCh").value, u: d.u, due: d.due, time: d.time, note: $("eNote").value.trim(), notified: false, rec: $("eRec").value || null });
+  if (cur.rec && !cur.due) cur.due = today();
   if (cur.time && !cur.due) cur.due = today();
   const o = cur.orig;
   if (o && (o.cat !== cur.cat || o.ch !== cur.ch || o.u !== cur.u || o.slot !== bucket(cur))) {
