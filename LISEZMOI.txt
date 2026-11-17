@@ -1,17 +1,17 @@
-SOUFFLE — installation (5 min)
+TEMPO — installation (5 min)
 
 1. Sur GitHub (compte r4c4st) : nouveau dépôt public "zap".
 2. Uploader les 5 fichiers : index.html, manifest.json, sw.js, icon-192.png, icon-512.png
 3. Settings > Pages > Branch "main" / root > Save.
 4. Sur le S25, dans Chrome : https://r4c4st.github.io/zap/
    Menu ⋮ > "Ajouter à l'écran d'accueil" > Installer.
-5. Ouvrir Souffle > ⚙️ > "Activer les rappels" (autoriser les notifications), puis autoriser le micro au premier 🎙️.
+5. Ouvrir Tempo > ⚙️ > "Activer les rappels" (autoriser les notifications), puis autoriser le micro au premier 🎙️.
 
 UTILISATION
-- 🎙️ : tu parles en vrac, plusieurs choses d'un coup ("et puis", "ensuite"... = nouvelle tâche). ⚡ Souffleper.
+- 🎙️ : tu parles en vrac, plusieurs choses d'un coup ("et puis", "ensuite"... = nouvelle tâche). ⚡ Tempoper.
 - ⌨️ : écrire. 📋 : coller ce que tu as copié (mail, SMS).
-- Depuis n'importe quelle appli (Outlook, SMS, WhatsApp...) : Partager > Souffle.
-- Appui long sur l'icône Souffle : raccourci "Noter" (micro direct).
+- Depuis n'importe quelle appli (Outlook, SMS, WhatsApp...) : Partager > Tempo.
+- Appui long sur l'icône Tempo : raccourci "Noter" (micro direct).
 - Rond à gauche = réglé. Tap sur la tâche = modifier / 📅 mettre dans l'agenda Google / envoyer.
 - Tap sur l'étiquette chantier = toutes les tâches du chantier. 🏗️ en haut = grouper par chantier.
 - ⚙️ : tes chantiers et mots-clés, ton équipe, sauvegarde/restauration.
@@ -21,6 +21,6 @@ console.anthropic.com > API Keys > créer une clé > la coller dans ⚙️.
 Quelques euros par mois à ton usage. Sans clé : tri automatique par règles.
 
 LIMITES V1
-- Les rappels se déclenchent quand Souffle est ouvert ou revient au premier plan. Pour un rappel à heure
+- Les rappels se déclenchent quand Tempo est ouvert ou revient au premier plan. Pour un rappel à heure
   fixe garanti, utilise 📅 (agenda Google). La V2 aura de vrais rappels poussés (Supabase).
 - Les données sont sur le téléphone : pense à 💾 Sauvegarder de temps en temps.

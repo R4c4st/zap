@@ -3,19 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
-<meta name="theme-color" content="#050b0f" media="(prefers-color-scheme: dark)">
-<meta name="theme-color" content="#f2f8fa" media="(prefers-color-scheme: light)">
-<title>Souffle</title>
+<meta name="theme-color" content="#e6f6f7">
+<title>Tempo</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png">
 <style>
 :root{
-  --bg:#050b0f;--fg:#eaf6f8;--mut:#6c818a;--faint:#18252c;--sheet:#0c161c;
-  --u3:#ff6b6b;--u2:#f3b562;--u1:#4f646d;--glow:150,226,240;--ok:#8fe6c6;
-}
-@media (prefers-color-scheme: light){
-  :root{--bg:#f2f8fa;--fg:#0e1c23;--mut:#86a0aa;--faint:#d9e6eb;--sheet:#ffffff;--u1:#b5c7ce;--glow:40,160,190;--ok:#2fae86}
-  body[data-space=perso]{--glow:80,130,225}
+  --bg:#f7fbfc;--fg:#0f2229;--mut:#8aa3ac;--faint:#e1edf0;--sheet:#ffffff;
+  --u3:#ec5f5f;--u2:#eea64c;--u1:#c3d3d8;--glow:46,184,196;--ok:#36c08f;
+  --air1:#e6f6f7;--air2:#f7fbfc;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0}
 html,body{background:var(--bg);color:var(--fg);font-family:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-weight:300;overscroll-behavior:none;-webkit-font-smoothing:antialiased}
@@ -28,9 +24,8 @@ select{appearance:none}
 .top{display:flex;justify-content:space-between;align-items:center;padding:22px 26px 0;font-size:13px;letter-spacing:.4px;color:var(--mut)}
 .top button{font-size:20px;letter-spacing:2px;color:var(--mut);padding:4px 0 4px 12px}
 
-body[data-space=perso]{--glow:175,200,255}
-@media (prefers-color-scheme: light){body[data-space=perso]{--glow:80,130,225}}
-body{background-image:radial-gradient(900px 520px at 50% 22%,rgba(var(--glow),.075),transparent 65%);background-attachment:fixed;transition:background-color .6s}
+body[data-space=perso]{--glow:96,140,232;--air1:#ecf1fc}
+body{background:radial-gradient(700px 460px at 50% 26%,rgba(var(--glow),.10),transparent 70%),linear-gradient(180deg,var(--air1) 0%,var(--air2) 45%,#fff 100%);background-attachment:fixed;min-height:100vh}
 .spc{display:flex;gap:4px;margin-left:auto;margin-right:6px;border:1px solid var(--faint);border-radius:999px;padding:3px}
 .spc button{font-size:12px;letter-spacing:1px;padding:5px 12px;border-radius:999px;color:var(--mut)}
 .spc button.on{background:var(--fg);color:var(--bg)}
@@ -44,7 +39,7 @@ body{background-image:radial-gradient(900px 520px at 50% 22%,rgba(var(--glow),.0
 /* ring */
 .stage{height:min(40vh,360px);display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative}
 .ring{width:168px;height:168px;border-radius:50%;position:relative;display:grid;place-items:center;transition:transform .5s cubic-bezier(.2,.8,.2,1)}
-.ring::before{content:"";position:absolute;inset:0;border-radius:50%;border:1px solid rgba(var(--glow),.55);box-shadow:0 0 40px rgba(var(--glow),.12),inset 0 0 30px rgba(var(--glow),.06);transition:.5s}
+.ring::before{content:"";position:absolute;inset:0;border-radius:50%;border:1.5px solid rgba(var(--glow),.75);box-shadow:0 0 40px rgba(var(--glow),.12),inset 0 0 30px rgba(var(--glow),.06);transition:.5s}
 .ring::after{content:"";position:absolute;inset:-14px;border-radius:50%;border:1px solid rgba(var(--glow),.12);animation:breathe 9s ease-in-out infinite}
 .core{width:10px;height:10px;border-radius:50%;background:rgb(var(--glow));box-shadow:0 0 18px rgba(var(--glow),.8);transition:.4s}
 @keyframes breathe{0%,100%{transform:scale(.96);opacity:.35}45%{transform:scale(1.06);opacity:1}}
@@ -115,7 +110,7 @@ body{background-image:radial-gradient(900px 520px at 50% 22%,rgba(var(--glow),.0
 .etitle{font-size:20px;line-height:1.4;border:0;padding:0}
 
 .sw{position:relative;overflow:hidden;margin:0 -26px;padding:0 26px;user-select:none;-webkit-user-select:none}
-.sw .it{position:relative;z-index:1;background:var(--bg);transition:transform .3s cubic-bezier(.2,.8,.2,1),opacity .5s}
+.sw .it{position:relative;z-index:1;background:transparent;transition:transform .3s cubic-bezier(.2,.8,.2,1),opacity .5s}
 .swbg{position:absolute;inset:0;display:flex;justify-content:space-between;align-items:center;padding:0 26px;font-size:13px;letter-spacing:1px;text-transform:uppercase;color:var(--mut)}
 .swbg span{opacity:0;transition:opacity .2s,color .2s}
 .sw.dirR .swbg .r,.sw.dirL .swbg .l{opacity:1}
@@ -193,7 +188,7 @@ body{background-image:radial-gradient(900px 520px at 50% 22%,rgba(var(--glow),.0
 <div class="sheet" id="set">
   <div class="lab" style="margin-top:0">Claude</div>
   <input type="password" id="sKey" placeholder="clé API Anthropic (sk-ant-…)">
-  <p class="small">Sans clé, Souffle trie seul avec ses règles. Avec, c'est Claude qui comprend, découpe et range — en s'appuyant sur la fiche ci-dessous et sur tes corrections.</p>
+  <p class="small">Sans clé, Tempo trie seul avec ses règles. Avec, c'est Claude qui comprend, découpe et range — en s'appuyant sur la fiche ci-dessous et sur tes corrections.</p>
   <div class="lab" id="lProf">Qui je suis (lu par Claude à chaque tri)</div>
   <textarea id="sProfile" rows="7"></textarea>
   <div class="lab" id="lChs">Mes chantiers — Nom : mots-clés</div>
@@ -221,7 +216,7 @@ body{background-image:radial-gradient(900px 520px at 50% 22%,rgba(var(--glow),.0
     <button class="ok" id="sSave">OK</button>
   </div>
   <input type="file" id="sFile" accept=".json" hidden>
-  <p class="small" style="margin-top:24px;text-align:center">Souffle v12 · Rc4st</p>
+  <p class="small" style="margin-top:24px;text-align:center">Tempo v13 · Rc4st</p>
 </div>
 
 <div class="sheet" id="menu">
@@ -844,9 +839,9 @@ async function calSync(it){
     start = { dateTime: `${it.due}T${it.time}:00`, timeZone: "Europe/Paris" }; end = { dateTime: `${it.due}T${pad(e.getHours())}:${pad(e.getMinutes())}:00`, timeZone: "Europe/Paris" }; }
   const body = {
     subject: (it.done ? "✓ " : "") + (it.ch ? "[" + it.ch + "] " : "") + it.title,
-    body: { contentType: "text", content: (it.note ? it.note + "\n\n" : "") + (it.done ? "Fait le " + new Date(it.doneAt).toLocaleString("fr-FR") + "\n" : "") + "— Souffle" },
+    body: { contentType: "text", content: (it.note ? it.note + "\n\n" : "") + (it.done ? "Fait le " + new Date(it.doneAt).toLocaleString("fr-FR") + "\n" : "") + "— Tempo" },
     start, end, isAllDay: allDay, showAs: "free",
-    isReminderOn: !it.done && !allDay, reminderMinutesBeforeStart: 10, categories: ["Souffle"]
+    isReminderOn: !it.done && !allDay, reminderMinutesBeforeStart: 10, categories: ["Tempo"]
   };
   try {
     const url = "https://graph.microsoft.com/v1.0/me/events" + (it.evId ? "/" + it.evId : "");
@@ -1194,14 +1189,14 @@ $("mSet").onclick = () => { hide(); setTimeout(openSettings, 60); };
 const openSettings = () => {
   $("sKey").value = CFG.key || ""; $("sProfile").value = CFG.profile; $("sCh").value = CFG.ch; $("sTeam").value = CFG.team;
   $("sMsId").value = CFG.msId || ""; $("sCal").checked = CFG.calSync !== false;
-  $("sMsState").textContent = MS.rt || MS.at ? `connecté : ${MS.user || "Outlook"} — Souffle relève tes mails à l'ouverture (toutes les 20 min max) et via « mails » sous le rond.` : "Souffle lit tes mails (sans jamais en envoyer ni en supprimer) et en tire les actions à faire. Il faut Claude branché.";
+  $("sMsState").textContent = MS.rt || MS.at ? `connecté : ${MS.user || "Outlook"} — Tempo relève tes mails à l'ouverture (toutes les 20 min max) et via « mails » sous le rond.` : "Tempo lit tes mails (sans jamais en envoyer ni en supprimer) et en tire les actions à faire. Il faut Claude branché.";
   const P = SPACE === "perso";
   $("lProf").textContent = (P ? "Qui je suis — vie privée" : "Qui je suis — travail") + " (lu par Claude à chaque tri)";
   $("lChs").textContent = P ? "Mes thèmes — Nom : mots-clés" : "Mes chantiers — Nom : mots-clés";
   $("lTeam").textContent = P ? "Mes proches" : "Mon équipe";
   $("lStyle").textContent = P ? "Ma façon d'écrire mes textos et mails perso" : "Ma façon d'écrire mes mails";
   $("sContacts").value = CFG.contacts; $("sPick").style.display = PICK ? "" : "none"; $("sStyle").value = CFG.style; $("sSil").value = String(CFG.silence);
-  const n = (CFG.learn || []).length; $("sLearn").textContent = n ? `Souffle a retenu ${n} correction${n > 1 ? "s" : ""} de ta part.` : "Quand tu corriges un classement, Souffle le retient pour la suite.";
+  const n = (CFG.learn || []).length; $("sLearn").textContent = n ? `Tempo a retenu ${n} correction${n > 1 ? "s" : ""} de ta part.` : "Quand tu corriges un classement, Tempo le retient pour la suite.";
   show("set");
 };
 $("sSave").onclick = () => { CFG.key = $("sKey").value.trim(); CFG.profile = $("sProfile").value.trim() || DEFAULT_PROFILE; CFG.ch = $("sCh").value; CFG.team = $("sTeam").value; CFG.contacts = $("sContacts").value; CFG.style = $("sStyle").value.trim() || DEFAULT_STYLE; CFG.silence = +$("sSil").value; CFG.msId = $("sMsId").value.trim(); CFG.calSync = $("sCal").checked; saveCfg(); paintMailBtn(); hide(); render(); toast(CFG.key ? "Claude est branché" : "enregistré"); };
@@ -1213,7 +1208,7 @@ $("sNotif").onclick = async () => {
 };
 $("sExp").onclick = () => {
   const b = new Blob([JSON.stringify({ S, CFG: Object.assign({}, CFG, { key: "" }) }, null, 1)], { type: "application/json" });
-  const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = "souffle-" + today() + ".json"; a.click();
+  const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = "tempo-" + today() + ".json"; a.click();
 };
 $("sImp").onclick = () => $("sFile").click();
 $("sFile").onchange = async e => {

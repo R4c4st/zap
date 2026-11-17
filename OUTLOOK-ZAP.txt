@@ -1,7 +1,7 @@
-BRANCHER TON OUTLOOK PERSO SUR SOUFFLE (≈ 5 min, plutôt sur PC)
+BRANCHER TON OUTLOOK PERSO SUR TEMPO (≈ 5 min, plutôt sur PC)
 
-Souffle a besoin d'une "autorisation d'application" Microsoft. Elle sert à deux choses :
-- lire tes mails (Souffle n'envoie, ne supprime et ne déplace jamais aucun mail) ;
+Tempo a besoin d'une "autorisation d'application" Microsoft. Elle sert à deux choses :
+- lire tes mails (Tempo n'envoie, ne supprime et ne déplace jamais aucun mail) ;
 - mettre tes tâches datées dans ton agenda Outlook, et les marquer « ✓ » quand c'est fait.
 
 1. Va sur portal.azure.com et connecte-toi avec ton compte Outlook perso.
@@ -10,7 +10,7 @@ Souffle a besoin d'une "autorisation d'application" Microsoft. Elle sert à deux
 2. Cherche "Inscriptions d'applications" (App registrations) en haut, puis "+ Nouvelle inscription".
 
 3. Remplis :
-   - Nom : Souffle
+   - Nom : Tempo
    - Types de comptes : "Comptes dans un annuaire organisationnel et comptes Microsoft personnels"
    - URI de redirection : choisis "Application monopage (SPA)"
      et colle exactement : https://r4c4st.github.io/zap/
@@ -21,11 +21,11 @@ Souffle a besoin d'une "autorisation d'application" Microsoft. Elle sert à deux
 5. Menu "Autorisations de l'API" > "+ Ajouter une autorisation" > Microsoft Graph > Autorisations déléguées
    Coche : Mail.Read, Calendars.ReadWrite et offline_access (User.Read y est déjà) > Ajouter.
 
-6. Dans Souffle sur le téléphone : ··· > Outlook perso > colle l'ID > "connecter Outlook"
+6. Dans Tempo sur le téléphone : ··· > Outlook perso > colle l'ID > "connecter Outlook"
    > connecte-toi avec ton Outlook perso > Accepter.
 
 ENSUITE
-- Souffle relève tes mails à l'ouverture (au maximum toutes les 20 min), ou quand tu appuies sur "mails" sous le rond.
+- Tempo relève tes mails à l'ouverture (au maximum toutes les 20 min), ou quand tu appuies sur "mails" sous le rond.
 - Claude lit les nouveaux mails, ignore les pubs et les notifications, et crée seulement les actions à faire.
   Quand une réponse est attendue d'un contact clé, il prépare aussi le brouillon de réponse.
 - La connexion Microsoft peut redemander ton accord de temps en temps (sécurité Microsoft) : un tap et c'est reparti.
