@@ -198,7 +198,7 @@ select{appearance:none}
   <div class="foot" style="margin-top:10px"><div class="l"><button id="sMsGo" style="color:var(--fg)">connecter Outlook</button><button id="sMsOff">déconnecter</button></div></div>
   <div class="lab">Fin de dictée</div>
   <select id="sSil"><option value="0">je touche le rond pour finir</option><option value="2">après 2 s de silence</option><option value="3">après 3 s de silence</option><option value="5">après 5 s de silence</option></select>
-  <p class="small">Tu peux aussi finir en disant « c'est tout » ou « terminé ».</p>
+  <p class="small">Tu peux aussi finir en disant « c'est tout ».</p>
   <p class="small" id="sLearn"></p>
   <div class="foot" style="flex-wrap:wrap;gap:16px">
     <div class="l" style="flex-wrap:wrap"><button id="sNotif">rappels</button><button id="sExp">sauvegarder</button><button id="sImp">restaurer</button><button id="sForget">oublier mes corrections</button></div>
@@ -421,6 +421,7 @@ RÈGLES
 - Place chaque action dans un moment réaliste de sa journée via due (YYYY-MM-DD) et time (HH:MM) : matin 09:00, après-midi 14:00, fin de journée 17:30. Un appel urgent sans heure → dès que possible aujourd'hui. Sans indice de date et pas urgent → due null.
 - note : détail utile (référence, quantité, nom) ou "".
 - MAILS : s'il demande d'écrire, d'envoyer, de demander, de prévenir ou de faire un compte rendu à un contact clé (ex. « demande à Christelle… », « mail à Loïc pour… »), mets cat "mail" et ajoute "mail":{"to":"prénom du contact","subject":"objet court et clair (avec le chantier si connu)","body":"le mail complet, rédigé exactement dans SA façon d'écrire, avec seulement ce qu'il a dit"}. Pas de signature longue, termine par « Raphaël ». N'invente ni quantité, ni référence, ni date.
+- C'EST FAIT : s'il dit qu'une ou plusieurs choses sont faites, réglées, envoyées, appelées, commandées, livrées, bouclées (« Christelle c'est fait », « le devis Siebert est parti », « j'ai eu Berner »), retrouve CHAQUE tâche correspondante dans sa liste, même formulée autrement, et mets-la dans "updates" avec done:true. Il peut en citer plusieurs d'affilée. Ne crée JAMAIS de nouvelle tâche pour une chose déjà faite. Si une chose faite ne correspond à aucune tâche, ignore-la.
 - MODIFICATIONS : s'il parle d'une tâche DÉJÀ dans sa liste (« le truc Arvato c'est pour jeudi », « c'est fait pour Christelle », « annule le rappel Berner »), ne crée pas de nouvelle action : ajoute une entrée dans "updates" avec l'id et seulement les champs qui changent (title, u, due, time, note, ch, done:true, delete:true).
 Réponds UNIQUEMENT en JSON : {"items":[{"title":"","cat":"appel|mail|materiel|equipe|chantier|remarque","ch":"","u":1,"due":null,"time":null,"note":"","mail":null}],"updates":[{"id":"","due":"…"}]}`;
   const r = await fetch("https://api.anthropic.com/v1/messages", {
@@ -453,43 +454,75 @@ async function aiMail(it){
   return JSON.parse(raw.slice(raw.indexOf("{"), raw.lastIndexOf("}") + 1));
 }
 function applyUpdates(ups){
-  let n = 0;
+  const res = { n: 0, done: [], undo: [] };
   for (const u of ups) {
     const it = S.items.find(i => i.id === u.id); if (!it) continue;
-    if (u.delete) { S.items.splice(S.items.indexOf(it), 1); calDel(it); n++; continue; }
-    if (u.done) { it.done = true; it.doneAt = Date.now(); if (!S.doneDays.includes(today())) S.doneDays.push(today()); }
+    const snap = JSON.parse(JSON.stringify(it)), idx = S.items.indexOf(it);
+    if (u.delete) { S.items.splice(idx, 1); calDel(it); res.undo.push(() => { S.items.splice(idx, 0, snap); calSync(snap); }); res.n++; continue; }
     ["title", "note", "ch", "due", "time"].forEach(k => { if (u[k] !== undefined) it[k] = u[k]; });
     if ([1, 2, 3].includes(+u.u)) it.u = +u.u;
-    it.notified = false; calSync(it); n++;
+    it.notified = false;
+    if (u.done && !it.done) { markDone(it); res.done.push(it); } else calSync(it);
+    res.undo.push(() => { Object.keys(it).forEach(k => delete it[k]); Object.assign(it, snap); calSync(it); });
+    res.n++;
   }
-  return n;
+  return res;
+}
+
+/* « c'est fait » sans Claude : on rapproche par mots communs */
+const DONE_RX = /\b(c'?est (fait|regle|bon|envoye|ok)|fait|faite|faits|faites|regle|reglee|regles|termine|terminee|envoye|envoyee|appele|appelee|commande|commandee|livre|livree|valide|validee|boucle|bouclee)\b/;
+const STOP = new Set("pour avec dans chez sur les des une est ete fait faite faits faites regle reglee termine terminee envoye envoyee appele appelee commande commandee c'est bon tache taches truc aussi cette celle celui elle ils mail mails appel appeler rappeler envoyer demander voir faire".split(" "));
+const words = t => norm(t).replace(/[^a-z0-9' ]/g, " ").split(/\s+/).filter(w => w.length > 2 && !STOP.has(w));
+function localDone(text){
+  const open = S.items.filter(i => !i.done), done = [], rest = [];
+  for (const seg of splitText(text)) {
+    const n = norm(seg);
+    if (!DONE_RX.test(n)) { rest.push(seg); continue; }
+    const w = new Set(words(seg));
+    let best = null, sc = 0;
+    for (const i of open) {
+      if (done.includes(i)) continue;
+      const iw = words(i.title + " " + (i.ch || "") + " " + (i.mail ? i.mail.to : ""));
+      const s = iw.filter(x => w.has(x) || [...w].some(y => y.length > 4 && (x.startsWith(y.slice(0, 5)) || y.startsWith(x.slice(0, 5))))).length;
+      if (s > sc) { sc = s; best = i; }
+    }
+    if (best && sc >= 1) done.push(best); else rest.push(seg);
+  }
+  return { done, rest: rest.join(". ") };
 }
 
 async function capture(text, src, kind){
   text = (text || "").trim(); if (!text) { idle(); return; }
-  let parsed = null, viaAI = false, upd = 0;
+  let parsed = null, viaAI = false, U = { n: 0, done: [], undo: [] };
   if (CFG.key) {
     ringState("think"); hint(kind === "mail" ? "je lis tes mails…" : "je range…");
-    try { const r = await aiParse(text, kind); parsed = r.items; upd = applyUpdates(r.updates); viaAI = true; } catch (e) { parsed = null; }
+    try { const r = await aiParse(text, kind); parsed = r.items; U = applyUpdates(r.updates); viaAI = true; } catch (e) { parsed = null; }
   }
   if (kind === "mail") {
     if (!viaAI) { idle(); toast("il faut Claude pour lire les mails"); return false; }
-    if (!parsed.length && !upd) { flashOk(); idle(); toast("rien à faire dans tes mails"); return true; }
+    if (!parsed.length && !U.n) { flashOk(); idle(); toast("rien à faire dans tes mails"); return true; }
   }
-  if (viaAI && !parsed.length && upd) {
-    save(); flashOk(); idle(); render(); vib(18);
-    toast(upd === 1 ? "tâche mise à jour" : upd + " tâches mises à jour"); return;
+  if (!viaAI) {
+    const ld = localDone(text);
+    ld.done.forEach(i => { const snap = JSON.parse(JSON.stringify(i)); markDone(i); U.done.push(i); U.undo.push(() => { Object.assign(i, snap); calSync(i); }); U.n++; });
+    text = ld.rest;
+    parsed = text ? localParse(text) : [];
+    if (!parsed.length && text && !U.n) parsed = [{ title: cleanTitle(text), cat: "remarque", ch: "", u: 1, due: null, time: null, note: "" }];
   }
-  if (!parsed || !parsed.length) parsed = localParse(text);
-  if (!parsed.length) parsed = [{ title: cleanTitle(text), cat: "remarque", ch: "", u: 1, due: null, time: null, note: "" }];
   const now = Date.now();
-  const added = parsed.map(p => Object.assign({ id: uid(), created: now, done: false, doneAt: null, src: src || "voix", raw: text, orig: { cat: p.cat, ch: p.ch, u: p.u, slot: bucket(p) } }, p));
-  S.items.unshift(...added); save(); added.forEach(calSync);
-  flashOk(); idle(); render(added.map(a => a.id));
-  vib(18);
-  const ids = added.map(a => a.id);
-  const nm = added.filter(a => a.mail).length;
-  toast((added.length === 1 ? "noté" : added.length + " choses notées") + (nm ? ` · ${nm} mail${nm > 1 ? "s" : ""} prêt${nm > 1 ? "s" : ""}` : "") + (upd ? ` · ${upd} modifiée${upd > 1 ? "s" : ""}` : ""), "annuler", () => { S.items = S.items.filter(i => !ids.includes(i.id)); save(); render(); });
+  const added = (parsed || []).map(p => Object.assign({ id: uid(), created: now, done: false, doneAt: null, src: src || "voix", raw: text, orig: { cat: p.cat, ch: p.ch, u: p.u, slot: bucket(p) } }, p));
+  if (added.length) { S.items.unshift(...added); added.forEach(calSync); }
+  save(); flashOk(); idle(); render(added.map(a => a.id));
+  vib(U.done.length ? [12, 50, 18] : 18);
+  const ids = added.map(a => a.id), nm = added.filter(a => a.mail).length, other = U.n - U.done.length;
+  const parts = [];
+  if (U.done.length) parts.push(U.done.length === 1 ? "✓ " + U.done[0].title : `✓ ${U.done.length} réglées`);
+  if (added.length) parts.push(added.length === 1 ? "1 notée" : added.length + " notées");
+  if (nm) parts.push(`${nm} mail${nm > 1 ? "s" : ""} prêt${nm > 1 ? "s" : ""}`);
+  if (other) parts.push(`${other} modifiée${other > 1 ? "s" : ""}`);
+  toast(parts.join(" · ") || "rien compris, redis-le", parts.length ? "annuler" : "", () => {
+    S.items = S.items.filter(i => !ids.includes(i.id)); U.undo.reverse().forEach(f => f()); save(); render();
+  });
   if (CFG.key && !viaAI) setTimeout(() => toast("Claude injoignable · rangé par règles"), 2600);
   return true;
 }
@@ -1002,7 +1035,7 @@ function startListen(){
     }
     $("live").innerHTML = esc(finalTxt) + (interim ? ` <i>${esc(interim)}</i>` : "");
     const all = (finalTxt + " " + interim).trim();
-    const endRx = /[\s.,]*(c'?est tout|termin[ée]|fin de la note|c'?est bon pour moi|over)[\s.!]*$/i;
+    const endRx = /[\s.,]*(c'?est tout|fin de la note|over)[\s.!]*$/i;
     if (endRx.test(norm(all).replace(/é/g, "e")) || endRx.test(all)) {
       finalTxt = all.replace(endRx, "").trim(); interim = ""; clearTimeout(silT); validate(); return;
     }
