@@ -172,7 +172,7 @@ select{appearance:none}
   </div>
   <button id="eMk" style="margin-top:18px;font-size:14px;color:rgb(var(--glow))">✉ préparer un mail</button>
   <div class="foot">
-    <div class="l"><button id="eCal">agenda</button><button id="eShare">envoyer</button><button id="eDel" class="del">supprimer</button></div>
+    <div class="l"><button id="eCal">agenda Outlook</button><button id="eShare">envoyer</button><button id="eDel" class="del">supprimer</button></div>
     <button class="ok" id="eSave">OK</button>
   </div>
 </div>
@@ -191,11 +191,13 @@ select{appearance:none}
   <textarea id="sContacts" rows="4"></textarea>
   <div class="lab">Ma façon d'écrire mes mails</div>
   <textarea id="sStyle" rows="8"></textarea>
+  <div id="msBox" style="display:none">
   <div class="lab">Outlook perso (lecture des mails)</div>
   <input id="sMsId" placeholder="ID d'application (client) Azure">
   <p class="small" id="sMsState"></p>
   <label class="small" style="display:flex;gap:10px;align-items:center;margin-top:10px"><input type="checkbox" id="sCal" style="width:auto"> mettre mes tâches datées dans l'agenda Outlook (cochées « ✓ » quand c'est fait)</label>
   <div class="foot" style="margin-top:10px"><div class="l"><button id="sMsGo" style="color:var(--fg)">connecter Outlook</button><button id="sMsOff">déconnecter</button></div></div>
+  </div>
   <div class="lab">Fin de dictée</div>
   <select id="sSil"><option value="0">je touche le rond pour finir</option><option value="2">après 2 s de silence</option><option value="3">après 3 s de silence</option><option value="5">après 5 s de silence</option></select>
   <p class="small">Tu peux aussi finir en disant « c'est tout ».</p>
@@ -967,12 +969,13 @@ $("eDel").onclick = () => {
 };
 $("eCal").onclick = () => {
   if (!cur) return;
-  const dv = $("eDate").value || today(), d = dv.replace(/-/g, ""), t = $("eTime").value;
-  let dates;
-  if (t) { const [H, M] = t.split(":").map(Number), end = new Date(2000, 0, 1, H, M + 30); dates = `${d}T${pad(H)}${pad(M)}00/${d}T${pad(end.getHours())}${pad(end.getMinutes())}00`; }
-  else dates = `${d}/${ymd(addDays(1, new Date(dv + "T12:00"))).replace(/-/g, "")}`;
+  const dv = $("eDate").value || today(), t = $("eTime").value;
+  let st, en, all = !t;
+  if (t) { const [H, M] = t.split(":").map(Number), e = new Date(2000, 0, 1, H, M + 30); st = `${dv}T${t}:00`; en = `${dv}T${pad(e.getHours())}:${pad(e.getMinutes())}:00`; }
+  else { st = dv; en = ymd(addDays(1, new Date(dv + "T12:00"))); }
   const title = ($("eCh").value ? "[" + $("eCh").value + "] " : "") + $("eTitle").value;
-  window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${dates}&details=${encodeURIComponent($("eNote").value)}&ctz=Europe/Paris`, "_blank");
+  const q = new URLSearchParams({ path: "/calendar/action/compose", rru: "addevent", subject: title, body: $("eNote").value || "", startdt: st, enddt: en, allday: all ? "true" : "false" });
+  window.open("https://outlook.live.com/calendar/0/deeplink/compose?" + q.toString(), "_blank");
 };
 $("eShare").onclick = async () => {
   const txt = ($("eCh").value ? "[" + $("eCh").value + "] " : "") + $("eTitle").value + ($("eNote").value ? "\n" + $("eNote").value : "");
