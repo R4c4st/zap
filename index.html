@@ -124,7 +124,8 @@ body{background:radial-gradient(700px 460px at 50% 26%,rgba(var(--glow),.10),tra
 .tabs{display:flex;gap:22px}
 .tabs button{font-size:22px;color:var(--mut)} .tabs button.on{color:var(--fg)}
 #hist .it{padding:11px 0}
-.toast{position:fixed;left:50%;bottom:calc(26px + env(safe-area-inset-bottom));transform:translate(-50%,20px);opacity:0;transition:.3s;font-size:14px;display:flex;gap:18px;padding:12px 20px;border-radius:999px;background:var(--sheet);border:1px solid var(--faint);z-index:40;white-space:nowrap;letter-spacing:.2px}
+#edit,#pp{z-index:45}
+.toast{position:fixed;left:50%;bottom:calc(26px + env(safe-area-inset-bottom));transform:translate(-50%,20px);opacity:0;transition:.3s;font-size:14px;display:flex;gap:18px;padding:12px 20px;border-radius:999px;background:var(--sheet);border:1px solid var(--faint);z-index:60;white-space:nowrap;letter-spacing:.2px}
 .toast.show{opacity:1;transform:translate(-50%,0)}
 .toast button{color:rgb(var(--glow));font-weight:500}
 </style>
@@ -220,7 +221,7 @@ body{background:radial-gradient(700px 460px at 50% 26%,rgba(var(--glow),.10),tra
     <button class="ok" id="sSave">OK</button>
   </div>
   <input type="file" id="sFile" accept=".json" hidden>
-  <p class="small" style="margin-top:24px;text-align:center">Tempo v14 · Rc4st</p>
+  <p class="small" style="margin-top:24px;text-align:center">Tempo v15 · Rc4st</p>
 </div>
 
 <div class="sheet" id="menu">
@@ -1234,12 +1235,12 @@ $("eSave").onclick = () => {
     CFG.learn.push({ id: cur.id, t: (cur.raw && cur.raw.length < 160 ? cur.raw : cur.title), cat: cur.cat, ch: cur.ch, u: cur.u, slot: SLOTS.find(s => s[0] === bucket(cur))[1] });
     CFG.learn = CFG.learn.slice(-40); saveCfg();
   }
-  const edited = cur; save(); hide(); render(); calSync(edited);
+  const edited = cur; save(); closeEdit(); render(); calSync(edited);
 };
 $("eDel").onclick = () => {
   if (!cur) return; const it = cur, idx = S.items.indexOf(it);
-  S.items.splice(idx, 1); save(); hide(); render(); calDel(it);
-  toast("supprimé", "annuler", () => { S.items.splice(idx, 0, it); save(); render(); calSync(it); });
+  S.items.splice(idx, 1); save(); closeEdit(); render(); calDel(it);
+  toast("supprimé", "annuler", () => { S.items.splice(idx, 0, it); save(); render(); if ($("memos").classList.contains("show")) paintMemos(); if ($("hist").classList.contains("show")) paintHist(); calSync(it); });
 };
 $("eCal").onclick = () => {
   if (!cur) return;
@@ -1342,6 +1343,12 @@ $("sFile").onchange = async e => {
 
 function show(id){ $("mask").classList.add("show"); $(id).classList.add("show"); }
 function hide(){ $("mask").classList.remove("show"); document.querySelectorAll(".sheet").forEach(s => s.classList.remove("show")); cur = null; }
+function closeEdit(){
+  const under = ["memos", "hist"].find(id => $(id).classList.contains("show"));
+  if (!under) { hide(); return; }
+  $("edit").classList.remove("show"); cur = null;
+  if (under === "memos") paintMemos(); else paintHist();
+}
 $("mask").onclick = hide;
 
 /* ===== voice ===== */
