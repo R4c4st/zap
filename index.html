@@ -164,6 +164,10 @@ body{background:radial-gradient(700px 460px at 50% 26%,rgba(var(--glow),.10),tra
     <div><div class="lab">Date</div><input type="date" id="eDate"></div>
     <div><div class="lab">Heure</div><input type="time" id="eTime"></div>
   </div>
+  <div class="two" id="eMemoRow" style="display:none">
+    <div><div class="lab">Rubrique</div><select id="eRb"></select></div>
+    <div><div class="lab">Montant €</div><input id="eAmt" inputmode="decimal" placeholder="—"></div>
+  </div>
   <div class="lab">Répéter</div>
   <select id="eRec"><option value="">jamais</option><option value="jour">chaque jour</option><option value="ouvre">en semaine (lun–ven)</option><option value="semaine">chaque semaine</option><option value="mois">chaque mois</option><option value="an">chaque année</option></select>
   <div class="lab">Note</div>
@@ -216,11 +220,12 @@ body{background:radial-gradient(700px 460px at 50% 26%,rgba(var(--glow),.10),tra
     <button class="ok" id="sSave">OK</button>
   </div>
   <input type="file" id="sFile" accept=".json" hidden>
-  <p class="small" style="margin-top:24px;text-align:center">Tempo v13 · Rc4st</p>
+  <p class="small" style="margin-top:24px;text-align:center">Tempo v14 · Rc4st</p>
 </div>
 
 <div class="sheet" id="menu">
   <div class="menu">
+    <button id="mMemo">mémos & frais</button>
     <button id="mHist">historique & chantiers</button>
     <button id="mSet">réglages</button>
   </div>
@@ -239,6 +244,15 @@ body{background:radial-gradient(700px 460px at 50% 26%,rgba(var(--glow),.10),tra
   </div>
   <div class="sl" id="hChips" style="margin-top:20px"></div>
   <div id="hList" style="margin-top:8px"></div>
+</div>
+
+<div class="sheet full" id="memos">
+  <div style="display:flex;justify-content:space-between;align-items:center">
+    <div class="tabs" id="mTabs"></div>
+    <button id="mClose" style="font-size:14px;color:var(--mut)">fermer</button>
+  </div>
+  <div id="mHead" style="margin-top:18px"></div>
+  <div id="mList" style="margin-top:6px"></div>
 </div>
 
 <div class="toast" id="toast"><span id="tTxt"></span><button id="tBtn"></button></div>
@@ -296,10 +310,19 @@ Object.assign(CFG, CFG.sp[SPACE]);
 const save = () => LS.set(SKEY(SPACE), S);
 const saveCfg = () => { CFG.sp[SPACE] = pickPer(); LS.set("zap_cfg", CFG); };
 
-const CATS_PRO = { appel: "appel", message: "texto", mail: "mail", materiel: "matériel", equipe: "équipe", chantier: "chantier", remarque: "remarque" };
-const CATS_PERSO = { appel: "appel", message: "texto", mail: "mail", rdv: "rendez-vous", facture: "facture", courses: "courses", tache: "à faire", remarque: "remarque" };
+const CATS_PRO = { appel: "appel", message: "texto", mail: "mail", memo: "mémo", materiel: "matériel", equipe: "équipe", chantier: "chantier", remarque: "remarque" };
+const CATS_PERSO = { appel: "appel", message: "texto", mail: "mail", memo: "mémo", rdv: "rendez-vous", facture: "facture", courses: "courses", tache: "à faire", remarque: "remarque" };
 let CATS = SPACE === "perso" ? CATS_PERSO : CATS_PRO;
 const isList = i => i.cat === "courses";
+const isMemo = i => i.cat === "memo";
+const RB = () => SPACE === "perso" ? { depense: "dépenses", info: "notes", idee: "idées" } : { depense: "frais à rembourser", info: "infos", idee: "idées" };
+const eur = n => (Math.round((+n || 0) * 100) / 100).toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " €";
+function parseAmount(n){
+  const m = n.match(/(\d+(?:[.,]\d{1,2})?)\s*(?:€|euros?\b|eur\b)(?:\s*(\d{1,2})\b)?/);
+  if (!m) return null;
+  let v = parseFloat(m[1].replace(",", ".")); if (m[2] && !/[.,]/.test(m[1])) v += (+m[2]) / 100;
+  return v;
+}
 const SLOTS = [["now","maintenant"],["matin","ce matin"],["aprem","cet après-midi"],["soir","ce soir"],["today","aujourd'hui"],["demain","demain"],["semaine","cette semaine"],["tard","plus tard"]];
 
 /* ===== helpers ===== */
@@ -475,8 +498,37 @@ function localParsePerso(text){
   }
   return out;
 }
+function localMemo(seg){
+  const n = norm(seg), chs = chantiers();
+  let ch = ""; for (const c of chs) if (c.keys.some(k => n.includes(k))) { ch = c.name; break; }
+  const amt = parseAmount(n);
+  const strip = t => t.replace(/^(note[rz]?( que)?|memo|mémo|retiens( que)?|pour info|info|idee|idée|frais|depense|dépense)\s*:?\s*/i, "")
+    .replace(/^(j'ai (payé|paye|depense|dépensé|avancé|avance|mis|pris|acheté|achete)|payé|paye)\s+/i, "")
+    .replace(/(\d+(?:[.,]\d{1,2})?)\s*(€|euros?\b|eur\b)(\s*\d{1,2}\b)?/i, "").replace(/\s{2,}/g, " ").trim().replace(/\s+(de|d'|pour|en)\s*$/i, "")
+    .replace(/^(de |d'|du |des |en |pour )/i, "").trim();
+  if (amt !== null && /\b(paye|payee|depense|frais|rembours\w*|essence|carburant|gasoil|gazole|peage|parking|repas|resto|restaurant|dejeuner|hotel|nuit|achat|achete|ticket|note de frais|avance|train|taxi|fournitures?)\b/.test(n)) {
+    let t = strip(seg); t = t.charAt(0).toUpperCase() + t.slice(1);
+    return { title: t || "Dépense", cat: "memo", rb: "depense", amount: amt, ch, u: 1, due: parseWhen(seg).due || today(), time: null, note: "" };
+  }
+  if (/^(note[rz]?|memo|retiens|pour info|info)\b/.test(n) || /\b(noter que|note que|a retenir)\b/.test(n)) {
+    let t = strip(seg); t = t.charAt(0).toUpperCase() + t.slice(1);
+    return { title: t, cat: "memo", rb: "info", ch, u: 1, due: today(), time: null, note: "" };
+  }
+  if (/^(idee|j'ai une idee)\b/.test(n)) {
+    let t = strip(seg.replace(/^j'ai une id[ée]e\s*:?\s*/i, "")); t = t.charAt(0).toUpperCase() + t.slice(1);
+    return { title: t, cat: "memo", rb: "idee", ch, u: 1, due: today(), time: null, note: "" };
+  }
+  return null;
+}
 function localParse(text){
-  if (SPACE === "perso") return localParsePerso(text);
+  const memos = [], rest = [];
+  for (const seg of splitText(text)) { const m = localMemo(seg); if (m) memos.push(m); else rest.push(seg); }
+  if (!rest.length) return memos;
+  text = rest.join(". ");
+  if (SPACE === "perso") return memos.concat(localParsePerso(text));
+  return memos.concat(localParsePro(text));
+}
+function localParsePro(text){
   const chs = chantiers(), tm = team().map(t => norm(t.split(" ")[0]));
   return splitText(text).map(seg => {
     const n = norm(seg);
@@ -506,7 +558,7 @@ function localParse(text){
 async function aiParse(text, kind){
   const d = new Date();
   const learn = (CFG.learn || []).slice(-25).map(l => `- « ${l.t} » → type ${l.cat}, chantier ${l.ch || "aucun"}, urgence ${l.u}${l.slot ? ", moment " + l.slot : ""}`).join("\n");
-  const open = S.items.filter(i => !i.done).slice(0, 40).map(i => `- id=${i.id} : ${i.title}${i.ch ? " [" + i.ch + "]" : ""}${i.due ? " (" + i.due + (i.time ? " " + i.time : "") + ")" : ""}`).join("\n");
+  const open = S.items.filter(i => !i.done && !isMemo(i)).slice(0, 40).map(i => `- id=${i.id} : ${i.title}${i.ch ? " [" + i.ch + "]" : ""}${i.due ? " (" + i.due + (i.time ? " " + i.time : "") + ")" : ""}`).join("\n");
   const ctc = contacts().map(c => `- ${c.name}${c.role ? " : " + c.role : ""}`).join("\n");
   const sys = `Tu es l'assistant d'organisation personnel de Raphaël. Il dicte en vrac, sans ponctuation, avec des erreurs de reconnaissance vocale. Tu transformes ce qu'il dit en actions claires, rangées.
 
@@ -537,9 +589,10 @@ ${SPACE === "perso" ? `- VIE PRIVÉE : cat "rdv" pour un rendez-vous à prendre 
 ` : ""}- TEXTOS / WHATSAPP : s'il veut envoyer un texto, SMS, message ou WhatsApp à quelqu'un, cat "message" et "mail":{"to":"prénom","subject":"","body":"le message, court, avec SES mots, comme il parle","via":"wa" si WhatsApp sinon "sms"}. Si une heure/date est donnée, c'est le moment où il doit l'envoyer (due/time).
 - RÉCURRENCE : si c'est répétitif (« tous les lundis », « chaque mois le 5 », « tous les jours »), ajoute "rec":"jour|ouvre|semaine|mois|an" et mets la PROCHAINE occurrence dans due (et time si dite). "ouvre" = du lundi au vendredi. Le title ne contient pas la fréquence.
 - MAILS : s'il demande d'écrire, d'envoyer, de demander, de prévenir ou de faire un compte rendu à un contact clé (ex. « demande à Christelle… », « mail à Loïc pour… »), mets cat "mail" et ajoute "mail":{"to":"prénom du contact","subject":"objet court et clair (avec le chantier si connu)","body":"le mail complet, rédigé exactement dans SA façon d'écrire, avec seulement ce qu'il a dit"}. Pas de signature longue, termine par « Raphaël ». N'invente ni quantité, ni référence, ni date.
+- MÉMOS (pas des tâches) : s'il demande de noter/retenir une info, une idée, ou s'il signale une DÉPENSE payée de sa poche${SPACE === "pro" ? " à se faire rembourser (essence, péage, parking, repas, hôtel, petit matériel, fournitures…)" : ""}, mets cat "memo" avec "rb":"depense|info|idee". Pour une dépense : "amount" = montant en euros (nombre, ex. 45.5), title = objet court (« Essence », « Repas midi »), ch = chantier/thème si dit, due = date de la dépense (aujourd'hui par défaut), note = détails utiles (lieu, nb de personnes, n° de ticket). Pour une info : title = l'info elle-même, claire et complète. Pas d'urgence, pas d'heure.
 - C'EST FAIT : s'il dit qu'une ou plusieurs choses sont faites, réglées, envoyées, appelées, commandées, livrées, bouclées (« Christelle c'est fait », « le devis Siebert est parti », « j'ai eu Berner »), retrouve CHAQUE tâche correspondante dans sa liste, même formulée autrement, et mets-la dans "updates" avec done:true. Il peut en citer plusieurs d'affilée. Ne crée JAMAIS de nouvelle tâche pour une chose déjà faite. Si une chose faite ne correspond à aucune tâche, ignore-la.
 - MODIFICATIONS : s'il parle d'une tâche DÉJÀ dans sa liste (« le truc Arvato c'est pour jeudi », « c'est fait pour Christelle », « annule le rappel Berner »), ne crée pas de nouvelle action : ajoute une entrée dans "updates" avec l'id et seulement les champs qui changent (title, u, due, time, note, ch, done:true, delete:true).
-Réponds UNIQUEMENT en JSON : {"items":[{"title":"","cat":"${Object.keys(CATS).join("|")}","ch":"","u":1,"due":null,"time":null,"note":"","mail":null,"rec":null}],"updates":[{"id":"","due":"…"}]}`;
+Réponds UNIQUEMENT en JSON : {"items":[{"title":"","cat":"${Object.keys(CATS).join("|")}","ch":"","u":1,"due":null,"time":null,"note":"","mail":null,"rec":null,"rb":null,"amount":null}],"updates":[{"id":"","due":"…"}]}`;
   const r = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: { "content-type": "application/json", "x-api-key": CFG.key, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
@@ -555,7 +608,9 @@ ICI CE NE SONT PAS DES DICTÉES : ce sont des mails qu'il a reçus. Extrais uniq
     title: it.title || "", cat: CATS[it.cat] ? it.cat : "remarque", ch: it.ch || "",
     u: [1, 2, 3].includes(+it.u) ? +it.u : 1, due: it.due || null, time: it.time || null, note: it.note || "", ai: true,
     mail: it.mail && it.mail.body ? { to: it.mail.to || "", subject: it.mail.subject || (it.cat === "message" ? "" : it.title), body: it.mail.body, via: it.mail.via === "wa" ? "wa" : "sms" } : null,
-    rec: REC[it.rec] ? it.rec : null
+    rec: REC[it.rec] ? it.rec : null,
+    rb: it.cat === "memo" ? (["depense", "info", "idee"].includes(it.rb) ? it.rb : (it.amount ? "depense" : "info")) : undefined,
+    amount: it.cat === "memo" && it.amount != null && !isNaN(+it.amount) ? +it.amount : undefined
   })).filter(it => it.title);
   return { items, updates: Array.isArray(obj.updates) ? obj.updates.filter(u => u && u.id) : [] };
 }
@@ -591,7 +646,7 @@ const DONE_RX = /\b(c'?est (fait|regle|bon|envoye|ok)|fait|faite|faits|faites|re
 const STOP = new Set("pour avec dans chez sur les des une est ete fait faite faits faites regle reglee termine terminee envoye envoyee appele appelee commande commandee c'est bon tache taches truc aussi cette celle celui elle ils mail mails appel appeler rappeler envoyer demander voir faire".split(" "));
 const words = t => norm(t).replace(/[^a-z0-9' ]/g, " ").split(/\s+/).filter(w => w.length > 2 && !STOP.has(w));
 function localDone(text){
-  const open = S.items.filter(i => !i.done), done = [], rest = [];
+  const open = S.items.filter(i => !i.done && !isMemo(i)), done = [], rest = [];
   for (const seg of splitText(text)) {
     const n = norm(seg);
     if (!DONE_RX.test(n)) { rest.push(seg); continue; }
@@ -633,8 +688,13 @@ async function capture(text, src, kind){
   vib(U.done.length ? [12, 50, 18] : 18);
   const ids = added.map(a => a.id), nm = added.filter(a => a.mail).length, other = U.n - U.done.length;
   const parts = [];
+  const mem = added.filter(isMemo);
+  const dep = mem.filter(m => m.rb === "depense"), oth = mem.length - dep.length;
+  if (dep.length) parts.push(`${dep.length > 1 ? dep.length + " frais" : "frais"} · ${eur(dep.reduce((a, m) => a + (+m.amount || 0), 0))}`);
+  if (oth) parts.push(oth > 1 ? oth + " mémos" : "1 mémo");
   if (U.done.length) parts.push(U.done.length === 1 ? "✓ " + U.done[0].title : `✓ ${U.done.length} réglées`);
-  if (added.length) parts.push(added.length === 1 ? "1 notée" : added.length + " notées");
+  const tk = added.length - mem.length;
+  if (tk) parts.push(tk === 1 ? "1 notée" : tk + " notées");
   const nt = added.filter(a => a.mail && a.cat === "message").length, nmm = nm - nt;
   if (nmm) parts.push(`${nmm} mail${nmm > 1 ? "s" : ""} prêt${nmm > 1 ? "s" : ""}`);
   if (nt) parts.push(`${nt} texto${nt > 1 ? "s" : ""} prêt${nt > 1 ? "s" : ""}`);
@@ -689,7 +749,8 @@ function render(fresh){
   fresh = fresh || [];
   const d = new Date();
   $("date").textContent = WD[d.getDay()] + " " + d.getDate() + " " + MO[d.getMonth()];
-  const open = S.items.filter(i => !i.done && !isList(i)), shop = S.items.filter(i => !i.done && isList(i)).sort((a, b) => a.created - b.created);
+  const open = S.items.filter(i => !i.done && !isList(i) && !isMemo(i)), shop = S.items.filter(i => !i.done && isList(i)).sort((a, b) => a.created - b.created);
+  const memoN = S.items.filter(i => isMemo(i) && !(i.rb === "depense" && i.done)).length, toPay = S.items.filter(i => isMemo(i) && i.rb === "depense" && !i.done).reduce((a, i) => a + (+i.amount || 0), 0);
   const doneT = S.items.filter(i => i.done && i.doneAt && ymd(new Date(i.doneAt)) === today()).sort((a, b) => b.doneAt - a.doneAt);
   let h = "";
   if (!open.length && !shop.length) h = `<p class="empty">${doneT.length ? "tout est réglé." : "rien en tête. touche le rond et parle."}</p>`;
@@ -705,13 +766,13 @@ function render(fresh){
   if (doneT.length) h += `<button class="donebar" id="doneBar" style="width:100%">${doneT.length} réglé${doneT.length > 1 ? "s" : ""} aujourd'hui${streak() > 1 ? " · " + streak() + " jours d'affilée" : ""}</button><div class="donelist${showDone ? " show" : ""}">${doneT.map(i => itHTML(i)).join("")}</div>`;
   $("list").innerHTML = h;
   const GL = { now: "maintenant", matin: "matin", aprem: "aprem", soir: "soir", today: "aujourd'hui", demain: "demain", semaine: "semaine", tard: "plus tard" };
-  $("glance").innerHTML = SLOTS.map(([k]) => { const a = open.filter(i => bucket(i) === k); return a.length ? `<button class="gl${a.some(i => i.u === 3) ? " hot" : ""}" data-g="${k}"><b>${a.length}</b>${GL[k]}</button>` : ""; }).join("") + (shop.length ? `<button class="gl" data-g="courses"><b>${shop.length}</b>courses</button>` : "");
+  $("glance").innerHTML = SLOTS.map(([k]) => { const a = open.filter(i => bucket(i) === k); return a.length ? `<button class="gl${a.some(i => i.u === 3) ? " hot" : ""}" data-g="${k}"><b>${a.length}</b>${GL[k]}</button>` : ""; }).join("") + (shop.length ? `<button class="gl" data-g="courses"><b>${shop.length}</b>courses</button>` : "") + (memoN ? `<button class="gl" data-g="memos"><b>${toPay ? eur(toPay).replace(",00", "") : memoN}</b>${toPay ? (SPACE === "pro" ? "à rembourser" : "dépensés") : "mémos"}</button>` : "");
   paintPoint(); scheduleBrief();
   if (fresh.length) requestAnimationFrame(() => requestAnimationFrame(() => document.querySelectorAll(".it[style]").forEach((e, n) => setTimeout(() => e.removeAttribute("style"), n * 70))));
   if (!listening && !typing) idleHint();
 }
 function idleHint(){
-  const open = S.items.filter(i => !i.done), now = open.filter(i => bucket(i) === "now").length;
+  const open = S.items.filter(i => !i.done && !isMemo(i)), now = open.filter(i => bucket(i) === "now").length;
   hint(now ? `${now} chose${now > 1 ? "s" : ""} maintenant` : open.length ? "" : "");
 }
 function streak(){
@@ -723,9 +784,9 @@ function streak(){
 
 /* ===== le point ===== */
 const halfDay = () => today() + (new Date().getHours() < 12 ? "am" : "pm");
-const openSig = () => halfDay() + "|" + S.items.filter(i => !i.done).map(i => i.id + i.u + (i.due || "") + (i.time || "")).join(",");
+const openSig = () => halfDay() + "|" + S.items.filter(i => !i.done && !isMemo(i)).map(i => i.id + i.u + (i.due || "") + (i.time || "")).join(",");
 function localPoint(){
-  const open = S.items.filter(i => !i.done);
+  const open = S.items.filter(i => !i.done && !isMemo(i) && !isList(i));
   if (!open.length) return "";
   const order = SLOTS.map(s => s[0]);
   const sorted = open.slice().sort((a, b) => order.indexOf(bucket(a)) - order.indexOf(bucket(b)) || b.u - a.u || (a.time || "").localeCompare(b.time || ""));
@@ -741,14 +802,14 @@ let briefT = null, briefBusy = false;
 function scheduleBrief(){
   if (!CFG.key || briefBusy) return;
   if (S.brief && S.brief.sig === openSig()) return;
-  if (!S.items.some(i => !i.done)) return;
+  if (!S.items.some(i => !i.done && !isMemo(i))) return;
   clearTimeout(briefT); briefT = setTimeout(makeBrief, 1800);
 }
 async function makeBrief(){
   const sig = openSig(); if (S.brief && S.brief.sig === sig) return;
   briefBusy = true; $("point").classList.add("load");
   const lab = Object.fromEntries(SLOTS), d = new Date();
-  const list = S.items.filter(i => !i.done).map(i => `- [${lab[bucket(i)]}] urgence ${i.u} : ${i.title}${i.ch ? " (" + i.ch + ")" : ""}${i.time ? " à " + i.time : ""}${i.mail ? " — mail prêt" : ""}`).join("\n");
+  const list = S.items.filter(i => !i.done && !isMemo(i)).map(i => `- [${lab[bucket(i)]}] urgence ${i.u} : ${i.title}${i.ch ? " (" + i.ch + ")" : ""}${i.time ? " à " + i.time : ""}${i.mail ? " — mail prêt" : ""}`).join("\n");
   try {
     const r = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -862,6 +923,7 @@ $("sMsOff").onclick = () => { MS = {}; saveMs(); paintMailBtn(); $("sMsState").t
 
 document.addEventListener("click", e => {
   const g = e.target.closest(".gl");
+  if (g && g.dataset.g === "memos") { openMemos(); return; }
   if (g) { if (FAR.includes(g.dataset.g) && !showFar) { showFar = true; render(); } const s = $("g-" + g.dataset.g); if (s) window.scrollTo({ top: s.getBoundingClientRect().top + scrollY - 20, behavior: "smooth" }); return; }
   if (e.target.closest("#doneBar")) { showDone = !showDone; render(); return; }
   if (e.target.closest("#farBar")) { showFar = !showFar; render(); return; }
@@ -1012,7 +1074,7 @@ function openPostpone(it){
 let hMode = "done", hCh = "";
 function openHist(){ hMode = "done"; hCh = ""; paintHist(); show("hist"); }
 function paintHist(){
-  const pool = S.items.filter(i => hMode === "done" ? i.done : !i.done);
+  const pool = S.items.filter(i => !isMemo(i) && (hMode === "done" ? i.done : !i.done));
   const names = [...new Set(pool.map(i => i.ch).filter(Boolean))].sort();
   $("hTabs").innerHTML = `<button data-m="done" class="${hMode === "done" ? "on" : ""}">fait</button><button data-m="open" class="${hMode === "open" ? "on" : ""}">à faire</button>`;
   $("hChips").innerHTML = `<button data-c="" class="${!hCh ? "on" : ""}">tout · ${pool.length}</button>` + names.map(n => `<button data-c="${esc(n)}" class="${hCh === n ? "on" : ""}">${esc(n)} · ${pool.filter(i => i.ch === n).length}</button>`).join("") + (pool.some(i => !i.ch) ? `<button data-c="__none" class="${hCh === "__none" ? "on" : ""}">sans chantier</button>` : "");
@@ -1056,6 +1118,11 @@ function unDone(it){
   save(); calSync(it);
 }
 function done(it, row){
+  if (isMemo(it)) {
+    it.done = !it.done; it.doneAt = it.done ? Date.now() : null; save(); vib(12); paintMemos(); render();
+    toast(it.done ? "remboursé" : "remis en attente", "annuler", () => { it.done = !it.done; it.doneAt = it.done ? Date.now() : null; save(); paintMemos(); render(); });
+    return;
+  }
   const inHist = !!row.closest("#hist");
   if (!it.done) {
     markDone(it); vib([12, 50, 18]); flashOk();
@@ -1090,6 +1157,7 @@ $("eSlot").onclick = e => {
 };
 $("eUrg").onclick = e => { const b = e.target.closest("button"); if (b) setU(+b.dataset.u); };
 $("eDate").onchange = $("eTime").onchange = paintSlots;
+$("eCat").onchange = () => { $("eMemoRow").style.display = $("eCat").value === "memo" ? "" : "none"; };
 function openEdit(it){
   cur = it;
   $("eCat").innerHTML = Object.entries(CATS).map(([k, v]) => `<option value="${k}">${v}</option>`).join("");
@@ -1097,9 +1165,14 @@ function openEdit(it){
   $("eCh").innerHTML = `<option value="">—</option>` + names.map(n => `<option>${esc(n)}</option>`).join("");
   $("eTitle").value = it.title; $("eCat").value = it.cat; $("eCh").value = it.ch || "";
   $("eRec").value = it.rec || "";
+  $("eRb").innerHTML = Object.entries(RB()).map(([k, v]) => `<option value="${k}">${v}</option>`).join("");
+  $("eRb").value = it.rb || "info"; $("eAmt").value = it.amount != null ? String(it.amount).replace(".", ",") : "";
+  $("eMemoRow").style.display = isMemo(it) ? "" : "none";
+  const hideM = isMemo(it) ? "none" : "";
+  [$("eSlot"), $("eSlot").previousElementSibling, $("eUrg"), $("eUrg").previousElementSibling, $("eRec"), $("eRec").previousElementSibling, $("eTime").parentNode, $("eMk")].forEach(e => e.style.display = hideM);
   $("eDate").value = it.due || ""; $("eTime").value = it.time || ""; $("eNote").value = it.note || "";
   $("lCh").textContent = SPACE === "perso" ? "Thème" : "Chantier";
-  setU(it.u); paintMail(); show("edit");
+  setU(it.u); paintMail(); if (isMemo(it)) $("eMk").style.display = "none"; show("edit");
 }
 function paintMail(){
   const m = cur && cur.mail;
@@ -1152,6 +1225,7 @@ $("eSave").onclick = () => {
   keepMail();
   const d = draft();
   Object.assign(cur, { title: $("eTitle").value.trim() || cur.title, cat: $("eCat").value, ch: $("eCh").value, u: d.u, due: d.due, time: d.time, note: $("eNote").value.trim(), notified: false, rec: $("eRec").value || null });
+  if (isMemo(cur)) { cur.rb = $("eRb").value; const a = parseFloat(($("eAmt").value || "").replace(",", ".")); cur.amount = isNaN(a) ? undefined : a; if (!cur.due) cur.due = today(); }
   if (cur.rec && !cur.due) cur.due = today();
   if (cur.time && !cur.due) cur.due = today();
   const o = cur.orig;
@@ -1185,6 +1259,55 @@ $("eShare").onclick = async () => {
 /* ===== settings ===== */
 $("bSet").onclick = () => show("menu");
 $("mHist").onclick = () => { hide(); setTimeout(openHist, 60); };
+$("mMemo").onclick = () => { hide(); setTimeout(openMemos, 60); };
+
+/* mémos & frais */
+let mRb = "depense", mShowPaid = false;
+function openMemos(){ const has = k => S.items.some(i => isMemo(i) && i.rb === k); mRb = has("depense") ? "depense" : has("info") ? "info" : has("idee") ? "idee" : "depense"; paintMemos(); show("memos"); }
+function paintMemos(){
+  const rb = RB();
+  $("mTabs").innerHTML = Object.entries(rb).map(([k, v]) => `<button data-r="${k}" class="${mRb === k ? "on" : ""}" style="font-size:18px">${k === "depense" ? (SPACE === "pro" ? "frais" : "dépenses") : v}</button>`).join("");
+  const all = S.items.filter(i => isMemo(i) && (i.rb || "info") === mRb).sort((a, b) => (b.due || "").localeCompare(a.due || "") || b.created - a.created);
+  let head = "", list = all;
+  if (mRb === "depense") {
+    const open = all.filter(i => !i.done), paid = all.filter(i => i.done);
+    const tot = open.reduce((a, i) => a + (+i.amount || 0), 0);
+    head = `<div style="font-size:13px;letter-spacing:1.6px;text-transform:uppercase;color:var(--mut)">${SPACE === "pro" ? "à te faire rembourser" : "en cours"}</div>
+      <div style="font-size:40px;font-weight:200;margin:4px 0 14px">${eur(tot)}</div>
+      ${open.length ? `<div style="display:flex;flex-wrap:wrap;gap:10px 22px;font-size:14px;white-space:nowrap"><button id="mSend" style="color:rgb(var(--glow));font-weight:500">envoyer la note de frais</button><button id="mCopy" style="color:var(--mut)">copier</button><button id="mPaid" style="color:var(--mut)">tout remboursé</button></div>` : ""}`;
+    list = mShowPaid ? open.concat(paid) : open;
+    if (paid.length) head += `<button id="mTogglePaid" class="farbar" style="margin-top:20px">${mShowPaid ? "masquer" : "voir"} les remboursés · ${paid.length}</button>`;
+  }
+  $("mHead").innerHTML = head;
+  $("mList").innerHTML = list.length ? list.map(i => {
+    const d = i.due ? new Date(i.due + "T12:00") : null;
+    const MA = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
+    const sub = [d ? d.getDate() + " " + MA[d.getMonth()] : "", i.ch, i.note].filter(Boolean).join(" · ");
+    return `<div class="it${i.done ? " done" : ""}" data-id="${i.id}">${i.rb === "depense" ? `<button class="dot" data-a="done" aria-label="remboursé"></button>` : `<span class="dot" style="opacity:.5"></span>`}
+      <div class="tx" data-a="edit"><div class="tt">${esc(i.title)}</div>${sub ? `<div class="sub">${esc(sub)}</div>` : ""}</div>
+      ${i.rb === "depense" ? `<div style="font-size:17px;font-weight:300;white-space:nowrap">${eur(i.amount)}</div>` : ""}</div>`;
+  }).join("") : `<p class="empty" style="margin-top:30px">${mRb === "depense" ? "aucun frais en attente. dis « j'ai payé 45 € d'essence pour Liffol »." : mRb === "info" ? "aucune info. dis « note que… »." : "aucune idée. dis « idée : … »."}</p>`;
+}
+function noteDeFrais(){
+  const open = S.items.filter(i => isMemo(i) && i.rb === "depense" && !i.done).sort((a, b) => (a.due || "").localeCompare(b.due || ""));
+  const tot = open.reduce((a, i) => a + (+i.amount || 0), 0);
+  const lines = open.map(i => { const d = new Date((i.due || today()) + "T12:00"); return `${pad(d.getDate())}/${pad(d.getMonth() + 1)} · ${i.title}${i.ch ? " · " + i.ch : ""}${i.note ? " (" + i.note + ")" : ""} · ${eur(i.amount)}`; });
+  const d = new Date();
+  return { subject: `Note de frais — Raphaël Castellanos — ${MO[d.getMonth()]} ${d.getFullYear()}`,
+    body: `Bonjour,\n\nVoici mes frais à rembourser :\n\n${lines.join("\n")}\n\nTotal : ${eur(tot)}\n\nLes justificatifs suivent.\n\nMerci,\nRaphaël` };
+}
+$("memos").addEventListener("click", e => {
+  const t = e.target.closest("[data-r]"); if (t) { mRb = t.dataset.r; mShowPaid = false; paintMemos(); return; }
+  if (e.target.closest("#mTogglePaid")) { mShowPaid = !mShowPaid; paintMemos(); return; }
+  if (e.target.closest("#mSend")) { const n = noteDeFrais(); location.href = `mailto:?subject=${encodeURIComponent(n.subject)}&body=${encodeURIComponent(n.body)}`; return; }
+  if (e.target.closest("#mCopy")) { const n = noteDeFrais(); navigator.clipboard.writeText(n.subject + "\n\n" + n.body).then(() => toast("copié")).catch(() => {}); return; }
+  if (e.target.closest("#mPaid")) {
+    const open = S.items.filter(i => isMemo(i) && i.rb === "depense" && !i.done);
+    open.forEach(i => { i.done = true; i.doneAt = Date.now(); }); save(); paintMemos(); render();
+    toast(`${open.length} remboursé${open.length > 1 ? "s" : ""}`, "annuler", () => { open.forEach(i => { i.done = false; i.doneAt = null; }); save(); paintMemos(); render(); });
+  }
+}, true);
+$("mClose").onclick = hide;
 $("mSet").onclick = () => { hide(); setTimeout(openSettings, 60); };
 const openSettings = () => {
   $("sKey").value = CFG.key || ""; $("sProfile").value = CFG.profile; $("sCh").value = CFG.ch; $("sTeam").value = CFG.team;
