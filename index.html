@@ -3,231 +3,190 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
-<meta name="theme-color" content="#0b0d12">
-<title>Zap ⚡</title>
+<meta name="theme-color" content="#0a0a0b" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f6f5f2" media="(prefers-color-scheme: light)">
+<title>Zap</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png">
 <style>
 :root{
-  --bg:#0b0d12;--card:#151923;--card2:#1c2130;--line:#262c3d;--txt:#eef1f7;--mut:#8a93a8;
-  --acc:#ffd23f;--acc2:#ff8a00;--red:#ff4d5e;--orange:#ffa53d;--grey:#5b6478;--ok:#3ddc97;--blue:#5aa9ff;
+  --bg:#0a0a0b;--fg:#f2f0ec;--mut:#6f6d69;--faint:#2a2a2c;--sheet:#141415;
+  --u3:#ff5a4e;--u2:#f2a93b;--u1:#5c5b58;--glow:255,196,92;--ok:#7fd8a6;
 }
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;background:var(--bg);color:var(--txt);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overscroll-behavior:none}
-body{padding:env(safe-area-inset-top) 0 140px}
-button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
-input,select,textarea{font:inherit;color:var(--txt);background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:12px;width:100%}
-textarea{resize:vertical}
-header{padding:18px 18px 6px;display:flex;align-items:center;justify-content:space-between}
-.logo{font-weight:900;font-size:26px;letter-spacing:-.5px}
-.logo span{background:linear-gradient(90deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;color:transparent}
-.hbtn{width:42px;height:42px;border-radius:50%;background:var(--card);display:grid;place-items:center;font-size:19px}
-.brief{margin:6px 18px 14px;color:var(--mut);font-size:15px;line-height:1.4}
-.brief b{color:var(--txt)}
-.stats{display:flex;gap:8px;margin:0 18px 16px}
-.stat{flex:1;background:var(--card);border-radius:16px;padding:12px;text-align:center}
-.stat .n{font-size:24px;font-weight:800}
-.stat .l{font-size:12px;color:var(--mut);margin-top:2px}
-.stat.fire .n{color:var(--acc2)} .stat.done .n{color:var(--ok)} .stat.urg .n{color:var(--red)}
-h2{font-size:13px;text-transform:uppercase;letter-spacing:1.2px;color:var(--mut);margin:18px 18px 10px;font-weight:700}
-.focus{margin:0 12px;background:linear-gradient(135deg,#221d0b,#1a1408 60%,#151923);border:1px solid #3a3115;border-radius:20px;padding:6px}
-.focus .empty{padding:18px;color:var(--mut);text-align:center}
-.chips{display:flex;gap:8px;overflow-x:auto;padding:2px 18px 6px;scrollbar-width:none}
-.chips::-webkit-scrollbar{display:none}
-.chip{flex:none;padding:8px 14px;border-radius:999px;background:var(--card);color:var(--mut);font-size:14px;font-weight:600;border:1px solid transparent}
-.chip.on{background:var(--acc);color:#1a1400}
-.chip .c{opacity:.7;margin-left:4px;font-weight:500}
-#list{padding:4px 12px}
-.item{display:flex;gap:12px;align-items:flex-start;background:var(--card);border-radius:16px;padding:14px 14px 14px 12px;margin-bottom:8px;position:relative;overflow:hidden;transition:transform .35s,opacity .35s}
-.focus .item{background:rgba(255,255,255,.03);margin-bottom:4px}
-.item::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--grey)}
-.item.u3::before{background:var(--red)} .item.u2::before{background:var(--orange)}
-.item.gone{transform:translateX(110%);opacity:0}
-.chk{flex:none;width:28px;height:28px;border-radius:50%;border:2.5px solid var(--grey);margin-top:1px;display:grid;place-items:center;font-size:15px;transition:.2s}
-.item.u3 .chk{border-color:var(--red)} .item.u2 .chk{border-color:var(--orange)}
-.item.done .chk{background:var(--ok);border-color:var(--ok);color:#06210f}
-.item.done .tt{text-decoration:line-through;color:var(--mut)}
-.body{flex:1;min-width:0}
-.tt{font-size:16px;font-weight:600;line-height:1.3;word-wrap:break-word}
-.meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}
-.tag{font-size:12px;padding:3px 8px;border-radius:8px;background:var(--card2);color:var(--mut)}
-.tag.ch{color:var(--acc);background:#2a2410}
-.tag.late{color:#fff;background:var(--red)}
-.tag.today{color:#1a1400;background:var(--acc)}
-.tag.ai{color:var(--blue)}
-.note{font-size:13px;color:var(--mut);margin-top:6px}
-.emptyList{color:var(--mut);text-align:center;padding:30px 20px}
-/* mic */
-.dock{position:fixed;left:0;right:0;bottom:0;padding:14px 18px calc(18px + env(safe-area-inset-bottom));display:flex;align-items:center;justify-content:center;gap:16px;background:linear-gradient(transparent,var(--bg) 35%)}
-.mic{width:78px;height:78px;border-radius:50%;background:linear-gradient(135deg,var(--acc),var(--acc2));display:grid;place-items:center;font-size:34px;box-shadow:0 8px 30px rgba(255,160,0,.35);transition:transform .15s}
-.mic:active{transform:scale(.92)}
-.side{width:52px;height:52px;border-radius:50%;background:var(--card);display:grid;place-items:center;font-size:22px}
-/* overlay */
-.ov{position:fixed;inset:0;background:rgba(5,6,10,.86);backdrop-filter:blur(8px);display:none;flex-direction:column;z-index:20;padding:calc(24px + env(safe-area-inset-top)) 20px calc(24px + env(safe-area-inset-bottom))}
-.ov.show{display:flex}
-.ov h3{margin:0 0 6px;font-size:14px;color:var(--mut);text-transform:uppercase;letter-spacing:1.2px}
-.live{flex:1;font-size:24px;line-height:1.35;font-weight:600;overflow:auto;padding:10px 0;white-space:pre-wrap}
-.live .interim{color:var(--mut)}
-.pulse{width:120px;height:120px;border-radius:50%;margin:10px auto 20px;background:radial-gradient(circle,var(--acc) 0,var(--acc2) 55%,transparent 70%);animation:p 1.2s infinite ease-in-out}
-.pulse.off{animation:none;opacity:.25}
-@keyframes p{0%,100%{transform:scale(.85);opacity:.8}50%{transform:scale(1.05);opacity:1}}
-.row{display:flex;gap:10px}
-.big{flex:1;padding:16px;border-radius:16px;font-weight:700;font-size:16px;background:var(--card)}
-.big.go{background:linear-gradient(135deg,var(--acc),var(--acc2));color:#1a1400}
+@media (prefers-color-scheme: light){
+  :root{--bg:#f6f5f2;--fg:#151515;--mut:#9a978f;--faint:#e4e1da;--sheet:#ffffff;--u1:#c3c0b8;--glow:240,160,40}
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0}
+html,body{background:var(--bg);color:var(--fg);font-family:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-weight:300;overscroll-behavior:none;-webkit-font-smoothing:antialiased}
+body{padding:env(safe-area-inset-top) 0 calc(60px + env(safe-area-inset-bottom));min-height:100vh}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;padding:0}
+input,select,textarea{font:inherit;font-weight:300;color:var(--fg);background:transparent;border:0;border-bottom:1px solid var(--faint);border-radius:0;padding:10px 0;width:100%;outline:none}
+textarea{resize:none}
+select{appearance:none}
+
+.top{display:flex;justify-content:space-between;align-items:center;padding:22px 26px 0;font-size:13px;letter-spacing:.4px;color:var(--mut)}
+.top button{font-size:20px;letter-spacing:2px;color:var(--mut);padding:4px 0 4px 12px}
+
+/* ring */
+.stage{height:min(48vh,420px);display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative}
+.ring{width:168px;height:168px;border-radius:50%;position:relative;display:grid;place-items:center;transition:transform .5s cubic-bezier(.2,.8,.2,1)}
+.ring::before{content:"";position:absolute;inset:0;border-radius:50%;border:1px solid rgba(var(--glow),.55);box-shadow:0 0 40px rgba(var(--glow),.12),inset 0 0 30px rgba(var(--glow),.06);transition:.5s}
+.ring::after{content:"";position:absolute;inset:-14px;border-radius:50%;border:1px solid rgba(var(--glow),.12);animation:breathe 5s ease-in-out infinite}
+.core{width:10px;height:10px;border-radius:50%;background:rgb(var(--glow));box-shadow:0 0 18px rgba(var(--glow),.8);transition:.4s}
+@keyframes breathe{0%,100%{transform:scale(.97);opacity:.5}50%{transform:scale(1.04);opacity:1}}
+.ring.on{transform:scale(1.08)}
+.ring.on::before{border-color:rgba(var(--glow),.95);box-shadow:0 0 70px rgba(var(--glow),.35),inset 0 0 50px rgba(var(--glow),.15)}
+.ring.on .core{width:22px;height:22px;animation:beat 1.1s ease-in-out infinite}
+@keyframes beat{0%,100%{transform:scale(.8)}50%{transform:scale(1.15)}}
+.ripple{position:absolute;inset:0;border-radius:50%;border:1px solid rgba(var(--glow),.5);opacity:0;pointer-events:none}
+.ring.on .ripple{animation:rip 2.4s ease-out infinite}
+.ring.on .ripple:nth-child(2){animation-delay:.8s}.ring.on .ripple:nth-child(3){animation-delay:1.6s}
+@keyframes rip{0%{transform:scale(1);opacity:.6}100%{transform:scale(1.9);opacity:0}}
+.ring.ok::before{border-color:var(--ok);box-shadow:0 0 70px rgba(127,216,166,.35)}
+.ring.ok .core{background:var(--ok);box-shadow:0 0 24px var(--ok)}
+.ring.think .core{animation:think 1s linear infinite}
+@keyframes think{0%{transform:translateX(-30px)}50%{transform:translateX(30px)}100%{transform:translateX(-30px)}}
+
+.hint{margin-top:30px;font-size:14px;color:var(--mut);letter-spacing:.3px;min-height:20px;text-align:center;padding:0 30px;transition:.3s}
+.live{margin-top:26px;font-size:21px;line-height:1.45;text-align:center;padding:0 30px;max-height:28vh;overflow:auto;font-weight:300}
+.live i{color:var(--mut);font-style:normal}
+.acts{display:none;gap:40px;margin-top:22px;font-size:14px;letter-spacing:.5px}
+.acts.show{display:flex}
+.acts button{color:var(--mut)} .acts .yes{color:var(--fg)}
+.alt{position:absolute;bottom:4px;display:flex;gap:28px;font-size:13px;color:var(--mut);letter-spacing:.4px}
+.typed{display:none;margin-top:24px;width:calc(100% - 60px);font-size:18px;text-align:center}
+
+/* list */
+.list{padding:8px 26px 30px}
+.grp{margin-top:34px}
+.grp h3{font-weight:400;font-size:12px;letter-spacing:2.2px;text-transform:uppercase;color:var(--mut);margin-bottom:6px}
+.grp.now h3{color:var(--u3)}
+.it{display:flex;align-items:flex-start;gap:16px;padding:13px 0;transition:opacity .5s,transform .5s;touch-action:pan-y}
+.dot{flex:none;width:22px;height:22px;margin-top:1px;border-radius:50%;display:grid;place-items:center}
+.dot::after{content:"";width:8px;height:8px;border-radius:50%;background:var(--u1);transition:.3s}
+.u3 .dot::after{background:var(--u3);box-shadow:0 0 10px var(--u3)} .u2 .dot::after{background:var(--u2)}
+.tx{flex:1;min-width:0}
+.tt{font-size:17px;line-height:1.38}
+.sub{font-size:12.5px;color:var(--mut);margin-top:3px;letter-spacing:.2px}
+.it.done .tt{color:var(--mut);text-decoration:line-through;text-decoration-color:var(--mut)}
+.it.done .dot::after{background:var(--ok);box-shadow:none}
+.it.bye{opacity:0;transform:translateX(30px)}
+.empty{text-align:center;color:var(--mut);font-size:14px;margin-top:10px;letter-spacing:.3px}
+.donebar{margin-top:44px;font-size:13px;color:var(--mut);letter-spacing:.4px;text-align:center}
+.donelist{display:none}.donelist.show{display:block}
+
 /* sheet */
-.sheet{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-radius:24px 24px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom));z-index:30;transform:translateY(105%);transition:transform .28s;max-height:92vh;overflow:auto}
+.mask{position:fixed;inset:0;background:rgba(0,0,0,.45);opacity:0;pointer-events:none;transition:.3s;z-index:20}
+.mask.show{opacity:1;pointer-events:auto}
+.sheet{position:fixed;left:0;right:0;bottom:0;background:var(--sheet);border-radius:26px 26px 0 0;padding:28px 26px calc(26px + env(safe-area-inset-bottom));z-index:30;transform:translateY(105%);transition:transform .35s cubic-bezier(.2,.8,.2,1);max-height:90vh;overflow:auto}
 .sheet.show{transform:none}
-.mask{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:25;display:none}
-.mask.show{display:block}
-.sheet h4{margin:0 0 14px;font-size:18px}
-.f{margin-bottom:12px}
-.f label{display:block;font-size:12px;color:var(--mut);margin-bottom:5px;text-transform:uppercase;letter-spacing:.8px}
-.seg{display:flex;gap:8px}
-.seg button{flex:1;padding:12px 6px;border-radius:12px;background:var(--card2);font-weight:600;font-size:14px;border:1.5px solid transparent}
-.seg button.on[data-u="3"]{border-color:var(--red);color:var(--red)}
-.seg button.on[data-u="2"]{border-color:var(--orange);color:var(--orange)}
-.seg button.on[data-u="1"]{border-color:var(--grey)}
-.two{display:flex;gap:10px}.two>*{flex:1}
-.small{font-size:13px;color:var(--mut);line-height:1.4}
-.btnrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
-.btn{padding:12px 14px;border-radius:12px;background:var(--card2);font-weight:600;font-size:14px}
-.btn.pri{background:var(--acc);color:#1a1400}
-.btn.dng{color:var(--red)}
-/* toast */
-.toast{position:fixed;left:50%;bottom:120px;transform:translate(-50%,30px);background:#262c3d;padding:12px 16px;border-radius:14px;display:flex;gap:14px;align-items:center;opacity:0;transition:.25s;z-index:40;max-width:92vw;font-size:15px;box-shadow:0 8px 30px rgba(0,0,0,.4)}
+.lab{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--mut);margin:22px 0 8px}
+.sl{display:flex;flex-wrap:wrap;gap:8px}
+.sl button{font-size:14px;padding:8px 14px;border-radius:999px;border:1px solid var(--faint);color:var(--mut)}
+.sl button.on{border-color:var(--fg);color:var(--fg)}
+.ug{display:flex;gap:26px}
+.ug button{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--mut)}
+.ug button::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--c)}
+.ug button.on{color:var(--fg)}
+.two{display:flex;gap:20px}.two>div{flex:1}
+.foot{display:flex;justify-content:space-between;align-items:center;margin-top:30px;font-size:14px}
+.foot .l{display:flex;gap:22px;color:var(--mut)}
+.foot .ok{padding:12px 26px;border-radius:999px;background:var(--fg);color:var(--bg);font-weight:500}
+.del{color:var(--u3)!important}
+.small{font-size:12.5px;color:var(--mut);line-height:1.5;margin-top:8px}
+.etitle{font-size:20px;line-height:1.4;border:0;padding:0}
+
+.toast{position:fixed;left:50%;bottom:calc(26px + env(safe-area-inset-bottom));transform:translate(-50%,20px);opacity:0;transition:.3s;font-size:14px;display:flex;gap:18px;padding:12px 20px;border-radius:999px;background:var(--sheet);border:1px solid var(--faint);z-index:40;white-space:nowrap;letter-spacing:.2px}
 .toast.show{opacity:1;transform:translate(-50%,0)}
-.toast button{color:var(--acc);font-weight:700}
-.conf{position:fixed;width:9px;height:14px;z-index:50;pointer-events:none;border-radius:2px}
-.banner{margin:0 12px 10px;padding:12px 14px;border-radius:14px;background:#2a1216;border:1px solid #5a1f29;font-size:14px;display:none}
-.banner.show{display:block}
+.toast button{color:rgb(var(--glow));font-weight:500}
 </style>
 </head>
 <body>
 
-<header>
-  <div class="logo"><span>Zap</span> ⚡</div>
-  <div style="display:flex;gap:8px">
-    <button class="hbtn" id="bGroup" title="Grouper par chantier">🏗️</button>
-    <button class="hbtn" id="bSet" title="Réglages">⚙️</button>
-  </div>
-</header>
-<div class="brief" id="brief"></div>
-<div class="banner" id="banner"></div>
+<div class="top"><span id="date"></span><button id="bSet" aria-label="Réglages">···</button></div>
 
-<div class="stats">
-  <div class="stat urg"><div class="n" id="sUrg">0</div><div class="l">urgents</div></div>
-  <div class="stat done"><div class="n" id="sDone">0</div><div class="l">réglés aujourd'hui</div></div>
-  <div class="stat fire"><div class="n" id="sStreak">0</div><div class="l">🔥 jours d'affilée</div></div>
-</div>
-
-<h2>🎯 Focus — les 3 qui comptent</h2>
-<div class="focus" id="focus"></div>
-
-<h2>Tout</h2>
-<div class="chips" id="chips"></div>
-<div id="list"></div>
-
-<div class="dock">
-  <button class="side" id="bType" title="Écrire">⌨️</button>
-  <button class="mic" id="bMic" title="Parler">🎙️</button>
-  <button class="side" id="bPaste" title="Coller">📋</button>
-</div>
-
-<!-- capture overlay -->
-<div class="ov" id="ov">
-  <h3 id="ovTitle">Je t'écoute… parle en vrac</h3>
-  <div class="pulse" id="pulse"></div>
+<div class="stage">
+  <button class="ring" id="ring" aria-label="Parler"><span class="ripple"></span><span class="ripple"></span><span class="ripple"></span><span class="core"></span></button>
+  <div class="hint" id="hint"></div>
   <div class="live" id="live"></div>
-  <textarea id="typed" rows="4" placeholder="Ou écris ici, en vrac : « rappeler Christelle pour les câbles Arvato demain, et puis voir avec Dylan pour la nacelle Baccarat urgent »" style="display:none;margin-bottom:12px"></textarea>
-  <div class="row">
-    <button class="big" id="ovCancel">Annuler</button>
-    <button class="big go" id="ovOk">⚡ Zapper</button>
-  </div>
+  <textarea class="typed" id="typed" rows="2" placeholder="écris en vrac…"></textarea>
+  <div class="acts" id="acts"><button id="aNo">annuler</button><button class="yes" id="aYes">c'est noté</button></div>
+  <div class="alt" id="alt"><button id="bType">écrire</button><button id="bPaste">coller</button></div>
 </div>
+
+<div class="list" id="list"></div>
 
 <div class="mask" id="mask"></div>
 
-<!-- edit sheet -->
 <div class="sheet" id="edit">
-  <h4>Modifier</h4>
-  <div class="f"><label>Quoi</label><textarea id="eTitle" rows="2"></textarea></div>
-  <div class="f"><label>Urgence</label>
-    <div class="seg" id="eUrg">
-      <button data-u="3">🔴 Urgent</button><button data-u="2">🟠 Important</button><button data-u="1">⚪ Plus tard</button>
-    </div>
+  <textarea class="etitle" id="eTitle" rows="2"></textarea>
+  <div class="lab">Quand</div>
+  <div class="sl" id="eSlot"></div>
+  <div class="lab">Urgence</div>
+  <div class="ug" id="eUrg">
+    <button data-u="3" style="--c:var(--u3)">urgent</button><button data-u="2" style="--c:var(--u2)">important</button><button data-u="1" style="--c:var(--u1)">plus tard</button>
   </div>
   <div class="two">
-    <div class="f"><label>Type</label><select id="eCat"></select></div>
-    <div class="f"><label>Chantier</label><select id="eCh"></select></div>
+    <div><div class="lab">Chantier</div><select id="eCh"></select></div>
+    <div><div class="lab">Type</div><select id="eCat"></select></div>
   </div>
   <div class="two">
-    <div class="f"><label>Pour le</label><input type="date" id="eDate"></div>
-    <div class="f"><label>À</label><input type="time" id="eTime"></div>
+    <div><div class="lab">Date</div><input type="date" id="eDate"></div>
+    <div><div class="lab">Heure</div><input type="time" id="eTime"></div>
   </div>
-  <div class="f"><label>Note</label><textarea id="eNote" rows="2"></textarea></div>
-  <div class="btnrow">
-    <button class="btn pri" id="eSave">Enregistrer</button>
-    <button class="btn" id="eCal">📅 Mettre dans l'agenda</button>
-    <button class="btn" id="eShare">↗️ Envoyer</button>
-    <button class="btn dng" id="eDel">Supprimer</button>
+  <div class="lab">Note</div>
+  <textarea id="eNote" rows="1" placeholder="—"></textarea>
+  <div class="foot">
+    <div class="l"><button id="eCal">agenda</button><button id="eShare">envoyer</button><button id="eDel" class="del">supprimer</button></div>
+    <button class="ok" id="eSave">OK</button>
   </div>
 </div>
 
-<!-- settings sheet -->
 <div class="sheet" id="set">
-  <h4>Réglages</h4>
-  <div class="f"><label>Tri par l'IA (Claude)</label>
-    <input type="password" id="sKey" placeholder="Clé API Anthropic (sk-ant-…)">
-    <p class="small">Sans clé, Zap trie tout seul avec ses propres règles (déjà efficace). Avec une clé, c'est Claude qui découpe et classe ce que tu dictes : beaucoup plus fin. La clé reste sur ce téléphone.</p>
+  <div class="lab" style="margin-top:0">Claude</div>
+  <input type="password" id="sKey" placeholder="clé API Anthropic (sk-ant-…)">
+  <p class="small">Sans clé, Zap trie seul avec ses règles. Avec, c'est Claude qui comprend, découpe et range — en s'appuyant sur la fiche ci-dessous et sur tes corrections.</p>
+  <div class="lab">Qui je suis (lu par Claude à chaque tri)</div>
+  <textarea id="sProfile" rows="7"></textarea>
+  <div class="lab">Mes chantiers — Nom : mots-clés</div>
+  <textarea id="sCh" rows="6"></textarea>
+  <div class="lab">Mon équipe</div>
+  <input id="sTeam">
+  <p class="small" id="sLearn"></p>
+  <div class="foot" style="flex-wrap:wrap;gap:16px">
+    <div class="l" style="flex-wrap:wrap"><button id="sNotif">rappels</button><button id="sExp">sauvegarder</button><button id="sImp">restaurer</button><button id="sForget">oublier mes corrections</button></div>
+    <button class="ok" id="sSave">OK</button>
   </div>
-  <div class="f"><label>Mes chantiers (un par ligne — Nom : mots-clés)</label>
-    <textarea id="sCh" rows="8"></textarea>
-  </div>
-  <div class="f"><label>Mon équipe (séparés par des virgules)</label>
-    <input id="sTeam">
-  </div>
-  <div class="btnrow">
-    <button class="btn pri" id="sSave">Enregistrer</button>
-    <button class="btn" id="sNotif">🔔 Activer les rappels</button>
-    <button class="btn" id="sExp">💾 Sauvegarder</button>
-    <button class="btn" id="sImp">📂 Restaurer</button>
-    <button class="btn dng" id="sClear">Vider les faits</button>
-  </div>
-  <input type="file" id="sFile" accept=".json" style="display:none">
-  <p class="small" style="margin-top:14px">Zap V1 — signé Rc4st</p>
+  <input type="file" id="sFile" accept=".json" hidden>
+  <p class="small" style="margin-top:24px;text-align:center">Zap · Rc4st</p>
 </div>
 
-<div class="toast" id="toast"><span id="toastTxt"></span><button id="toastBtn"></button></div>
+<div class="toast" id="toast"><span id="tTxt"></span><button id="tBtn"></button></div>
 
 <script>
 "use strict";
-/* ---------- storage ---------- */
+/* ===== storage ===== */
 const LS = {
   get(k, d){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; }catch(e){ return d; } },
   set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
 };
-const DEFAULT_CH = [
-  "Arvato : arvato","Baccarat : baccarat","Berner : berner, optima","EPSM Jury : epsm, jury",
-  "SDIS Le Thillot : thillot","SDIS Liffol : liffol","Solocap : solocap","Storify : storify, indepo",
-  "Superba : superba","Siebert : siebert, volailles","Morel : morel, trust team","Gantois : gantois","Vauconsant : vauconsant"
-].join("\n");
-const DEFAULT_TEAM = "Sébastien, Stéphane, Cédric, Matéo, Dylan, Christelle, Loïc";
+const DEFAULT_CH = ["Arvato : arvato","Baccarat : baccarat","Berner : berner, optima","EPSM Jury : epsm, jury","SDIS Le Thillot : thillot","SDIS Liffol : liffol","Solocap : solocap","Storify : storify, indepo","Superba : superba","Siebert : siebert, volailles","Morel : morel, trust team","Gantois : gantois","Vauconsant : vauconsant"].join("\n");
+const DEFAULT_TEAM = "Sébastien Bigel, Stéphane Racadot, Cédric Mariotte, Matéo Perrouin, Dylan Binder, Christelle, Loïc";
+const DEFAULT_PROFILE = `Raphaël Castellanos, référent technique de l'agence OCI Connect Nancy (sous-traitant auto-entrepreneur), métier courant faible : contrôle d'accès, vidéoprotection, alarme, interphonie 2N, réseau et baies de brassage.
+Il fait : installations, SAV, VPI (visites techniques), préparation et suivi de chantiers, gestion des techniciens, devis et DOE.
+Christelle (assistante commerciale) = demandes et commandes de matériel. Loïc = responsable d'agence, à qui il fait des points projet. Techniciens : Sébastien, Stéphane, Cédric, Matéo, Dylan.
+Il fonctionne à la réactivité : il faut lui dire clairement ce qui passe en premier. Un client qui attend, un appel à passer ou du matériel qui bloque un chantier passent avant le reste.`;
 
 let S = LS.get("zap_state", null) || { items: [], doneDays: [] };
-let CFG = LS.get("zap_cfg", null) || { key: "", ch: DEFAULT_CH, team: DEFAULT_TEAM };
+let CFG = Object.assign({ key: "", ch: DEFAULT_CH, team: DEFAULT_TEAM, profile: DEFAULT_PROFILE, learn: [] }, LS.get("zap_cfg", {}));
+if (!CFG.profile) CFG.profile = DEFAULT_PROFILE;
 const save = () => LS.set("zap_state", S);
 const saveCfg = () => LS.set("zap_cfg", CFG);
 
-const CATS = {
-  appel:    { e: "📞", n: "Appel" },
-  mail:     { e: "✉️", n: "Mail" },
-  materiel: { e: "📦", n: "Matériel" },
-  equipe:   { e: "👷", n: "Équipe" },
-  chantier: { e: "🏗️", n: "Chantier" },
-  remarque: { e: "📝", n: "Remarque" }
-};
+const CATS = { appel: "appel", mail: "mail", materiel: "matériel", equipe: "équipe", chantier: "chantier", remarque: "remarque" };
+const SLOTS = [["now","maintenant"],["matin","ce matin"],["aprem","cet après-midi"],["soir","ce soir"],["today","aujourd'hui"],["demain","demain"],["semaine","cette semaine"],["tard","plus tard"]];
 
-/* ---------- helpers ---------- */
+/* ===== helpers ===== */
 const $ = id => document.getElementById(id);
 const norm = s => (s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
@@ -236,18 +195,19 @@ const ymd = d => d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.get
 const today = () => ymd(new Date());
 const addDays = (n, base) => { const d = base ? new Date(base) : new Date(); d.setDate(d.getDate() + n); return d; };
 const esc = s => (s || "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const nowHM = () => { const d = new Date(); return pad(d.getHours()) + ":" + pad(d.getMinutes()); };
+const WD = ["dimanche","lundi","mardi","mercredi","jeudi","vendredi","samedi"];
+const MO = ["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
 
 function chantiers(){
   return (CFG.ch || "").split("\n").map(l => l.trim()).filter(Boolean).map(l => {
     const [name, kw] = l.split(":");
-    const keys = (kw || name).split(",").map(k => norm(k.trim())).filter(Boolean);
-    return { name: name.trim(), keys };
+    return { name: name.trim(), keys: (kw || name).split(",").map(k => norm(k.trim())).filter(Boolean) };
   });
 }
-function team(){ return (CFG.team || "").split(",").map(t => t.trim()).filter(Boolean); }
+const team = () => (CFG.team || "").split(",").map(t => t.trim()).filter(Boolean);
 
-/* ---------- local parser (sans IA) ---------- */
-const WD = ["dimanche","lundi","mardi","mercredi","jeudi","vendredi","samedi"];
+/* ===== local parser ===== */
 function parseWhen(t){
   const n = norm(t); let date = null, time = null;
   if (/\bapres[- ]demain\b/.test(n)) date = addDays(2);
@@ -257,70 +217,78 @@ function parseWhen(t){
   else {
     const m = n.match(/\bdans (\d+|un|une|deux|trois) (jours?|semaines?)\b/);
     if (m) { const v = { un: 1, une: 1, deux: 2, trois: 3 }[m[1]] || +m[1]; date = addDays(m[2].startsWith("sem") ? v * 7 : v); }
-    else {
-      for (let i = 0; i < 7; i++) if (new RegExp("\\b" + WD[i] + "\\b").test(n)) {
-        const d = new Date(); let diff = (i - d.getDay() + 7) % 7; if (diff === 0) diff = 7; date = addDays(diff); break;
-      }
+    else for (let i = 0; i < 7; i++) if (new RegExp("\\b" + WD[i] + "\\b").test(n)) {
+      let diff = (i - new Date().getDay() + 7) % 7; if (diff === 0) diff = 7; date = addDays(diff); break;
     }
   }
   const tm = n.match(/\b(\d{1,2}) ?h(?:eures?)? ?(\d{2})?\b/);
   if (tm && +tm[1] < 24) time = pad(+tm[1]) + ":" + (tm[2] || "00");
-  else if (/\bce matin\b/.test(n)) time = "09:00";
+  else if (/\bce matin|demain matin|le matin\b/.test(n)) time = "09:00";
   else if (/\bmidi\b/.test(n)) time = "12:00";
-  else if (/\b(cet? apres[- ]?midi|cet aprem)\b/.test(n)) time = "14:00";
-  else if (/\bce soir\b/.test(n)) time = "18:00";
+  else if (/\b(apres[- ]?midi|aprem)\b/.test(n)) time = "14:00";
+  else if (/\bce soir|demain soir\b/.test(n)) time = "18:00";
   if (time && !date) date = new Date();
   return { due: date ? ymd(date) : null, time };
 }
 function splitText(t){
-  return t.replace(/\s+(et puis|ensuite|apres ca|après ça|et aussi|autre chose|point suivant|deuxieme chose|deuxième chose|troisieme chose|troisième chose|sinon)\s+/gi, "\n")
+  return t.replace(/\s+(et puis|ensuite|apres ca|après ça|et aussi|autre chose|point suivant|deuxi[eè]me chose|troisi[eè]me chose|sinon)\s+/gi, "\n")
           .split(/[\n.!?;]+/).map(s => s.trim()).filter(s => s.length > 3);
 }
 function cleanTitle(t){
   let s = t.trim()
     .replace(/^(alors|bon|euh|donc|ok|et)\s+/i, "")
-    .replace(/^(il faut (absolument )?que (je |j'|j’)|faut (absolument )?que (je |j'|j’)|je dois |il faut |faut |penser a |penser à |ne pas oublier de |pas oublier de |n'oublie pas de |note(r)? que |rappel(le)? moi de )/i, "")
+    .replace(/^(il faut (absolument )?que (je |j'|j’)|faut (absolument )?que (je |j'|j’)|je dois |il faut |faut |penser [aà] |ne pas oublier de |pas oublier de |n'oublie pas de |note(r)? que |rappel(le)? moi de )/i, "")
     .replace(/^(remarque|note|info)\s*:?\s+/i, "")
     .replace(/\s+(c'est urgent|urgent|urgente|en urgence|asap)\s*$/i, "");
-  const V = { appelle: "appeler", rappelle: "rappeler", envoie: "envoyer", commande: "commander", passe: "passer", vois: "voir", voie: "voir",
-    fasse: "faire", fais: "faire", prépare: "préparer", prepare: "préparer", relance: "relancer", vérifie: "vérifier", verifie: "vérifier",
-    réponde: "répondre", reponde: "répondre", demande: "demander", termine: "terminer", finisse: "finir", aille: "aller", récupère: "récupérer", recupere: "récupérer" };
+  const V = { appelle: "appeler", rappelle: "rappeler", envoie: "envoyer", commande: "commander", passe: "passer", vois: "voir", voie: "voir", fasse: "faire", fais: "faire", prépare: "préparer", prepare: "préparer", relance: "relancer", vérifie: "vérifier", verifie: "vérifier", réponde: "répondre", reponde: "répondre", demande: "demander", termine: "terminer", finisse: "finir", aille: "aller", récupère: "récupérer", recupere: "récupérer" };
   s = s.replace(/^(\S+)/, w => V[w.toLowerCase()] || w);
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 function localParse(text){
-  const chs = chantiers(), tm = team().map(norm);
+  const chs = chantiers(), tm = team().map(t => norm(t.split(" ")[0]));
   return splitText(text).map(seg => {
     const n = norm(seg);
     let ch = ""; for (const c of chs) if (c.keys.some(k => n.includes(k))) { ch = c.name; break; }
     let cat = "remarque";
     if (/^(remarque|note|info)\b/.test(n)) cat = "remarque";
-    else if (/\b(appel(er|le|les)?|rappel(er|le|les)?|telephon\w*|passer un coup de fil|joindre|coup de fil)\b/.test(n)) cat = "appel";
+    else if (/\b(appel(er|le|les)?|rappel(er|le|les)?|telephon\w*|coup de fil|joindre)\b/.test(n)) cat = "appel";
     else if (/\b(mail|e-mail|email|envoyer|repondre|devis|transmettre)\b/.test(n)) cat = "mail";
-    else if (/\b(command\w*|materiel|cable|cables|camera|cameras|lecteur|lecteurs|switch|baie|ventouse|badge|badges|onduleur|piece|pieces|stock|livraison|nacelle|centrale|interphone|disque|enregistreur)\b/.test(n)) cat = "materiel";
+    else if (/\b(command\w*|materiel|cables?|cameras?|lecteurs?|switch|baie|ventouses?|badges?|onduleur|pieces?|stock|livraison|nacelle|centrale|interphones?|disque|enregistreur)\b/.test(n)) cat = "materiel";
     else if (tm.some(p => p && n.includes(p)) || /\b(equipe|technicien|planning|planifier)\b/.test(n)) cat = "equipe";
     else if (ch) cat = "chantier";
     const w = parseWhen(seg);
     let u = 1;
-    if (/\b(urgent\w*|urgence|asap|tout de suite|immediatement|au plus vite|vite|bloquant)\b/.test(n)) u = 3;
+    if (/\b(urgent\w*|urgence|asap|tout de suite|immediatement|au plus vite|vite|bloquant|bloque)\b/.test(n)) u = 3;
     else if (/\b(important|rapidement|surtout|pas oublier|absolument|priorit\w*)\b/.test(n)) u = 2;
-    if (w.due && w.due <= today()) u = Math.max(u, 3);
-    else if (w.due && w.due === ymd(addDays(1))) u = Math.max(u, 2);
+    if (w.due && w.due < today()) u = 3;
     if (cat === "appel" && u < 2) u = 2;
     return { title: cleanTitle(seg), cat, ch, u, due: w.due, time: w.time, note: "" };
   });
 }
 
-/* ---------- IA (Claude) ---------- */
+/* ===== Claude ===== */
 async function aiParse(text){
-  const chs = chantiers().map(c => c.name).join(", ");
   const d = new Date();
-  const sys = `Tu es l'assistant d'organisation de Raphaël, technicien/référent courant faible (contrôle d'accès, vidéo, alarme, interphonie, réseau) chez OCI Connect Nancy. Il dicte en vrac, souvent sans ponctuation, parfois avec des erreurs de reconnaissance vocale. Découpe le texte en actions distinctes et classe-les.
-Date du jour : ${WD[d.getDay()]} ${ymd(d)}, il est ${pad(d.getHours())}:${pad(d.getMinutes())}.
-Chantiers connus : ${chs}.
+  const learn = (CFG.learn || []).slice(-25).map(l => `- « ${l.t} » → type ${l.cat}, chantier ${l.ch || "aucun"}, urgence ${l.u}${l.slot ? ", moment " + l.slot : ""}`).join("\n");
+  const open = S.items.filter(i => !i.done).slice(0, 40).map(i => `- ${i.title}${i.ch ? " [" + i.ch + "]" : ""}`).join("\n");
+  const sys = `Tu es l'assistant d'organisation personnel de Raphaël. Il dicte en vrac, sans ponctuation, avec des erreurs de reconnaissance vocale. Tu transformes ce qu'il dit en actions claires, rangées.
+
+QUI IL EST
+${CFG.profile}
+
+Chantiers connus : ${chantiers().map(c => c.name).join(", ")}.
 Équipe / contacts : ${CFG.team}.
-Réponds UNIQUEMENT avec du JSON : {"items":[{"title":"action courte, verbe à l'infinitif, claire","cat":"appel|mail|materiel|equipe|chantier|remarque","ch":"nom exact d'un chantier connu ou nouveau nom ou \\"\\"","u":3|2|1,"due":"YYYY-MM-DD ou null","time":"HH:MM ou null","note":"détail utile ou \\"\\""}]}
-Urgence : 3 = à faire aujourd'hui / bloquant / client qui attend ; 2 = cette semaine ou important ; 1 = plus tard. Un appel à passer vaut au moins 2. Corrige les erreurs évidentes de dictée. Ne crée pas d'action inventée.`;
+Maintenant : ${WD[d.getDay()]} ${ymd(d)}, ${nowHM()}.
+${learn ? "\nSES CORRECTIONS PASSÉES (respecte sa façon de classer) :\n" + learn : ""}
+${open ? "\nDÉJÀ DANS SA LISTE (ne crée pas de doublon) :\n" + open : ""}
+
+RÈGLES
+- Découpe en actions distinctes. N'invente rien. Corrige les erreurs évidentes de dictée (noms de chantiers, de personnes, matériel).
+- title : court, commence par un verbe à l'infinitif, compréhensible seul.
+- u : 3 = aujourd'hui / bloquant / client qui attend ; 2 = cette semaine, important ; 1 = quand il pourra.
+- Place chaque action dans un moment réaliste de sa journée via due (YYYY-MM-DD) et time (HH:MM) : matin 09:00, après-midi 14:00, fin de journée 17:30. Un appel urgent sans heure → dès que possible aujourd'hui. Sans indice de date et pas urgent → due null.
+- note : détail utile (référence, quantité, nom) ou "".
+Réponds UNIQUEMENT en JSON : {"items":[{"title":"","cat":"appel|mail|materiel|equipe|chantier|remarque","ch":"","u":1,"due":null,"time":null,"note":""}]}`;
   const r = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: { "content-type": "application/json", "x-api-key": CFG.key, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
@@ -337,292 +305,271 @@ Urgence : 3 = à faire aujourd'hui / bloquant / client qui attend ; 2 = cette se
 }
 
 async function capture(text, src){
-  text = (text || "").trim(); if (!text) return;
+  text = (text || "").trim(); if (!text) { idle(); return; }
   let parsed = null, viaAI = false;
-  if (CFG.key) {
-    toast("⚡ Claude trie…");
-    try { parsed = await aiParse(text); viaAI = true; } catch (e) { parsed = null; }
-  }
+  if (CFG.key) { ringState("think"); hint("je range…"); try { parsed = await aiParse(text); viaAI = true; } catch (e) { parsed = null; } }
   if (!parsed || !parsed.length) parsed = localParse(text);
   if (!parsed.length) parsed = [{ title: cleanTitle(text), cat: "remarque", ch: "", u: 1, due: null, time: null, note: "" }];
   const now = Date.now();
-  const added = parsed.map(p => Object.assign({ id: uid(), created: now, done: false, doneAt: null, src: src || "voix", raw: text }, p));
-  S.items.unshift(...added); save(); render();
-  vib(20);
+  const added = parsed.map(p => Object.assign({ id: uid(), created: now, done: false, doneAt: null, src: src || "voix", raw: text, orig: { cat: p.cat, ch: p.ch, u: p.u, slot: bucket(p) } }, p));
+  S.items.unshift(...added); save();
+  flashOk(); idle(); render(added.map(a => a.id));
+  vib(18);
   const ids = added.map(a => a.id);
-  toast(`${added.length} truc${added.length > 1 ? "s" : ""} noté${added.length > 1 ? "s" : ""}${viaAI ? " par Claude" : ""} ✔`, "Annuler", () => {
-    S.items = S.items.filter(i => !ids.includes(i.id)); save(); render();
-  });
+  toast(added.length === 1 ? "noté" : added.length + " choses notées", "annuler", () => { S.items = S.items.filter(i => !ids.includes(i.id)); save(); render(); });
+  if (CFG.key && !viaAI) setTimeout(() => toast("Claude injoignable · rangé par règles"), 2600);
 }
 
-/* ---------- render ---------- */
-let filter = "all", chFilter = "", group = LS.get("zap_group", false);
-const sortFn = (a, b) => (b.u - a.u) || ((a.due || "9999") + (a.time || "99")).localeCompare((b.due || "9999") + (b.time || "99")) || (b.created - a.created);
-function dueTag(it){
-  if (!it.due) return "";
-  const t = today(), tm = ymd(addDays(1));
-  const hh = it.time ? " " + it.time.replace(":", "h") : "";
-  if (it.due < t && !it.done) return `<span class="tag late">⏰ en retard</span>`;
-  if (it.due === t) return `<span class="tag today">Aujourd'hui${hh}</span>`;
-  if (it.due === tm) return `<span class="tag">Demain${hh}</span>`;
-  const d = new Date(it.due + "T12:00");
-  return `<span class="tag">${WD[d.getDay()].slice(0, 3)}. ${d.getDate()}/${d.getMonth() + 1}${hh}</span>`;
+/* ===== buckets ===== */
+function bucket(i){
+  const t = today(), tm = ymd(addDays(1)), wk = ymd(addDays(6));
+  if (i.due && i.due < t) return "now";
+  if (i.due === t) {
+    if (!i.time) return i.u === 3 ? "now" : "today";
+    if (i.time <= nowHM()) return "now";
+    const h = +i.time.slice(0, 2); return h < 12 ? "matin" : h < 17 ? "aprem" : "soir";
+  }
+  if (!i.due) return i.u === 3 ? "now" : i.u === 2 ? "semaine" : "tard";
+  if (i.due === tm) return "demain";
+  if (i.due <= wk) return "semaine";
+  return "tard";
 }
-function itemHTML(it){
-  const c = CATS[it.cat] || CATS.remarque;
-  return `<div class="item u${it.u}${it.done ? " done" : ""}" data-id="${it.id}">
-    <button class="chk" data-act="done">${it.done ? "✓" : ""}</button>
-    <div class="body" data-act="edit">
-      <div class="tt">${esc(it.title)}</div>
-      <div class="meta"><span class="tag">${c.e} ${c.n}</span>${it.ch ? `<span class="tag ch" data-act="ch" data-ch="${esc(it.ch)}">🏗️ ${esc(it.ch)}</span>` : ""}${dueTag(it)}</div>
-      ${it.note ? `<div class="note">${esc(it.note)}</div>` : ""}
-    </div></div>`;
+function whenLabel(i){
+  const b = bucket(i), parts = [];
+  if (i.ch) parts.push(i.ch);
+  if (i.cat !== "remarque" && i.cat !== "chantier") parts.push(CATS[i.cat]);
+  if (i.time && ["now","matin","aprem","soir","demain"].includes(b)) parts.push(i.time.replace(":", "h"));
+  if (i.due && (b === "semaine" || b === "tard")) { const d = new Date(i.due + "T12:00"); parts.push(WD[d.getDay()] + " " + d.getDate()); }
+  if (i.due && i.due < today()) parts.push("en retard");
+  if (i.note) parts.push(i.note);
+  return parts.join(" · ");
+}
+
+/* ===== render ===== */
+let showDone = false;
+const sortIn = (a, b) => (b.u - a.u) || ((a.due || "9") + (a.time || "99")).localeCompare((b.due || "9") + (b.time || "99")) || (b.created - a.created);
+function itHTML(i, fresh){
+  return `<div class="it u${i.u}${i.done ? " done" : ""}" data-id="${i.id}"${fresh ? ' style="opacity:0;transform:translateY(8px)"' : ""}>
+    <button class="dot" data-a="done" aria-label="réglé"></button>
+    <div class="tx" data-a="edit"><div class="tt">${esc(i.title)}</div>${whenLabel(i) ? `<div class="sub">${esc(whenLabel(i))}</div>` : ""}</div></div>`;
+}
+function render(fresh){
+  fresh = fresh || [];
+  const d = new Date();
+  $("date").textContent = WD[d.getDay()] + " " + d.getDate() + " " + MO[d.getMonth()];
+  const open = S.items.filter(i => !i.done);
+  const doneT = S.items.filter(i => i.done && i.doneAt && ymd(new Date(i.doneAt)) === today()).sort((a, b) => b.doneAt - a.doneAt);
+  let h = "";
+  if (!open.length) h = `<p class="empty">${doneT.length ? "tout est réglé." : "rien en tête. touche le rond et parle."}</p>`;
+  for (const [k, lab] of SLOTS) {
+    const arr = open.filter(i => bucket(i) === k).sort(k === "matin" || k === "aprem" || k === "soir" ? (a, b) => (a.time || "").localeCompare(b.time || "") || b.u - a.u : sortIn);
+    if (arr.length) h += `<section class="grp ${k}"><h3>${lab}</h3>${arr.map(i => itHTML(i, fresh.includes(i.id))).join("")}</section>`;
+  }
+  if (doneT.length) h += `<button class="donebar" id="doneBar" style="width:100%">${doneT.length} réglé${doneT.length > 1 ? "s" : ""} aujourd'hui${streak() > 1 ? " · " + streak() + " jours d'affilée" : ""}</button><div class="donelist${showDone ? " show" : ""}">${doneT.map(i => itHTML(i)).join("")}</div>`;
+  $("list").innerHTML = h;
+  if (fresh.length) requestAnimationFrame(() => requestAnimationFrame(() => document.querySelectorAll(".it[style]").forEach((e, n) => setTimeout(() => e.removeAttribute("style"), n * 70))));
+  if (!listening && !typing) idleHint();
+}
+function idleHint(){
+  const open = S.items.filter(i => !i.done), now = open.filter(i => bucket(i) === "now").length;
+  hint(now ? `${now} chose${now > 1 ? "s" : ""} maintenant` : open.length ? "" : "");
 }
 function streak(){
-  const set = new Set(S.doneDays); let n = 0; let d = new Date();
+  const set = new Set(S.doneDays); let n = 0, d = new Date();
   if (!set.has(ymd(d))) d = addDays(-1);
   while (set.has(ymd(d))) { n++; d = addDays(-1, d); }
   return n;
 }
-function render(){
-  const open = S.items.filter(i => !i.done);
-  const t = today();
-  const urg = open.filter(i => i.u === 3).length;
-  const doneToday = S.items.filter(i => i.done && i.doneAt && ymd(new Date(i.doneAt)) === t).length;
-  const calls = open.filter(i => i.cat === "appel" && (i.u >= 2)).length;
-  const late = open.filter(i => i.due && i.due < t).length;
-  $("sUrg").textContent = urg; $("sDone").textContent = doneToday; $("sStreak").textContent = streak();
 
-  const h = new Date().getHours();
-  const hello = h < 12 ? "Salut Raphaël 👋" : h < 18 ? "Bon aprem Raphaël 👊" : "Bonsoir Raphaël 🌙";
-  let brief;
-  if (!open.length) brief = `${hello}<br>Rien en attente. Appuie sur 🎙️ dès qu'un truc te passe par la tête.`;
-  else {
-    const parts = [];
-    if (urg) parts.push(`<b>${urg} urgent${urg > 1 ? "s" : ""}</b>`);
-    if (calls) parts.push(`<b>${calls} appel${calls > 1 ? "s" : ""}</b> à passer`);
-    if (late) parts.push(`<b>${late} en retard</b>`);
-    brief = `${hello}<br>${parts.length ? parts.join(" · ") : `${open.length} truc${open.length > 1 ? "s" : ""} en attente, rien d'urgent`}${doneToday ? ` — déjà ${doneToday} réglé${doneToday > 1 ? "s" : ""} aujourd'hui 💪` : ""}`;
-  }
-  $("brief").innerHTML = brief;
-
-  const focus = open.slice().sort(sortFn).slice(0, 3);
-  $("focus").innerHTML = focus.length ? focus.map(itemHTML).join("") : `<div class="empty">Tout est réglé. Profite 😎</div>`;
-
-  const cnt = f => S.items.filter(f).length;
-  const F = [
-    ["all", "Tout", i => !i.done], ["u3", "🔴 Urgent", i => !i.done && i.u === 3],
-    ...Object.keys(CATS).map(k => [k, CATS[k].e + " " + CATS[k].n, i => !i.done && i.cat === k]),
-    ["done", "✅ Faits", i => i.done]
-  ];
-  $("chips").innerHTML = (chFilter ? `<button class="chip on" data-f="__ch">🏗️ ${esc(chFilter)} ✕</button>` : "") +
-    F.filter(([k, , f]) => k === "all" || k === "done" || cnt(f)).map(([k, n, f]) =>
-      `<button class="chip${filter === k && !chFilter ? " on" : ""}" data-f="${k}">${n}<span class="c">${cnt(f)}</span></button>`).join("");
-
-  let arr;
-  if (chFilter) arr = S.items.filter(i => i.ch === chFilter).sort((a, b) => (a.done - b.done) || sortFn(a, b));
-  else {
-    const fn = (F.find(x => x[0] === filter) || F[0])[2];
-    arr = S.items.filter(fn);
-    arr.sort(filter === "done" ? (a, b) => b.doneAt - a.doneAt : sortFn);
-  }
-  if (!arr.length) { $("list").innerHTML = `<div class="emptyList">Rien ici.</div>`; return; }
-  if (group && !chFilter && filter !== "done") {
-    const g = {}; arr.forEach(i => { (g[i.ch || "Sans chantier"] = g[i.ch || "Sans chantier"] || []).push(i); });
-    const keys = Object.keys(g).sort((a, b) => a === "Sans chantier" ? 1 : b === "Sans chantier" ? -1 : Math.max(...g[b].map(i => i.u)) - Math.max(...g[a].map(i => i.u)) || a.localeCompare(b));
-    $("list").innerHTML = keys.map(k => `<h2 style="margin:14px 6px 8px;color:var(--acc)">🏗️ ${esc(k)} · ${g[k].length}</h2>` + g[k].map(itemHTML).join("")).join("");
-  } else $("list").innerHTML = arr.map(itemHTML).join("");
-}
-
-/* ---------- interactions ---------- */
 document.addEventListener("click", e => {
-  const chip = e.target.closest(".chip");
-  if (chip) { if (chip.dataset.f === "__ch") chFilter = ""; else { filter = chip.dataset.f; chFilter = ""; } render(); return; }
-  const el = e.target.closest("[data-act]"); if (!el) return;
-  const itemEl = el.closest(".item"); if (!itemEl) return;
-  const it = S.items.find(i => i.id === itemEl.dataset.id); if (!it) return;
-  const act = el.dataset.act;
-  if (act === "ch") { e.stopPropagation(); chFilter = el.dataset.ch; render(); window.scrollTo({ top: $("chips").offsetTop - 80, behavior: "smooth" }); return; }
-  if (act === "done") toggleDone(it, itemEl, el);
-  else if (act === "edit") openEdit(it);
-}, true);
-
-function toggleDone(it, itemEl, chk){
+  if (e.target.closest("#doneBar")) { showDone = !showDone; render(); return; }
+  const el = e.target.closest("[data-a]"); if (!el) return;
+  const row = el.closest(".it"); const it = S.items.find(i => i.id === row.dataset.id); if (!it) return;
+  if (el.dataset.a === "done") done(it, row); else openEdit(it);
+});
+function done(it, row){
   if (!it.done) {
     it.done = true; it.doneAt = Date.now();
-    if (!S.doneDays.includes(today())) S.doneDays.push(today());
-    S.doneDays = S.doneDays.slice(-400);
-    save(); vib([15, 40, 25]);
-    const r = chk.getBoundingClientRect(); confetti(r.left + r.width / 2, r.top + r.height / 2, it.u);
-    itemEl.classList.add("done"); chk.textContent = "✓";
-    setTimeout(() => { itemEl.classList.add("gone"); setTimeout(render, 330); }, 380);
-    const left = S.items.filter(i => !i.done && i.u === 3).length;
-    const msgs = ["Réglé ! 💥", "Et un de moins ✔", "Propre 👌", "Boum. Suivant ⚡", "Ça avance 🔥"];
-    toast(it.u === 3 && !left ? "Plus aucun urgent 🏆" : msgs[Math.floor(Math.random() * msgs.length)], "Annuler", () => { it.done = false; it.doneAt = null; save(); render(); });
+    if (!S.doneDays.includes(today())) S.doneDays.push(today()); S.doneDays = S.doneDays.slice(-400);
+    save(); vib([12, 50, 18]); flashOk();
+    row.classList.add("done"); setTimeout(() => { row.classList.add("bye"); setTimeout(render, 480); }, 420);
+    const left = S.items.filter(i => !i.done && bucket(i) === "now").length;
+    toast(it.u === 3 && !left ? "plus rien d'urgent" : "réglé", "annuler", () => { it.done = false; it.doneAt = null; save(); render(); });
   } else { it.done = false; it.doneAt = null; save(); render(); }
 }
 
-/* edit sheet */
+/* ===== edit ===== */
 let cur = null;
-function fillSelects(){
-  $("eCat").innerHTML = Object.keys(CATS).map(k => `<option value="${k}">${CATS[k].e} ${CATS[k].n}</option>`).join("");
+const SLOT_SET = {
+  now: i => { i.due = today(); i.time = null; i.u = 3; },
+  matin: i => { i.due = today(); i.time = "09:00"; },
+  aprem: i => { i.due = today(); i.time = "14:00"; },
+  soir: i => { i.due = today(); i.time = "17:30"; },
+  demain: i => { i.due = ymd(addDays(1)); i.time = i.time || null; },
+  semaine: i => { i.due = null; i.time = null; i.u = 2; },
+  tard: i => { i.due = null; i.time = null; i.u = 1; }
+};
+function draft(){ return { u: +$("eUrg").dataset.v, due: $("eDate").value || null, time: $("eTime").value || null }; }
+function paintSlots(){
+  const b = bucket(draft());
+  $("eSlot").innerHTML = SLOTS.filter(s => s[0] !== "today").map(([k, l]) => `<button data-s="${k}" class="${b === k ? "on" : ""}">${l}</button>`).join("");
+}
+function setU(u){ $("eUrg").dataset.v = u; [...$("eUrg").children].forEach(b => b.classList.toggle("on", +b.dataset.u === u)); paintSlots(); }
+$("eSlot").onclick = e => {
+  const b = e.target.closest("button"); if (!b) return;
+  const d = draft(); SLOT_SET[b.dataset.s](d);
+  $("eDate").value = d.due || ""; $("eTime").value = d.time || ""; setU(d.u);
+};
+$("eUrg").onclick = e => { const b = e.target.closest("button"); if (b) setU(+b.dataset.u); };
+$("eDate").onchange = $("eTime").onchange = paintSlots;
+function openEdit(it){
+  cur = it;
+  $("eCat").innerHTML = Object.entries(CATS).map(([k, v]) => `<option value="${k}">${v}</option>`).join("");
   const names = [...new Set([...chantiers().map(c => c.name), ...S.items.map(i => i.ch).filter(Boolean)])];
   $("eCh").innerHTML = `<option value="">—</option>` + names.map(n => `<option>${esc(n)}</option>`).join("");
-}
-function openEdit(it){
-  cur = it; fillSelects();
   $("eTitle").value = it.title; $("eCat").value = it.cat; $("eCh").value = it.ch || "";
   $("eDate").value = it.due || ""; $("eTime").value = it.time || ""; $("eNote").value = it.note || "";
-  setSeg(it.u); show("edit");
+  setU(it.u); show("edit");
 }
-function setSeg(u){ [...$("eUrg").children].forEach(b => b.classList.toggle("on", +b.dataset.u === u)); $("eUrg").dataset.v = u; }
-$("eUrg").onclick = e => { const b = e.target.closest("button"); if (b) setSeg(+b.dataset.u); };
 $("eSave").onclick = () => {
   if (!cur) return;
-  Object.assign(cur, { title: $("eTitle").value.trim() || cur.title, cat: $("eCat").value, ch: $("eCh").value, u: +$("eUrg").dataset.v,
-    due: $("eDate").value || null, time: $("eTime").value || null, note: $("eNote").value.trim() });
+  const d = draft();
+  Object.assign(cur, { title: $("eTitle").value.trim() || cur.title, cat: $("eCat").value, ch: $("eCh").value, u: d.u, due: d.due, time: d.time, note: $("eNote").value.trim(), notified: false });
   if (cur.time && !cur.due) cur.due = today();
-  cur.notified = false; save(); hide(); render();
+  const o = cur.orig;
+  if (o && (o.cat !== cur.cat || o.ch !== cur.ch || o.u !== cur.u || o.slot !== bucket(cur))) {
+    CFG.learn = (CFG.learn || []).filter(l => l.id !== cur.id);
+    CFG.learn.push({ id: cur.id, t: (cur.raw && cur.raw.length < 160 ? cur.raw : cur.title), cat: cur.cat, ch: cur.ch, u: cur.u, slot: SLOTS.find(s => s[0] === bucket(cur))[1] });
+    CFG.learn = CFG.learn.slice(-40); saveCfg();
+  }
+  save(); hide(); render();
 };
 $("eDel").onclick = () => {
   if (!cur) return; const it = cur, idx = S.items.indexOf(it);
   S.items.splice(idx, 1); save(); hide(); render();
-  toast("Supprimé", "Annuler", () => { S.items.splice(idx, 0, it); save(); render(); });
+  toast("supprimé", "annuler", () => { S.items.splice(idx, 0, it); save(); render(); });
 };
 $("eCal").onclick = () => {
   if (!cur) return;
-  const d = ($("eDate").value || today()).replace(/-/g, ""), t = $("eTime").value;
+  const dv = $("eDate").value || today(), d = dv.replace(/-/g, ""), t = $("eTime").value;
   let dates;
-  if (t) { const [H, M] = t.split(":").map(Number); const end = new Date(2000, 0, 1, H, M + 30);
-    dates = `${d}T${pad(H)}${pad(M)}00/${d}T${pad(end.getHours())}${pad(end.getMinutes())}00`; }
-  else { const nx = ymd(addDays(1, new Date($("eDate").value ? $("eDate").value + "T12:00" : Date.now()))).replace(/-/g, ""); dates = `${d}/${nx}`; }
+  if (t) { const [H, M] = t.split(":").map(Number), end = new Date(2000, 0, 1, H, M + 30); dates = `${d}T${pad(H)}${pad(M)}00/${d}T${pad(end.getHours())}${pad(end.getMinutes())}00`; }
+  else dates = `${d}/${ymd(addDays(1, new Date(dv + "T12:00"))).replace(/-/g, "")}`;
   const title = ($("eCh").value ? "[" + $("eCh").value + "] " : "") + $("eTitle").value;
-  window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${dates}&details=${encodeURIComponent($("eNote").value + "\n— via Zap ⚡")}&ctz=Europe/Paris`, "_blank");
+  window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${dates}&details=${encodeURIComponent($("eNote").value)}&ctz=Europe/Paris`, "_blank");
 };
 $("eShare").onclick = async () => {
-  if (!cur) return;
   const txt = ($("eCh").value ? "[" + $("eCh").value + "] " : "") + $("eTitle").value + ($("eNote").value ? "\n" + $("eNote").value : "");
-  try { if (navigator.share) await navigator.share({ text: txt }); else { await navigator.clipboard.writeText(txt); toast("Copié 📋"); } } catch (e) {}
+  try { if (navigator.share) await navigator.share({ text: txt }); else { await navigator.clipboard.writeText(txt); toast("copié"); } } catch (e) {}
 };
 
-/* settings */
-$("bSet").onclick = () => { $("sKey").value = CFG.key || ""; $("sCh").value = CFG.ch; $("sTeam").value = CFG.team; show("set"); };
-$("sSave").onclick = () => { CFG.key = $("sKey").value.trim(); CFG.ch = $("sCh").value; CFG.team = $("sTeam").value; saveCfg(); hide(); render(); toast(CFG.key ? "Claude activé ⚡" : "Enregistré"); };
+/* ===== settings ===== */
+$("bSet").onclick = () => {
+  $("sKey").value = CFG.key || ""; $("sProfile").value = CFG.profile; $("sCh").value = CFG.ch; $("sTeam").value = CFG.team;
+  const n = (CFG.learn || []).length; $("sLearn").textContent = n ? `Zap a retenu ${n} correction${n > 1 ? "s" : ""} de ta part.` : "Quand tu corriges un classement, Zap le retient pour la suite.";
+  show("set");
+};
+$("sSave").onclick = () => { CFG.key = $("sKey").value.trim(); CFG.profile = $("sProfile").value.trim() || DEFAULT_PROFILE; CFG.ch = $("sCh").value; CFG.team = $("sTeam").value; saveCfg(); hide(); render(); toast(CFG.key ? "Claude est branché" : "enregistré"); };
+$("sForget").onclick = () => { CFG.learn = []; saveCfg(); $("sLearn").textContent = "Corrections oubliées."; };
 $("sNotif").onclick = async () => {
-  if (!("Notification" in window)) return toast("Notifications non dispo ici");
-  const p = await Notification.requestPermission(); toast(p === "granted" ? "Rappels activés 🔔" : "Refusé — active-les dans Android");
+  if (!("Notification" in window)) return toast("pas de notifications ici");
+  const p = await Notification.requestPermission(); toast(p === "granted" ? "rappels activés" : "refusé dans Android");
 };
 $("sExp").onclick = () => {
   const b = new Blob([JSON.stringify({ S, CFG: Object.assign({}, CFG, { key: "" }) }, null, 1)], { type: "application/json" });
-  const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = "zap-sauvegarde-" + today() + ".json"; a.click();
+  const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = "zap-" + today() + ".json"; a.click();
 };
 $("sImp").onclick = () => $("sFile").click();
 $("sFile").onchange = async e => {
   const f = e.target.files[0]; if (!f) return;
-  try { const j = JSON.parse(await f.text()); if (j.S && j.S.items) { S = j.S; if (j.CFG) CFG = Object.assign(CFG, j.CFG, { key: CFG.key }); save(); saveCfg(); hide(); render(); toast("Restauré ✔"); } }
-  catch (err) { toast("Fichier illisible"); }
+  try { const j = JSON.parse(await f.text()); if (j.S && j.S.items) { S = j.S; if (j.CFG) CFG = Object.assign(CFG, j.CFG, { key: CFG.key }); save(); saveCfg(); hide(); render(); toast("restauré"); } }
+  catch (err) { toast("fichier illisible"); }
 };
-$("sClear").onclick = () => { const n = S.items.filter(i => i.done).length; S.items = S.items.filter(i => !i.done); save(); hide(); render(); toast(n + " faits archivés"); };
-$("bGroup").onclick = () => { group = !group; LS.set("zap_group", group); $("bGroup").style.background = group ? "var(--acc)" : ""; render(); toast(group ? "Groupé par chantier" : "Trié par urgence"); };
 
-/* sheets */
 function show(id){ $("mask").classList.add("show"); $(id).classList.add("show"); }
 function hide(){ $("mask").classList.remove("show"); document.querySelectorAll(".sheet").forEach(s => s.classList.remove("show")); cur = null; }
 $("mask").onclick = hide;
 
-/* ---------- voice ---------- */
+/* ===== voice ===== */
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-let rec = null, finalTxt = "", listening = false, mode = "voice";
-function openOverlay(m){
-  mode = m; finalTxt = ""; $("live").innerHTML = ""; $("typed").value = "";
-  $("ov").classList.add("show");
-  if (m === "type" || !SR) {
-    $("ovTitle").textContent = "Écris en vrac, Zap trie"; $("pulse").style.display = "none"; $("live").style.display = "none";
-    $("typed").style.display = "block"; setTimeout(() => $("typed").focus(), 50);
-  } else {
-    $("ovTitle").textContent = "Je t'écoute… parle en vrac"; $("pulse").style.display = ""; $("live").style.display = "";
-    $("typed").style.display = "none"; startRec();
-  }
+let rec = null, finalTxt = "", interim = "", listening = false, typing = false;
+const hint = t => { $("hint").textContent = t; };
+function ringState(s){ const r = $("ring"); r.classList.remove("on", "think", "ok"); if (s) r.classList.add(s); }
+function flashOk(){ ringState("ok"); setTimeout(() => { if (!listening) ringState(""); }, 900); }
+function idle(){
+  listening = false; typing = false; ringState("");
+  $("live").innerHTML = ""; $("acts").classList.remove("show"); $("alt").style.display = "";
+  $("typed").style.display = "none"; $("typed").value = ""; idleHint();
 }
-function startRec(){
+function startListen(){
+  if (!SR) { startType(); return; }
+  finalTxt = ""; interim = "";
   rec = new SR(); rec.lang = "fr-FR"; rec.continuous = true; rec.interimResults = true;
   rec.onresult = e => {
-    let interim = "";
+    interim = "";
     for (let i = e.resultIndex; i < e.results.length; i++) {
       const r = e.results[i];
       if (r.isFinal) finalTxt += (finalTxt ? ". " : "") + r[0].transcript.trim(); else interim += r[0].transcript;
     }
-    $("live").innerHTML = esc(finalTxt) + (interim ? ` <span class="interim">${esc(interim)}</span>` : "");
-    $("live").dataset.interim = interim;
+    $("live").innerHTML = esc(finalTxt) + (interim ? ` <i>${esc(interim)}</i>` : "");
   };
-  rec.onend = () => { if (listening) { try { rec.start(); } catch (e) {} } else $("pulse").classList.add("off"); };
-  rec.onerror = e => { if (e.error === "not-allowed") { listening = false; toast("Autorise le micro pour Zap"); } };
-  listening = true; $("pulse").classList.remove("off");
+  rec.onend = () => { if (listening) { try { rec.start(); } catch (e) {} } };
+  rec.onerror = e => { if (e.error === "not-allowed") { listening = false; idle(); toast("autorise le micro"); } };
+  listening = true; ringState("on"); hint("je t'écoute");
+  $("acts").classList.add("show"); $("alt").style.display = "none";
   try { rec.start(); } catch (e) {}
-  vib(15);
+  vib(12);
 }
-function stopRec(){ listening = false; try { rec && rec.stop(); } catch (e) {} }
-function closeOverlay(){ stopRec(); $("ov").classList.remove("show"); }
-$("bMic").onclick = () => openOverlay("voice");
-$("bType").onclick = () => openOverlay("type");
+function stopListen(){ listening = false; try { rec && rec.stop(); } catch (e) {} }
+function validate(){
+  if (typing) { const t = $("typed").value; idle(); capture(t, "texte"); return; }
+  const t = (finalTxt + " " + interim).trim(); stopListen(); $("acts").classList.remove("show"); capture(t, "voix");
+}
+function startType(){
+  typing = true; ringState("on"); hint(""); $("alt").style.display = "none";
+  $("typed").style.display = "block"; $("acts").classList.add("show"); setTimeout(() => $("typed").focus(), 60);
+}
+$("ring").onclick = () => { if (listening || typing) validate(); else startListen(); };
+$("aYes").onclick = validate;
+$("aNo").onclick = () => { stopListen(); idle(); };
+$("bType").onclick = startType;
 $("bPaste").onclick = async () => {
-  try { const t = await navigator.clipboard.readText(); if (t && t.trim()) capture(t, "presse-papier"); else toast("Presse-papier vide"); }
-  catch (e) { openOverlay("type"); }
-};
-$("ovCancel").onclick = closeOverlay;
-$("ovOk").onclick = () => {
-  const txt = mode === "type" || !SR ? $("typed").value : (finalTxt + " " + ($("live").dataset.interim || "")).trim();
-  closeOverlay(); capture(txt, mode === "type" ? "texte" : "voix");
+  try { const t = await navigator.clipboard.readText(); if (t && t.trim()) capture(t, "presse-papier"); else toast("rien à coller"); }
+  catch (e) { startType(); }
 };
 
-/* ---------- fx ---------- */
+/* ===== fx ===== */
 function vib(p){ try { navigator.vibrate && navigator.vibrate(p); } catch (e) {} }
-function confetti(x, y, u){
-  const cols = ["#ffd23f", "#ff8a00", "#3ddc97", "#5aa9ff", "#ff4d5e"]; const n = u === 3 ? 34 : 20;
-  for (let i = 0; i < n; i++) {
-    const c = document.createElement("div"); c.className = "conf"; c.style.background = cols[i % cols.length];
-    c.style.left = x + "px"; c.style.top = y + "px"; document.body.appendChild(c);
-    const a = Math.random() * Math.PI * 2, v = 60 + Math.random() * 120;
-    c.animate([{ transform: "translate(0,0) rotate(0)", opacity: 1 },
-      { transform: `translate(${Math.cos(a) * v}px,${Math.sin(a) * v + 140}px) rotate(${Math.random() * 720}deg)`, opacity: 0 }],
-      { duration: 900 + Math.random() * 400, easing: "cubic-bezier(.2,.7,.4,1)" }).onfinish = () => c.remove();
-  }
-}
 let tt = null;
 function toast(msg, btn, fn){
-  $("toastTxt").textContent = msg; const b = $("toastBtn");
+  $("tTxt").textContent = msg; const b = $("tBtn");
   b.textContent = btn || ""; b.style.display = btn ? "" : "none"; b.onclick = () => { fn && fn(); $("toast").classList.remove("show"); };
-  $("toast").classList.add("show"); clearTimeout(tt); tt = setTimeout(() => $("toast").classList.remove("show"), btn ? 4500 : 2200);
+  $("toast").classList.add("show"); clearTimeout(tt); tt = setTimeout(() => $("toast").classList.remove("show"), btn ? 4000 : 2200);
 }
 
-/* ---------- reminders ---------- */
+/* ===== reminders ===== */
 async function checkReminders(){
-  const now = new Date(), t = today(), hm = pad(now.getHours()) + ":" + pad(now.getMinutes());
-  const due = S.items.filter(i => !i.done && !i.notified && i.due && (i.due < t || (i.due === t && (!i.time ? now.getHours() >= 8 : i.time <= hm))));
-  const late = S.items.filter(i => !i.done && i.due && i.due < t);
-  $("banner").innerHTML = late.length ? `⏰ <b>${late.length}</b> truc${late.length > 1 ? "s" : ""} en retard — on s'en occupe ?` : "";
-  $("banner").classList.toggle("show", !!late.length);
+  const t = today(), hm = nowHM(), h = new Date().getHours();
+  const due = S.items.filter(i => !i.done && !i.notified && i.due && (i.due < t || (i.due === t && (i.time ? i.time <= hm : h >= 8))));
   if (!due.length) return;
   if ("Notification" in window && Notification.permission === "granted") {
-    try {
-      const reg = await navigator.serviceWorker.ready;
-      for (const i of due.slice(0, 5)) reg.showNotification("⚡ " + (i.ch ? "[" + i.ch + "] " : "") + i.title, { body: (CATS[i.cat] || CATS.remarque).n + (i.time ? " · " + i.time.replace(":", "h") : ""), tag: i.id, icon: "icon-192.png", badge: "icon-192.png" });
+    try { const reg = await navigator.serviceWorker.ready;
+      for (const i of due.slice(0, 5)) reg.showNotification(i.title, { body: whenLabel(i), tag: i.id, icon: "icon-192.png", badge: "icon-192.png" });
     } catch (e) {}
   }
-  due.forEach(i => i.notified = true); save();
+  due.forEach(i => i.notified = true); save(); render();
 }
 
-/* ---------- share target & boot ---------- */
+/* ===== boot ===== */
 function handleShare(){
   const p = new URLSearchParams(location.search);
   const parts = [p.get("title"), p.get("text"), p.get("url")].filter(Boolean);
   if (parts.length) { history.replaceState(null, "", location.pathname); capture(parts.join(" — "), "partage"); }
-  else if (p.get("quick")) { history.replaceState(null, "", location.pathname); openOverlay("voice"); }
+  else if (p.get("quick")) { history.replaceState(null, "", location.pathname); startListen(); }
 }
 if ("serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("sw.js").catch(() => {});
-if (group) $("bGroup").style.background = "var(--acc)";
 render(); handleShare(); checkReminders();
-setInterval(checkReminders, 60000);
+setInterval(() => { checkReminders(); if (!listening && !typing && !cur) render(); }, 60000);
 document.addEventListener("visibilitychange", () => { if (!document.hidden) { render(); checkReminders(); } });
 </script>
 </body>
