@@ -27,8 +27,15 @@ select{appearance:none}
 .top{display:flex;justify-content:space-between;align-items:center;padding:22px 26px 0;font-size:13px;letter-spacing:.4px;color:var(--mut)}
 .top button{font-size:20px;letter-spacing:2px;color:var(--mut);padding:4px 0 4px 12px}
 
+.point{padding:14px 26px 0;font-size:17px;line-height:1.45;min-height:24px;transition:opacity .4s}
+.point.load{opacity:.45}
+.glance{display:flex;gap:22px;overflow-x:auto;padding:16px 26px 0;scrollbar-width:none}
+.glance::-webkit-scrollbar{display:none}
+.gl{flex:none;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--mut);text-align:left}
+.gl b{display:block;font-size:24px;font-weight:200;color:var(--fg);letter-spacing:0;text-transform:none;margin-bottom:2px;position:relative}
+.gl.hot b::after{content:"";position:absolute;top:6px;margin-left:5px;width:6px;height:6px;border-radius:50%;background:var(--u3);box-shadow:0 0 8px var(--u3)}
 /* ring */
-.stage{height:min(48vh,420px);display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative}
+.stage{height:min(40vh,360px);display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative}
 .ring{width:168px;height:168px;border-radius:50%;position:relative;display:grid;place-items:center;transition:transform .5s cubic-bezier(.2,.8,.2,1)}
 .ring::before{content:"";position:absolute;inset:0;border-radius:50%;border:1px solid rgba(var(--glow),.55);box-shadow:0 0 40px rgba(var(--glow),.12),inset 0 0 30px rgba(var(--glow),.06);transition:.5s}
 .ring::after{content:"";position:absolute;inset:-14px;border-radius:50%;border:1px solid rgba(var(--glow),.12);animation:breathe 5s ease-in-out infinite}
@@ -79,7 +86,7 @@ select{appearance:none}
 .mask{position:fixed;inset:0;background:rgba(0,0,0,.45);opacity:0;pointer-events:none;transition:.3s;z-index:20}
 .mask.show{opacity:1;pointer-events:auto}
 .sheet{position:fixed;left:0;right:0;bottom:0;background:var(--sheet);border-radius:26px 26px 0 0;padding:28px 26px calc(26px + env(safe-area-inset-bottom));z-index:30;transform:translateY(105%);transition:transform .35s cubic-bezier(.2,.8,.2,1);max-height:90vh;overflow:auto}
-.sheet.show{transform:none}
+.sheet{visibility:hidden;transition:transform .35s cubic-bezier(.2,.8,.2,1),visibility 0s .35s}.sheet.show{transform:none;visibility:visible;transition:transform .35s cubic-bezier(.2,.8,.2,1)}
 .lab{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--mut);margin:22px 0 8px}
 .sl{display:flex;flex-wrap:wrap;gap:8px}
 .sl button{font-size:14px;padding:8px 14px;border-radius:999px;border:1px solid var(--faint);color:var(--mut)}
@@ -104,6 +111,8 @@ select{appearance:none}
 <body>
 
 <div class="top"><span id="date"></span><button id="bSet" aria-label="Réglages">···</button></div>
+<p class="point" id="point"></p>
+<div class="glance" id="glance"></div>
 
 <div class="stage">
   <button class="ring" id="ring" aria-label="Parler"><span class="ripple"></span><span class="ripple"></span><span class="ripple"></span><span class="core"></span></button>
@@ -111,7 +120,7 @@ select{appearance:none}
   <div class="live" id="live"></div>
   <textarea class="typed" id="typed" rows="2" placeholder="écris en vrac…"></textarea>
   <div class="acts" id="acts"><button id="aNo">annuler</button><button class="yes" id="aYes">c'est noté</button></div>
-  <div class="alt" id="alt"><button id="bType">écrire</button><button id="bPaste">coller</button></div>
+  <div class="alt" id="alt"><button id="bType">écrire</button><button id="bPaste">coller</button><button id="bMail" style="display:none">mails</button></div>
 </div>
 
 <div class="list" id="list"></div>
@@ -167,6 +176,10 @@ select{appearance:none}
   <textarea id="sContacts" rows="4"></textarea>
   <div class="lab">Ma façon d'écrire mes mails</div>
   <textarea id="sStyle" rows="8"></textarea>
+  <div class="lab">Outlook perso (lecture des mails)</div>
+  <input id="sMsId" placeholder="ID d'application (client) Azure">
+  <p class="small" id="sMsState"></p>
+  <div class="foot" style="margin-top:10px"><div class="l"><button id="sMsGo" style="color:var(--fg)">connecter Outlook</button><button id="sMsOff">déconnecter</button></div></div>
   <div class="lab">Fin de dictée</div>
   <select id="sSil"><option value="0">je touche le rond pour finir</option><option value="2">après 2 s de silence</option><option value="3">après 3 s de silence</option><option value="5">après 5 s de silence</option></select>
   <p class="small">Tu peux aussi finir en disant « c'est tout » ou « terminé ».</p>
@@ -316,7 +329,7 @@ function localParse(text){
 }
 
 /* ===== Claude ===== */
-async function aiParse(text){
+async function aiParse(text, kind){
   const d = new Date();
   const learn = (CFG.learn || []).slice(-25).map(l => `- « ${l.t} » → type ${l.cat}, chantier ${l.ch || "aucun"}, urgence ${l.u}${l.slot ? ", moment " + l.slot : ""}`).join("\n");
   const open = S.items.filter(i => !i.done).slice(0, 40).map(i => `- id=${i.id} : ${i.title}${i.ch ? " [" + i.ch + "]" : ""}${i.due ? " (" + i.due + (i.time ? " " + i.time : "") + ")" : ""}`).join("\n");
@@ -350,7 +363,9 @@ Réponds UNIQUEMENT en JSON : {"items":[{"title":"","cat":"appel|mail|materiel|e
   const r = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: { "content-type": "application/json", "x-api-key": CFG.key, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
-    body: JSON.stringify({ model: "claude-haiku-5-5", max_tokens: 1500, system: sys, messages: [{ role: "user", content: text }] })
+    body: JSON.stringify({ model: "claude-haiku-5-5", max_tokens: 1500, system: sys + (kind === "mail" ? `
+
+ICI CE NE SONT PAS DES DICTÉES : ce sont des mails qu'il a reçus. Extrais uniquement ce que LUI doit faire (répondre, rappeler, commander, intervenir, transmettre…). Ignore pubs, newsletters, notifications automatiques, mails purement informatifs. Mets l'expéditeur et l'objet dans note. Si une réponse est attendue d'un contact clé, prépare "mail" (réponse). Si rien n'est à faire : {"items":[],"updates":[]}.` : ""), messages: [{ role: "user", content: text }] })
   });
   if (!r.ok) throw new Error("API " + r.status);
   const j = await r.json();
@@ -387,12 +402,16 @@ function applyUpdates(ups){
   return n;
 }
 
-async function capture(text, src){
+async function capture(text, src, kind){
   text = (text || "").trim(); if (!text) { idle(); return; }
   let parsed = null, viaAI = false, upd = 0;
   if (CFG.key) {
-    ringState("think"); hint("je range…");
-    try { const r = await aiParse(text); parsed = r.items; upd = applyUpdates(r.updates); viaAI = true; } catch (e) { parsed = null; }
+    ringState("think"); hint(kind === "mail" ? "je lis tes mails…" : "je range…");
+    try { const r = await aiParse(text, kind); parsed = r.items; upd = applyUpdates(r.updates); viaAI = true; } catch (e) { parsed = null; }
+  }
+  if (kind === "mail") {
+    if (!viaAI) { idle(); toast("il faut Claude pour lire les mails"); return false; }
+    if (!parsed.length && !upd) { flashOk(); idle(); toast("rien à faire dans tes mails"); return true; }
   }
   if (viaAI && !parsed.length && upd) {
     save(); flashOk(); idle(); render(); vib(18);
@@ -409,6 +428,7 @@ async function capture(text, src){
   const nm = added.filter(a => a.mail).length;
   toast((added.length === 1 ? "noté" : added.length + " choses notées") + (nm ? ` · ${nm} mail${nm > 1 ? "s" : ""} prêt${nm > 1 ? "s" : ""}` : "") + (upd ? ` · ${upd} modifiée${upd > 1 ? "s" : ""}` : ""), "annuler", () => { S.items = S.items.filter(i => !ids.includes(i.id)); save(); render(); });
   if (CFG.key && !viaAI) setTimeout(() => toast("Claude injoignable · rangé par règles"), 2600);
+  return true;
 }
 
 /* ===== buckets ===== */
@@ -455,10 +475,13 @@ function render(fresh){
   if (!open.length) h = `<p class="empty">${doneT.length ? "tout est réglé." : "rien en tête. touche le rond et parle."}</p>`;
   for (const [k, lab] of SLOTS) {
     const arr = open.filter(i => bucket(i) === k).sort(k === "matin" || k === "aprem" || k === "soir" ? (a, b) => (a.time || "").localeCompare(b.time || "") || b.u - a.u : sortIn);
-    if (arr.length) h += `<section class="grp ${k}"><h3>${lab}</h3>${arr.map(i => itHTML(i, fresh.includes(i.id))).join("")}</section>`;
+    if (arr.length) h += `<section class="grp ${k}" id="g-${k}"><h3>${lab}</h3>${arr.map(i => itHTML(i, fresh.includes(i.id))).join("")}</section>`;
   }
   if (doneT.length) h += `<button class="donebar" id="doneBar" style="width:100%">${doneT.length} réglé${doneT.length > 1 ? "s" : ""} aujourd'hui${streak() > 1 ? " · " + streak() + " jours d'affilée" : ""}</button><div class="donelist${showDone ? " show" : ""}">${doneT.map(i => itHTML(i)).join("")}</div>`;
   $("list").innerHTML = h;
+  const GL = { now: "maintenant", matin: "matin", aprem: "aprem", soir: "soir", today: "aujourd'hui", demain: "demain", semaine: "semaine", tard: "plus tard" };
+  $("glance").innerHTML = SLOTS.map(([k]) => { const a = open.filter(i => bucket(i) === k); return a.length ? `<button class="gl${a.some(i => i.u === 3) ? " hot" : ""}" data-g="${k}"><b>${a.length}</b>${GL[k]}</button>` : ""; }).join("");
+  paintPoint(); scheduleBrief();
   if (fresh.length) requestAnimationFrame(() => requestAnimationFrame(() => document.querySelectorAll(".it[style]").forEach((e, n) => setTimeout(() => e.removeAttribute("style"), n * 70))));
   if (!listening && !typing) idleHint();
 }
@@ -473,7 +496,118 @@ function streak(){
   return n;
 }
 
+/* ===== le point ===== */
+const halfDay = () => today() + (new Date().getHours() < 12 ? "am" : "pm");
+const openSig = () => halfDay() + "|" + S.items.filter(i => !i.done).map(i => i.id + i.u + (i.due || "") + (i.time || "")).join(",");
+function localPoint(){
+  const open = S.items.filter(i => !i.done);
+  if (!open.length) return "";
+  const order = SLOTS.map(s => s[0]);
+  const sorted = open.slice().sort((a, b) => order.indexOf(bucket(a)) - order.indexOf(bucket(b)) || b.u - a.u || (a.time || "").localeCompare(b.time || ""));
+  const lab = Object.fromEntries(SLOTS);
+  const first = sorted[0], next = sorted.find(i => i !== first && bucket(i) !== bucket(first)) || sorted[1];
+  return `D'abord : ${first.title.charAt(0).toLowerCase() + first.title.slice(1)}${bucket(first) !== "now" ? " (" + lab[bucket(first)] + ")" : ""}.` + (next ? ` Ensuite : ${next.title.charAt(0).toLowerCase() + next.title.slice(1)}${bucket(next) !== bucket(first) ? " (" + lab[bucket(next)] + ")" : ""}.` : "");
+}
+function paintPoint(){
+  const ok = S.brief && S.brief.sig === openSig() && S.brief.text;
+  $("point").textContent = ok ? S.brief.text : localPoint();
+}
+let briefT = null, briefBusy = false;
+function scheduleBrief(){
+  if (!CFG.key || briefBusy) return;
+  if (S.brief && S.brief.sig === openSig()) return;
+  if (!S.items.some(i => !i.done)) return;
+  clearTimeout(briefT); briefT = setTimeout(makeBrief, 1800);
+}
+async function makeBrief(){
+  const sig = openSig(); if (S.brief && S.brief.sig === sig) return;
+  briefBusy = true; $("point").classList.add("load");
+  const lab = Object.fromEntries(SLOTS), d = new Date();
+  const list = S.items.filter(i => !i.done).map(i => `- [${lab[bucket(i)]}] urgence ${i.u} : ${i.title}${i.ch ? " (" + i.ch + ")" : ""}${i.time ? " à " + i.time : ""}${i.mail ? " — mail prêt" : ""}`).join("\n");
+  try {
+    const r = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-api-key": CFG.key, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
+      body: JSON.stringify({ model: "claude-haiku-5-5", max_tokens: 200,
+        system: `Tu fais le point pour Raphaël, en un coup d'œil.\n\nQUI IL EST\n${CFG.profile}\n\nIl est ${WD[d.getDay()]} ${nowHM()}. En 2 phrases très courtes (35 mots maximum au total), dis-lui par quoi commencer maintenant et ce qui l'attend ensuite (cet après-midi, demain). Regroupe ce qui va ensemble (même chantier, même personne). Tutoiement, ton direct et calme, pas de liste, pas d'emoji, pas de formule d'introduction. Texte brut uniquement.`,
+        messages: [{ role: "user", content: list }] })
+    });
+    if (r.ok) { const t = ((await r.json()).content || []).map(c => c.text || "").join("").trim(); if (t) { S.brief = { sig, text: t }; save(); } }
+  } catch (e) {}
+  briefBusy = false; $("point").classList.remove("load"); paintPoint();
+}
+
+/* ===== Outlook perso (Microsoft Graph, lecture seule) ===== */
+const MS_AUTH = "https://login.microsoftonline.com/common/oauth2/v2.0", MS_SCOPE = "offline_access User.Read Mail.Read";
+const msRedirect = () => location.origin + location.pathname;
+const b64u = b => btoa(String.fromCharCode(...b)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+let MS = LS.get("zap_ms", {});
+const saveMs = () => LS.set("zap_ms", MS);
+async function msLogin(){
+  if (!CFG.msId) return toast("mets l'ID d'application d'abord");
+  const v = b64u(crypto.getRandomValues(new Uint8Array(32)));
+  const ch = b64u(new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(v))));
+  const st = b64u(crypto.getRandomValues(new Uint8Array(12)));
+  LS.set("zap_pkce", { v, st });
+  location.href = `${MS_AUTH}/authorize?client_id=${encodeURIComponent(CFG.msId)}&response_type=code&redirect_uri=${encodeURIComponent(msRedirect())}&response_mode=query&scope=${encodeURIComponent(MS_SCOPE)}&code_challenge=${ch}&code_challenge_method=S256&state=${st}&prompt=select_account`;
+}
+async function msTokenReq(params){
+  const r = await fetch(`${MS_AUTH}/token`, { method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams(Object.assign({ client_id: CFG.msId, scope: MS_SCOPE }, params)) });
+  const j = await r.json(); if (!r.ok || !j.access_token) throw new Error(j.error_description || "token");
+  MS = { at: j.access_token, rt: j.refresh_token || MS.rt, exp: Date.now() + (j.expires_in - 120) * 1000, user: MS.user }; saveMs();
+}
+async function msHandleRedirect(){
+  const p = new URLSearchParams(location.search), code = p.get("code"), pk = LS.get("zap_pkce", null);
+  if (!code && !p.get("error")) return false;
+  history.replaceState(null, "", location.pathname);
+  if (p.get("error")) { toast("connexion Outlook annulée"); return true; }
+  if (!pk || pk.st !== p.get("state")) { toast("connexion Outlook invalide, recommence"); return true; }
+  try {
+    await msTokenReq({ grant_type: "authorization_code", code, redirect_uri: msRedirect(), code_verifier: pk.v });
+    const me = await (await fetch("https://graph.microsoft.com/v1.0/me", { headers: { Authorization: "Bearer " + MS.at } })).json();
+    MS.user = me.mail || me.userPrincipalName || "Outlook"; saveMs();
+    toast("Outlook connecté"); setTimeout(() => checkMail(true), 800);
+  } catch (e) { toast("échec connexion Outlook"); }
+  LS.set("zap_pkce", null); return true;
+}
+async function msToken(){
+  if (MS.at && MS.exp > Date.now()) return MS.at;
+  if (!MS.rt) return null;
+  try { await msTokenReq({ grant_type: "refresh_token", refresh_token: MS.rt }); return MS.at; }
+  catch (e) { MS = { user: MS.user }; saveMs(); return null; }
+}
+let mailBusy = false;
+async function checkMail(manual){
+  if (mailBusy || !CFG.msId || !(MS.rt || MS.at)) { if (manual && !(MS.rt || MS.at)) msLogin(); return; }
+  mailBusy = true;
+  try {
+    const t = await msToken();
+    if (!t) { mailBusy = false; if (manual) msLogin(); else paintMailBtn(); return; }
+    const since = S.mailSince || new Date(Date.now() - 2 * 86400000).toISOString();
+    const url = `https://graph.microsoft.com/v1.0/me/mailFolders/inbox/messages?$top=25&$filter=receivedDateTime gt ${since}&$orderby=receivedDateTime desc&$select=id,subject,from,bodyPreview,receivedDateTime`;
+    const j = await (await fetch(url, { headers: { Authorization: "Bearer " + t } })).json();
+    const seen = new Set(S.mailSeen || []);
+    const fresh = (j.value || []).filter(m => !seen.has(m.id));
+    S.lastMailCheck = Date.now();
+    if (!fresh.length) { save(); if (manual) toast("pas de nouveau mail"); mailBusy = false; return; }
+    const txt = fresh.map(m => `[MAIL] De : ${(m.from && m.from.emailAddress && (m.from.emailAddress.name + " <" + m.from.emailAddress.address + ">")) || "?"} — Reçu : ${m.receivedDateTime.slice(0, 16).replace("T", " ")} — Objet : ${m.subject || "(sans objet)"}\n${(m.bodyPreview || "").slice(0, 450)}`).join("\n\n");
+    const ok = await capture(txt, "mail", "mail");
+    if (ok) {
+      S.mailSeen = [...seen, ...fresh.map(m => m.id)].slice(-400);
+      S.mailSince = fresh[0].receivedDateTime; save();
+    }
+  } catch (e) { if (manual) toast("Outlook injoignable"); }
+  mailBusy = false;
+}
+function paintMailBtn(){ $("bMail").style.display = CFG.msId && (MS.rt || MS.at) ? "" : "none"; }
+$("bMail").onclick = () => checkMail(true);
+$("sMsGo").onclick = () => { CFG.msId = $("sMsId").value.trim(); saveCfg(); msLogin(); };
+$("sMsOff").onclick = () => { MS = {}; saveMs(); paintMailBtn(); $("sMsState").textContent = "déconnecté."; };
+
 document.addEventListener("click", e => {
+  const g = e.target.closest(".gl");
+  if (g) { const s = $("g-" + g.dataset.g); if (s) window.scrollTo({ top: s.getBoundingClientRect().top + scrollY - 20, behavior: "smooth" }); return; }
   if (e.target.closest("#doneBar")) { showDone = !showDone; render(); return; }
   const el = e.target.closest("[data-a]"); if (!el) return;
   const row = el.closest(".it"); const it = S.items.find(i => i.id === row.dataset.id); if (!it) return;
@@ -597,11 +731,13 @@ $("eShare").onclick = async () => {
 /* ===== settings ===== */
 $("bSet").onclick = () => {
   $("sKey").value = CFG.key || ""; $("sProfile").value = CFG.profile; $("sCh").value = CFG.ch; $("sTeam").value = CFG.team;
+  $("sMsId").value = CFG.msId || "";
+  $("sMsState").textContent = MS.rt || MS.at ? `connecté : ${MS.user || "Outlook"} — Zap relève tes mails à l'ouverture (toutes les 20 min max) et via « mails » sous le rond.` : "Zap lit tes mails (sans jamais en envoyer ni en supprimer) et en tire les actions à faire. Il faut Claude branché.";
   $("sContacts").value = CFG.contacts; $("sStyle").value = CFG.style; $("sSil").value = String(CFG.silence);
   const n = (CFG.learn || []).length; $("sLearn").textContent = n ? `Zap a retenu ${n} correction${n > 1 ? "s" : ""} de ta part.` : "Quand tu corriges un classement, Zap le retient pour la suite.";
   show("set");
 };
-$("sSave").onclick = () => { CFG.key = $("sKey").value.trim(); CFG.profile = $("sProfile").value.trim() || DEFAULT_PROFILE; CFG.ch = $("sCh").value; CFG.team = $("sTeam").value; CFG.contacts = $("sContacts").value; CFG.style = $("sStyle").value.trim() || DEFAULT_STYLE; CFG.silence = +$("sSil").value; saveCfg(); hide(); render(); toast(CFG.key ? "Claude est branché" : "enregistré"); };
+$("sSave").onclick = () => { CFG.key = $("sKey").value.trim(); CFG.profile = $("sProfile").value.trim() || DEFAULT_PROFILE; CFG.ch = $("sCh").value; CFG.team = $("sTeam").value; CFG.contacts = $("sContacts").value; CFG.style = $("sStyle").value.trim() || DEFAULT_STYLE; CFG.silence = +$("sSil").value; CFG.msId = $("sMsId").value.trim(); saveCfg(); paintMailBtn(); hide(); render(); toast(CFG.key ? "Claude est branché" : "enregistré"); };
 $("sForget").onclick = () => { CFG.learn = []; saveCfg(); $("sLearn").textContent = "Corrections oubliées."; };
 $("sNotif").onclick = async () => {
   if (!("Notification" in window)) return toast("pas de notifications ici");
@@ -707,9 +843,12 @@ function handleShare(){
   else if (p.get("quick")) { history.replaceState(null, "", location.pathname); startListen(); }
 }
 if ("serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("sw.js").catch(() => {});
-render(); handleShare(); checkReminders();
+const autoMail = () => { if (CFG.msId && MS.rt && CFG.key && Date.now() - (S.lastMailCheck || 0) > 20 * 60000) checkMail(false); };
+render(); paintMailBtn();
+msHandleRedirect().then(was => { if (!was) { handleShare(); autoMail(); } paintMailBtn(); });
+checkReminders();
 setInterval(() => { checkReminders(); if (!listening && !typing && !cur) render(); }, 60000);
-document.addEventListener("visibilitychange", () => { if (!document.hidden) { render(); checkReminders(); } });
+document.addEventListener("visibilitychange", () => { if (!document.hidden) { render(); checkReminders(); autoMail(); } });
 </script>
 </body>
 </html>
