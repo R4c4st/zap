@@ -103,6 +103,21 @@ select{appearance:none}
 .small{font-size:12.5px;color:var(--mut);line-height:1.5;margin-top:8px}
 .etitle{font-size:20px;line-height:1.4;border:0;padding:0}
 
+.sw{position:relative;overflow:hidden;margin:0 -26px;padding:0 26px;user-select:none;-webkit-user-select:none}
+.sw .it{position:relative;z-index:1;background:var(--bg);transition:transform .3s cubic-bezier(.2,.8,.2,1),opacity .5s}
+.swbg{position:absolute;inset:0;display:flex;justify-content:space-between;align-items:center;padding:0 26px;font-size:13px;letter-spacing:1px;text-transform:uppercase;color:var(--mut)}
+.swbg span{opacity:0;transition:opacity .2s,color .2s}
+.sw.dirR .swbg .r,.sw.dirL .swbg .l{opacity:1}
+.sw.goR .swbg .r{color:var(--ok)} .sw.goL .swbg .l{color:rgb(var(--glow))}
+.farbar{display:block;width:100%;margin-top:34px;padding:14px 0;border-top:1px solid var(--faint);border-bottom:1px solid var(--faint);font-size:12px;letter-spacing:2.2px;text-transform:uppercase;color:var(--mut);text-align:left}
+.far{display:none}.far.show{display:block}
+.menu{display:flex;flex-direction:column}
+.menu button{text-align:left;font-size:19px;padding:16px 0;border-bottom:1px solid var(--faint)}
+.menu button:last-child{border-bottom:0}
+.sheet.full{top:env(safe-area-inset-top);max-height:none;border-radius:26px 26px 0 0}
+.tabs{display:flex;gap:22px}
+.tabs button{font-size:22px;color:var(--mut)} .tabs button.on{color:var(--fg)}
+#hist .it{padding:11px 0}
 .toast{position:fixed;left:50%;bottom:calc(26px + env(safe-area-inset-bottom));transform:translate(-50%,20px);opacity:0;transition:.3s;font-size:14px;display:flex;gap:18px;padding:12px 20px;border-radius:999px;background:var(--sheet);border:1px solid var(--faint);z-index:40;white-space:nowrap;letter-spacing:.2px}
 .toast.show{opacity:1;transform:translate(-50%,0)}
 .toast button{color:rgb(var(--glow));font-weight:500}
@@ -172,13 +187,14 @@ select{appearance:none}
   <textarea id="sCh" rows="6"></textarea>
   <div class="lab">Mon équipe</div>
   <input id="sTeam">
-  <div class="lab">Contacts clés — Prénom : adresse mail : rôle</div>
+  <div class="lab">Contacts clés — Prénom : mail : téléphone : rôle</div>
   <textarea id="sContacts" rows="4"></textarea>
   <div class="lab">Ma façon d'écrire mes mails</div>
   <textarea id="sStyle" rows="8"></textarea>
   <div class="lab">Outlook perso (lecture des mails)</div>
   <input id="sMsId" placeholder="ID d'application (client) Azure">
   <p class="small" id="sMsState"></p>
+  <label class="small" style="display:flex;gap:10px;align-items:center;margin-top:10px"><input type="checkbox" id="sCal" style="width:auto"> mettre mes tâches datées dans l'agenda Outlook (cochées « ✓ » quand c'est fait)</label>
   <div class="foot" style="margin-top:10px"><div class="l"><button id="sMsGo" style="color:var(--fg)">connecter Outlook</button><button id="sMsOff">déconnecter</button></div></div>
   <div class="lab">Fin de dictée</div>
   <select id="sSil"><option value="0">je touche le rond pour finir</option><option value="2">après 2 s de silence</option><option value="3">après 3 s de silence</option><option value="5">après 5 s de silence</option></select>
@@ -190,6 +206,28 @@ select{appearance:none}
   </div>
   <input type="file" id="sFile" accept=".json" hidden>
   <p class="small" style="margin-top:24px;text-align:center">Zap · Rc4st</p>
+</div>
+
+<div class="sheet" id="menu">
+  <div class="menu">
+    <button id="mHist">historique & chantiers</button>
+    <button id="mSet">réglages</button>
+  </div>
+</div>
+
+<div class="sheet" id="pp">
+  <div class="lab" style="margin-top:0">Reporter</div>
+  <p id="ppTitle" style="font-size:18px;line-height:1.4;margin-bottom:18px"></p>
+  <div class="menu" id="ppList"></div>
+</div>
+
+<div class="sheet full" id="hist">
+  <div style="display:flex;justify-content:space-between;align-items:center">
+    <div class="tabs" id="hTabs"></div>
+    <button id="hClose" style="font-size:14px;color:var(--mut)">fermer</button>
+  </div>
+  <div class="sl" id="hChips" style="margin-top:20px"></div>
+  <div id="hList" style="margin-top:8px"></div>
 </div>
 
 <div class="toast" id="toast"><span id="tTxt"></span><button id="tBtn"></button></div>
@@ -208,8 +246,8 @@ Il fait : installations, SAV, VPI (visites techniques), préparation et suivi de
 Christelle (assistante commerciale) = demandes et commandes de matériel. Loïc = responsable d'agence, à qui il fait des points projet. Techniciens : Sébastien, Stéphane, Cédric, Matéo, Dylan.
 Il fonctionne à la réactivité : il faut lui dire clairement ce qui passe en premier. Un client qui attend, un appel à passer ou du matériel qui bloque un chantier passent avant le reste.`;
 
-const DEFAULT_CONTACTS = `Christelle :  : assistante commerciale — demandes et préparation de matériel, commandes
-Loïc :  : responsable d'agence — points projet, comptes rendus, infos importantes`;
+const DEFAULT_CONTACTS = `Christelle :  :  : assistante commerciale — demandes et préparation de matériel, commandes
+Loïc :  :  : responsable d'agence — points projet, comptes rendus, infos importantes`;
 const DEFAULT_STYLE = `Mails courts, simples et naturels, comme je parle. Tutoiement avec les collègues. Pas de formules lourdes ni de « je me permets ».
 Trame :
 Bonjour <prénom>,
@@ -250,9 +288,22 @@ function chantiers(){
 const team = () => (CFG.team || "").split(",").map(t => t.trim()).filter(Boolean);
 function contacts(){
   return (CFG.contacts || "").split("\n").map(l => l.trim()).filter(Boolean).map(l => {
-    const [name, email, role] = l.split(":").map(x => (x || "").trim());
-    return { name, email, role: role || "" };
+    const parts = l.split(":").map(x => (x || "").trim()), name = parts.shift();
+    const email = parts.find(p => p.includes("@")) || "";
+    const phone = parts.find(p => /^[+\d][\d .\-()]{7,}$/.test(p)) || "";
+    const role = parts.filter(p => p && p !== email && p !== phone).join(" ");
+    return { name, email, phone, role };
   }).filter(c => c.name);
+}
+const contactLine = c => `${c.name} : ${c.email || ""} : ${c.phone || ""} : ${c.role || ""}`;
+function setContact(name, patch){
+  const all = contacts(); const c = all.find(x => norm(x.name) === norm(name)); if (!c) return;
+  Object.assign(c, patch); CFG.contacts = all.map(contactLine).join("\n"); saveCfg();
+}
+function contactOf(it){
+  if (it.mail && it.mail.to) { const c = findContact(it.mail.to); if (c) return c; }
+  const n = norm(it.title + " " + (it.note || ""));
+  return contacts().find(c => n.includes(norm(c.name).split(" ")[0])) || null;
 }
 const findContact = n => { const k = norm(n).split(" ")[0]; return contacts().find(c => norm(c.name).split(" ")[0] === k) || null; };
 function localMail(seg, title){
@@ -268,6 +319,17 @@ function localMail(seg, title){
 }
 
 /* ===== local parser ===== */
+function dateFromText(n){
+  const MN = MO.map(norm);
+  let m = n.match(/\b(\d{1,2}|1er|premier) (janvier|fevrier|mars|avril|mai|juin|juillet|aout|septembre|octobre|novembre|decembre)\b/);
+  let d = null, mo = null;
+  if (m) { d = /^(1er|premier)$/.test(m[1]) ? 1 : +m[1]; mo = MN.indexOf(m[2]); }
+  else if ((m = n.match(/\b(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?\b/))) { d = +m[1]; mo = +m[2] - 1; }
+  if (d === null || mo < 0 || mo > 11 || d < 1 || d > 31) return null;
+  const now = new Date(); let y = now.getFullYear();
+  let r = new Date(y, mo, d, 12); if (r < addDays(-1)) r = new Date(y + 1, mo, d, 12);
+  return r;
+}
 function parseWhen(t){
   const n = norm(t); let date = null, time = null;
   if (/\bapres[- ]demain\b/.test(n)) date = addDays(2);
@@ -277,6 +339,7 @@ function parseWhen(t){
   else {
     const m = n.match(/\bdans (\d+|un|une|deux|trois) (jours?|semaines?)\b/);
     if (m) { const v = { un: 1, une: 1, deux: 2, trois: 3 }[m[1]] || +m[1]; date = addDays(m[2].startsWith("sem") ? v * 7 : v); }
+    else if (dateFromText(n)) date = dateFromText(n);
     else for (let i = 0; i < 7; i++) if (new RegExp("\\b" + WD[i] + "\\b").test(n)) {
       let diff = (i - new Date().getDay() + 7) % 7; if (diff === 0) diff = 7; date = addDays(diff); break;
     }
@@ -393,11 +456,11 @@ function applyUpdates(ups){
   let n = 0;
   for (const u of ups) {
     const it = S.items.find(i => i.id === u.id); if (!it) continue;
-    if (u.delete) { S.items.splice(S.items.indexOf(it), 1); n++; continue; }
+    if (u.delete) { S.items.splice(S.items.indexOf(it), 1); calDel(it); n++; continue; }
     if (u.done) { it.done = true; it.doneAt = Date.now(); if (!S.doneDays.includes(today())) S.doneDays.push(today()); }
     ["title", "note", "ch", "due", "time"].forEach(k => { if (u[k] !== undefined) it[k] = u[k]; });
     if ([1, 2, 3].includes(+u.u)) it.u = +u.u;
-    it.notified = false; n++;
+    it.notified = false; calSync(it); n++;
   }
   return n;
 }
@@ -421,7 +484,7 @@ async function capture(text, src, kind){
   if (!parsed.length) parsed = [{ title: cleanTitle(text), cat: "remarque", ch: "", u: 1, due: null, time: null, note: "" }];
   const now = Date.now();
   const added = parsed.map(p => Object.assign({ id: uid(), created: now, done: false, doneAt: null, src: src || "voix", raw: text, orig: { cat: p.cat, ch: p.ch, u: p.u, slot: bucket(p) } }, p));
-  S.items.unshift(...added); save();
+  S.items.unshift(...added); save(); added.forEach(calSync);
   flashOk(); idle(); render(added.map(a => a.id));
   vib(18);
   const ids = added.map(a => a.id);
@@ -458,12 +521,16 @@ function whenLabel(i){
 }
 
 /* ===== render ===== */
-let showDone = false;
+let showDone = false, showFar = false;
+const FAR = ["semaine", "tard"];
 const sortIn = (a, b) => (b.u - a.u) || ((a.due || "9") + (a.time || "99")).localeCompare((b.due || "9") + (b.time || "99")) || (b.created - a.created);
-function itHTML(i, fresh){
-  return `<div class="it u${i.u}${i.done ? " done" : ""}" data-id="${i.id}"${fresh ? ' style="opacity:0;transform:translateY(8px)"' : ""}>
+function actLabel(i){ return i.cat === "appel" ? "appeler" : i.mail ? "envoyer" : i.cat === "mail" ? "rédiger" : "ouvrir"; }
+function itHTML(i, fresh, nosw){
+  const row = `<div class="it u${i.u}${i.done ? " done" : ""}" data-id="${i.id}"${fresh ? ' style="opacity:0;transform:translateY(8px)"' : ""}>
     <button class="dot" data-a="done" aria-label="réglé"></button>
     <div class="tx" data-a="edit"><div class="tt">${esc(i.title)}</div>${whenLabel(i) ? `<div class="sub">${esc(whenLabel(i))}</div>` : ""}</div></div>`;
+  if (nosw || i.done) return row;
+  return `<div class="sw"><div class="swbg"><span class="r">${actLabel(i)} →</span><span class="l">← reporter</span></div>${row}</div>`;
 }
 function render(fresh){
   fresh = fresh || [];
@@ -473,9 +540,13 @@ function render(fresh){
   const doneT = S.items.filter(i => i.done && i.doneAt && ymd(new Date(i.doneAt)) === today()).sort((a, b) => b.doneAt - a.doneAt);
   let h = "";
   if (!open.length) h = `<p class="empty">${doneT.length ? "tout est réglé." : "rien en tête. touche le rond et parle."}</p>`;
+  const farN = open.filter(i => FAR.includes(bucket(i))).length;
+  if (fresh.some(id => { const i = S.items.find(x => x.id === id); return i && FAR.includes(bucket(i)); })) showFar = true;
   for (const [k, lab] of SLOTS) {
-    const arr = open.filter(i => bucket(i) === k).sort(k === "matin" || k === "aprem" || k === "soir" ? (a, b) => (a.time || "").localeCompare(b.time || "") || b.u - a.u : sortIn);
+    if (k === "semaine" && farN) h += `<button class="farbar" id="farBar">${showFar ? "replier" : "plus loin"} · ${farN}</button><div class="far${showFar ? " show" : ""}">`;
+    const arr = open.filter(i => bucket(i) === k).sort(k === "matin" || k === "aprem" || k === "soir" ? (a, b) => (a.time || "").localeCompare(b.time || "") || b.u - a.u : (a, b) => ((a.due || "9") + (a.time || "")).localeCompare((b.due || "9") + (b.time || "")) || sortIn(a, b));
     if (arr.length) h += `<section class="grp ${k}" id="g-${k}"><h3>${lab}</h3>${arr.map(i => itHTML(i, fresh.includes(i.id))).join("")}</section>`;
+    if (k === "tard" && farN) h += `</div>`;
   }
   if (doneT.length) h += `<button class="donebar" id="doneBar" style="width:100%">${doneT.length} réglé${doneT.length > 1 ? "s" : ""} aujourd'hui${streak() > 1 ? " · " + streak() + " jours d'affilée" : ""}</button><div class="donelist${showDone ? " show" : ""}">${doneT.map(i => itHTML(i)).join("")}</div>`;
   $("list").innerHTML = h;
@@ -538,7 +609,7 @@ async function makeBrief(){
 }
 
 /* ===== Outlook perso (Microsoft Graph, lecture seule) ===== */
-const MS_AUTH = "https://login.microsoftonline.com/common/oauth2/v2.0", MS_SCOPE = "offline_access User.Read Mail.Read";
+const MS_AUTH = "https://login.microsoftonline.com/common/oauth2/v2.0", MS_SCOPE = "offline_access User.Read Mail.Read Calendars.ReadWrite";
 const msRedirect = () => location.origin + location.pathname;
 const b64u = b => btoa(String.fromCharCode(...b)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 let MS = LS.get("zap_ms", {});
@@ -601,27 +672,177 @@ async function checkMail(manual){
   mailBusy = false;
 }
 function paintMailBtn(){ $("bMail").style.display = CFG.msId && (MS.rt || MS.at) ? "" : "none"; }
+
+/* agenda Outlook : chaque tâche datée = un événement ; faite = « ✓ » en tête, sans rappel */
+const calOn = () => CFG.calSync !== false && CFG.msId && (MS.rt || MS.at);
+async function calSync(it){
+  if (!it || !calOn()) return;
+  if (!it.due) { if (it.evId) calDel(it); return; }
+  const t = await msToken(); if (!t) return;
+  let start, end, allDay = !it.time;
+  if (allDay) { start = { dateTime: it.due + "T00:00:00", timeZone: "Europe/Paris" }; end = { dateTime: ymd(addDays(1, new Date(it.due + "T12:00"))) + "T00:00:00", timeZone: "Europe/Paris" }; }
+  else { const [H, M] = it.time.split(":").map(Number), e = new Date(2000, 0, 1, H, M + 30);
+    start = { dateTime: `${it.due}T${it.time}:00`, timeZone: "Europe/Paris" }; end = { dateTime: `${it.due}T${pad(e.getHours())}:${pad(e.getMinutes())}:00`, timeZone: "Europe/Paris" }; }
+  const body = {
+    subject: (it.done ? "✓ " : "") + (it.ch ? "[" + it.ch + "] " : "") + it.title,
+    body: { contentType: "text", content: (it.note ? it.note + "\n\n" : "") + (it.done ? "Fait le " + new Date(it.doneAt).toLocaleString("fr-FR") + "\n" : "") + "— Zap" },
+    start, end, isAllDay: allDay, showAs: "free",
+    isReminderOn: !it.done && !allDay, reminderMinutesBeforeStart: 10, categories: ["Zap"]
+  };
+  try {
+    const url = "https://graph.microsoft.com/v1.0/me/events" + (it.evId ? "/" + it.evId : "");
+    let r = await fetch(url, { method: it.evId ? "PATCH" : "POST", headers: { Authorization: "Bearer " + t, "content-type": "application/json" }, body: JSON.stringify(body) });
+    if (r.status === 404 && it.evId) { it.evId = null; save(); return calSync(it); }
+    if (r.ok && !it.evId) { it.evId = (await r.json()).id; save(); }
+  } catch (e) {}
+}
+async function calDel(it){
+  if (!it || !it.evId || !calOn()) return;
+  const t = await msToken(); if (!t) return;
+  try { await fetch("https://graph.microsoft.com/v1.0/me/events/" + it.evId, { method: "DELETE", headers: { Authorization: "Bearer " + t } }); } catch (e) {}
+  it.evId = null; save();
+}
 $("bMail").onclick = () => checkMail(true);
 $("sMsGo").onclick = () => { CFG.msId = $("sMsId").value.trim(); saveCfg(); msLogin(); };
 $("sMsOff").onclick = () => { MS = {}; saveMs(); paintMailBtn(); $("sMsState").textContent = "déconnecté."; };
 
 document.addEventListener("click", e => {
   const g = e.target.closest(".gl");
-  if (g) { const s = $("g-" + g.dataset.g); if (s) window.scrollTo({ top: s.getBoundingClientRect().top + scrollY - 20, behavior: "smooth" }); return; }
+  if (g) { if (FAR.includes(g.dataset.g) && !showFar) { showFar = true; render(); } const s = $("g-" + g.dataset.g); if (s) window.scrollTo({ top: s.getBoundingClientRect().top + scrollY - 20, behavior: "smooth" }); return; }
   if (e.target.closest("#doneBar")) { showDone = !showDone; render(); return; }
+  if (e.target.closest("#farBar")) { showFar = !showFar; render(); return; }
+  if (Date.now() - swipedAt < 400) return;
   const el = e.target.closest("[data-a]"); if (!el) return;
-  const row = el.closest(".it"); const it = S.items.find(i => i.id === row.dataset.id); if (!it) return;
+  const row = el.closest(".it"); if (!row) return; const it = S.items.find(i => i.id === row.dataset.id); if (!it) return;
   if (el.dataset.a === "done") done(it, row); else openEdit(it);
 });
+
+/* ===== glisser : droite = agir, gauche = reporter ===== */
+let swipedAt = 0, sw = null;
+document.addEventListener("pointerdown", e => {
+  const row = e.target.closest(".sw .it"); if (!row || e.button > 0) return;
+  sw = { row, x: e.clientX, y: e.clientY, dx: 0, on: false, id: e.pointerId };
+});
+document.addEventListener("pointermove", e => {
+  if (!sw || e.pointerId !== sw.id) return;
+  const dx = e.clientX - sw.x, dy = e.clientY - sw.y;
+  if (!sw.on) {
+    if (Math.abs(dy) > 12 && Math.abs(dy) > Math.abs(dx)) { sw = null; return; }
+    if (Math.abs(dx) < 14) return;
+    sw.on = true; sw.row.style.transition = "none";
+    try { sw.row.setPointerCapture(sw.id); } catch (er) {}
+  }
+  sw.dx = dx;
+  sw.row.style.transform = `translateX(${dx * (Math.abs(dx) > 110 ? 0.6 : 1) + (Math.abs(dx) > 110 ? Math.sign(dx) * 44 : 0)}px)`;
+  const bg = sw.row.parentNode;
+  bg.classList.toggle("goR", dx > 90); bg.classList.toggle("goL", dx < -90);
+  bg.classList.toggle("dirR", dx > 0); bg.classList.toggle("dirL", dx < 0);
+  if ((dx > 90 || dx < -90) && !sw.buzz) { vib(10); sw.buzz = true; } else if (Math.abs(dx) < 90) sw.buzz = false;
+});
+function endSwipe(){
+  if (!sw) return; const s = sw; sw = null;
+  if (!s.on) return;
+  swipedAt = Date.now();
+  s.row.style.transition = ""; s.row.style.transform = "";
+  s.row.parentNode.classList.remove("goR", "goL", "dirR", "dirL");
+  const it = S.items.find(i => i.id === s.row.dataset.id); if (!it) return;
+  if (s.dx > 90) act(it); else if (s.dx < -90) openPostpone(it);
+}
+document.addEventListener("pointerup", endSwipe);
+document.addEventListener("pointercancel", endSwipe);
+
+function act(it){
+  if (it.cat === "appel") {
+    const c = contactOf(it), num = (c && c.phone) || ((it.title + " " + (it.note || "")).match(/(?:\+33|0)[1-9](?:[ .-]?\d{2}){4}/) || [])[0];
+    S.pendingAck = { id: it.id, at: Date.now(), who: c ? c.name : "" }; save();
+    if (!num) toast(c ? `pas de numéro pour ${c.name} — ajoute-le dans ··· contacts` : "aucun numéro trouvé");
+    location.href = "tel:" + (num ? num.replace(/[^\d+]/g, "") : "");
+    return;
+  }
+  if (it.mail) { cur = it; sendMail(it); return; }
+  if (it.cat === "mail") { openEdit(it); makeMail(); return; }
+  openEdit(it);
+}
+function askAck(){
+  const p = S.pendingAck; if (!p || Date.now() - p.at < 2500) return;
+  const it = S.items.find(i => i.id === p.id); S.pendingAck = null; save();
+  if (!it || it.done) return;
+  setTimeout(() => toast(`appel${p.who ? " avec " + p.who : ""} fait ?`, "oui, réglé", () => { markDone(it); render(); }), 400);
+}
+
+/* reporter */
+let pp = null;
+function postponeChoices(){
+  const h = new Date().getHours(), c = [];
+  c.push(["dans 1 h", i => { const d = new Date(Date.now() + 3600000); i.due = ymd(d); i.time = pad(d.getHours()) + ":" + pad(d.getMinutes() < 30 ? 0 : 30); }]);
+  if (h < 13) c.push(["cet après-midi", i => { i.due = today(); i.time = "14:00"; }]);
+  if (h < 17) c.push(["ce soir", i => { i.due = today(); i.time = "17:30"; }]);
+  c.push(["demain matin", i => { i.due = ymd(addDays(1)); i.time = "09:00"; }]);
+  c.push(["demain après-midi", i => { i.due = ymd(addDays(1)); i.time = "14:00"; }]);
+  const nd = new Date().getDay(), toMon = ((8 - nd) % 7) || 7;
+  c.push(["lundi prochain", i => { i.due = ymd(addDays(toMon)); i.time = "09:00"; if (i.u === 3) i.u = 2; }]);
+  c.push(["dans 2 semaines", i => { i.due = ymd(addDays(14)); i.time = null; if (i.u === 3) i.u = 2; }]);
+  c.push(["plus tard, sans date", i => { i.due = null; i.time = null; i.u = 1; }]);
+  return c;
+}
+function openPostpone(it){
+  pp = it; const ch = postponeChoices();
+  $("ppTitle").textContent = it.title;
+  $("ppList").innerHTML = ch.map(([l], n) => `<button data-n="${n}">${l}</button>`).join("") + `<button data-n="date">choisir une date…</button>`;
+  $("ppList").onclick = e => {
+    const b = e.target.closest("button"); if (!b || !pp) return;
+    const it2 = pp; hide();
+    if (b.dataset.n === "date") { openEdit(it2); setTimeout(() => { try { $("eDate").showPicker(); } catch (er) { $("eDate").focus(); } }, 350); return; }
+    const before = { due: it2.due, time: it2.time, u: it2.u };
+    ch[+b.dataset.n][1](it2); it2.notified = false; save(); render(); calSync(it2);
+    toast("reporté · " + ch[+b.dataset.n][0], "annuler", () => { Object.assign(it2, before); save(); render(); calSync(it2); });
+  };
+  show("pp");
+}
+
+/* historique & chantiers */
+let hMode = "done", hCh = "";
+function openHist(){ hMode = "done"; hCh = ""; paintHist(); show("hist"); }
+function paintHist(){
+  const pool = S.items.filter(i => hMode === "done" ? i.done : !i.done);
+  const names = [...new Set(pool.map(i => i.ch).filter(Boolean))].sort();
+  $("hTabs").innerHTML = `<button data-m="done" class="${hMode === "done" ? "on" : ""}">fait</button><button data-m="open" class="${hMode === "open" ? "on" : ""}">à faire</button>`;
+  $("hChips").innerHTML = `<button data-c="" class="${!hCh ? "on" : ""}">tout · ${pool.length}</button>` + names.map(n => `<button data-c="${esc(n)}" class="${hCh === n ? "on" : ""}">${esc(n)} · ${pool.filter(i => i.ch === n).length}</button>`).join("") + (pool.some(i => !i.ch) ? `<button data-c="__none" class="${hCh === "__none" ? "on" : ""}">sans chantier</button>` : "");
+  let arr = pool.filter(i => !hCh || (hCh === "__none" ? !i.ch : i.ch === hCh));
+  let h = "";
+  if (hMode === "done") {
+    arr.sort((a, b) => (b.doneAt || 0) - (a.doneAt || 0));
+    const g = {};
+    arr.forEach(i => { const k = i.doneAt ? ymd(new Date(i.doneAt)) : "?"; (g[k] = g[k] || []).push(i); });
+    for (const k of Object.keys(g)) {
+      const lab = k === today() ? "aujourd'hui" : k === ymd(addDays(-1)) ? "hier" : k === "?" ? "—" : (d => WD[d.getDay()] + " " + d.getDate() + " " + MO[d.getMonth()])(new Date(k + "T12:00"));
+      h += `<section class="grp"><h3>${lab} · ${g[k].length}</h3>${g[k].map(i => itHTML(i, false, true)).join("")}</section>`;
+    }
+  } else {
+    arr.sort((a, b) => ((a.due || "9") + (a.time || "")).localeCompare((b.due || "9") + (b.time || "")) || sortIn(a, b));
+    h = arr.map(i => itHTML(i, false, true)).join("");
+  }
+  $("hList").innerHTML = h || `<p class="empty" style="margin-top:30px">rien ici.</p>`;
+}
+$("hTabs").onclick = e => { const b = e.target.closest("button"); if (b) { hMode = b.dataset.m; hCh = ""; paintHist(); } };
+$("hChips").onclick = e => { const b = e.target.closest("button"); if (b) { hCh = b.dataset.c; paintHist(); } };
+$("hClose").onclick = hide;
+function markDone(it){
+  it.done = true; it.doneAt = Date.now();
+  if (!S.doneDays.includes(today())) S.doneDays.push(today()); S.doneDays = S.doneDays.slice(-400);
+  if (S.pendingAck && S.pendingAck.id === it.id) S.pendingAck = null;
+  save(); calSync(it);
+}
+function unDone(it){ it.done = false; it.doneAt = null; save(); calSync(it); }
 function done(it, row){
+  const inHist = !!row.closest("#hist");
   if (!it.done) {
-    it.done = true; it.doneAt = Date.now();
-    if (!S.doneDays.includes(today())) S.doneDays.push(today()); S.doneDays = S.doneDays.slice(-400);
-    save(); vib([12, 50, 18]); flashOk();
-    row.classList.add("done"); setTimeout(() => { row.classList.add("bye"); setTimeout(render, 480); }, 420);
+    markDone(it); vib([12, 50, 18]); flashOk();
+    row.classList.add("done");
+    setTimeout(() => { row.classList.add("bye"); setTimeout(() => { render(); if (inHist) paintHist(); }, 480); }, 420);
     const left = S.items.filter(i => !i.done && bucket(i) === "now").length;
-    toast(it.u === 3 && !left ? "plus rien d'urgent" : "réglé", "annuler", () => { it.done = false; it.doneAt = null; save(); render(); });
-  } else { it.done = false; it.doneAt = null; save(); render(); }
+    toast(it.u === 3 && !left ? "plus rien d'urgent" : "réglé", "annuler", () => { unDone(it); render(); if (inHist) paintHist(); });
+  } else { unDone(it); render(); if (inHist) paintHist(); toast("remis à faire"); }
 }
 
 /* ===== edit ===== */
@@ -681,20 +902,17 @@ async function makeMail(){
 $("eMk").onclick = makeMail;
 $("eReMail").onclick = makeMail;
 $("eCopy").onclick = async () => { try { await navigator.clipboard.writeText($("eSubj").value + "\n\n" + $("eBody").value); toast("copié"); } catch (e) {} };
-$("eSend").onclick = () => {
-  if (!cur) return; keepMail();
-  const m = cur.mail, to = (m.email || "").trim();
-  const c = findContact(m.to || "");
-  if (to && c && !c.email) { CFG.contacts = CFG.contacts.split("\n").map(l => norm(l.split(":")[0]).trim() === norm(c.name) ? `${c.name} : ${to} : ${c.role}` : l).join("\n"); saveCfg(); }
+$("eSend").onclick = () => { if (!cur) return; keepMail(); sendMail(cur); };
+function sendMail(it){
+  const m = it.mail, c = findContact(m.to || "");
+  const to = ((m.email || "") || (c && c.email) || "").trim();
+  if (to && c && !c.email) setContact(c.name, { email: to });
   location.href = `mailto:${encodeURIComponent(to).replace(/%40/g, "@")}?subject=${encodeURIComponent(m.subject || "")}&body=${encodeURIComponent(m.body || "")}`;
-  const it = cur;
   setTimeout(() => {
-    it.done = true; it.doneAt = Date.now(); it.mail.sent = Date.now();
-    if (!S.doneDays.includes(today())) S.doneDays.push(today());
-    save(); hide(); render();
-    toast("mail parti → réglé", "annuler", () => { it.done = false; it.doneAt = null; save(); render(); });
+    it.mail.sent = Date.now(); markDone(it); hide(); render();
+    toast("mail parti · réglé", "annuler", () => { unDone(it); render(); });
   }, 600);
-};
+}
 $("eSave").onclick = () => {
   if (!cur) return;
   keepMail();
@@ -707,12 +925,12 @@ $("eSave").onclick = () => {
     CFG.learn.push({ id: cur.id, t: (cur.raw && cur.raw.length < 160 ? cur.raw : cur.title), cat: cur.cat, ch: cur.ch, u: cur.u, slot: SLOTS.find(s => s[0] === bucket(cur))[1] });
     CFG.learn = CFG.learn.slice(-40); saveCfg();
   }
-  save(); hide(); render();
+  const edited = cur; save(); hide(); render(); calSync(edited);
 };
 $("eDel").onclick = () => {
   if (!cur) return; const it = cur, idx = S.items.indexOf(it);
-  S.items.splice(idx, 1); save(); hide(); render();
-  toast("supprimé", "annuler", () => { S.items.splice(idx, 0, it); save(); render(); });
+  S.items.splice(idx, 1); save(); hide(); render(); calDel(it);
+  toast("supprimé", "annuler", () => { S.items.splice(idx, 0, it); save(); render(); calSync(it); });
 };
 $("eCal").onclick = () => {
   if (!cur) return;
@@ -729,15 +947,18 @@ $("eShare").onclick = async () => {
 };
 
 /* ===== settings ===== */
-$("bSet").onclick = () => {
+$("bSet").onclick = () => show("menu");
+$("mHist").onclick = () => { hide(); setTimeout(openHist, 60); };
+$("mSet").onclick = () => { hide(); setTimeout(openSettings, 60); };
+const openSettings = () => {
   $("sKey").value = CFG.key || ""; $("sProfile").value = CFG.profile; $("sCh").value = CFG.ch; $("sTeam").value = CFG.team;
-  $("sMsId").value = CFG.msId || "";
+  $("sMsId").value = CFG.msId || ""; $("sCal").checked = CFG.calSync !== false;
   $("sMsState").textContent = MS.rt || MS.at ? `connecté : ${MS.user || "Outlook"} — Zap relève tes mails à l'ouverture (toutes les 20 min max) et via « mails » sous le rond.` : "Zap lit tes mails (sans jamais en envoyer ni en supprimer) et en tire les actions à faire. Il faut Claude branché.";
   $("sContacts").value = CFG.contacts; $("sStyle").value = CFG.style; $("sSil").value = String(CFG.silence);
   const n = (CFG.learn || []).length; $("sLearn").textContent = n ? `Zap a retenu ${n} correction${n > 1 ? "s" : ""} de ta part.` : "Quand tu corriges un classement, Zap le retient pour la suite.";
   show("set");
 };
-$("sSave").onclick = () => { CFG.key = $("sKey").value.trim(); CFG.profile = $("sProfile").value.trim() || DEFAULT_PROFILE; CFG.ch = $("sCh").value; CFG.team = $("sTeam").value; CFG.contacts = $("sContacts").value; CFG.style = $("sStyle").value.trim() || DEFAULT_STYLE; CFG.silence = +$("sSil").value; CFG.msId = $("sMsId").value.trim(); saveCfg(); paintMailBtn(); hide(); render(); toast(CFG.key ? "Claude est branché" : "enregistré"); };
+$("sSave").onclick = () => { CFG.key = $("sKey").value.trim(); CFG.profile = $("sProfile").value.trim() || DEFAULT_PROFILE; CFG.ch = $("sCh").value; CFG.team = $("sTeam").value; CFG.contacts = $("sContacts").value; CFG.style = $("sStyle").value.trim() || DEFAULT_STYLE; CFG.silence = +$("sSil").value; CFG.msId = $("sMsId").value.trim(); CFG.calSync = $("sCal").checked; saveCfg(); paintMailBtn(); hide(); render(); toast(CFG.key ? "Claude est branché" : "enregistré"); };
 $("sForget").onclick = () => { CFG.learn = []; saveCfg(); $("sLearn").textContent = "Corrections oubliées."; };
 $("sNotif").onclick = async () => {
   if (!("Notification" in window)) return toast("pas de notifications ici");
@@ -848,7 +1069,7 @@ render(); paintMailBtn();
 msHandleRedirect().then(was => { if (!was) { handleShare(); autoMail(); } paintMailBtn(); });
 checkReminders();
 setInterval(() => { checkReminders(); if (!listening && !typing && !cur) render(); }, 60000);
-document.addEventListener("visibilitychange", () => { if (!document.hidden) { render(); checkReminders(); autoMail(); } });
+document.addEventListener("visibilitychange", () => { if (!document.hidden) { render(); checkReminders(); autoMail(); askAck(); } });
 </script>
 </body>
 </html>

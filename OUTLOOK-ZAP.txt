@@ -1,0 +1,31 @@
+BRANCHER TON OUTLOOK PERSO SUR ZAP (≈ 5 min, plutôt sur PC)
+
+Zap a besoin d'une "autorisation d'application" Microsoft. Elle sert à deux choses :
+- lire tes mails (Zap n'envoie, ne supprime et ne déplace jamais aucun mail) ;
+- mettre tes tâches datées dans ton agenda Outlook, et les marquer « ✓ » quand c'est fait.
+
+1. Va sur portal.azure.com et connecte-toi avec ton compte Outlook perso.
+   Si le portail te demande de créer un compte Azure : l'offre gratuite suffit, rien n'est facturé pour ça.
+
+2. Cherche "Inscriptions d'applications" (App registrations) en haut, puis "+ Nouvelle inscription".
+
+3. Remplis :
+   - Nom : Zap
+   - Types de comptes : "Comptes dans un annuaire organisationnel et comptes Microsoft personnels"
+   - URI de redirection : choisis "Application monopage (SPA)"
+     et colle exactement : https://r4c4st.github.io/zap/
+   -> Inscrire
+
+4. Copie "ID d'application (client)". Cet identifiant n'est pas secret, tu peux me l'envoyer sans souci.
+
+5. Menu "Autorisations de l'API" > "+ Ajouter une autorisation" > Microsoft Graph > Autorisations déléguées
+   Coche : Mail.Read, Calendars.ReadWrite et offline_access (User.Read y est déjà) > Ajouter.
+
+6. Dans Zap sur le téléphone : ··· > Outlook perso > colle l'ID > "connecter Outlook"
+   > connecte-toi avec ton Outlook perso > Accepter.
+
+ENSUITE
+- Zap relève tes mails à l'ouverture (au maximum toutes les 20 min), ou quand tu appuies sur "mails" sous le rond.
+- Claude lit les nouveaux mails, ignore les pubs et les notifications, et crée seulement les actions à faire.
+  Quand une réponse est attendue d'un contact clé, il prépare aussi le brouillon de réponse.
+- La connexion Microsoft peut redemander ton accord de temps en temps (sécurité Microsoft) : un tap et c'est reparti.
