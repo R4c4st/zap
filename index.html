@@ -57,6 +57,11 @@ body{background:radial-gradient(700px 460px at 50% 26%,rgba(var(--glow),.10),tra
 .ripple{position:absolute;inset:0;border-radius:50%;opacity:0;pointer-events:none;background:radial-gradient(circle,rgba(var(--glow),.42) 0%,rgba(var(--glow),.20) 32%,rgba(var(--glow),.06) 55%,transparent 70%)}
 /* au repos : des ronds dans l'eau, lents, qui naissent du cœur et s'éloignent */
 .ring .ripple{display:none}
+#constel{position:absolute;left:50%;top:50%;width:320px;height:320px;transform:translate(-50%,-50%);pointer-events:none;display:none}
+body.const #constel{display:block}
+body.const .ring::before,body.const .ring::after{content:none}
+body.const .ring .core,body.const .ring .orbit,body.const .ring .pulse{display:none}
+body.const .ring.on{transform:none}
 .pulse{position:absolute;inset:0;border-radius:50%;pointer-events:none;opacity:0;background:radial-gradient(circle,rgba(var(--glow),.46) 0%,rgba(var(--glow),.22) 30%,rgba(var(--glow),.07) 54%,transparent 70%);will-change:transform,opacity}
 @keyframes pond{0%{transform:scale(.15);opacity:0}12%{opacity:.9}55%{opacity:.35}100%{transform:scale(1.5);opacity:0}}
 
@@ -156,7 +161,7 @@ body{background:radial-gradient(700px 460px at 50% 26%,rgba(var(--glow),.10),tra
 <div class="glance" id="glance"></div>
 
 <div class="stage">
-  <button class="ring" id="ring" aria-label="Parler"><span class="ripple"></span><span class="ripple"></span><span class="ripple"></span><span class="orbit"></span><span class="orbit o2"></span><span class="core"></span></button>
+  <button class="ring" id="ring" aria-label="Parler"><span class="ripple"></span><span class="ripple"></span><span class="ripple"></span><span class="orbit"></span><span class="orbit o2"></span><span class="core"></span><canvas id="constel" width="320" height="320"></canvas></button>
   <div class="hint" id="hint"></div>
   <div class="live" id="live"></div>
   <textarea class="typed" id="typed" rows="2" placeholder="écris en vrac…"></textarea>
@@ -236,6 +241,8 @@ body{background:radial-gradient(700px 460px at 50% 26%,rgba(var(--glow),.10),tra
   <div class="foot" style="margin-top:10px"><div class="l"><button id="sMsGo" style="color:var(--fg)">connecter Outlook</button><button id="sMsOff">déconnecter</button></div></div>
   </div>
   <label class="small" style="display:flex;gap:10px;align-items:center;margin-top:22px"><input type="checkbox" id="sAg" style="width:auto"> proposer d'ajouter les rendez-vous à mon agenda</label>
+  <div class="lab">Visuel d'écoute</div>
+  <select id="sVis"><option value="rond">le rond (pulsar)</option><option value="const">la constellation</option></select>
   <div class="lab">Fin de dictée</div>
   <select id="sSil"><option value="0">je touche le rond pour finir</option><option value="2">après 2 s de silence</option><option value="3">après 3 s de silence</option><option value="5">après 5 s de silence</option></select>
   <p class="small">Tu peux aussi finir en disant « c'est tout ».</p>
@@ -245,7 +252,7 @@ body{background:radial-gradient(700px 460px at 50% 26%,rgba(var(--glow),.10),tra
     <button class="ok" id="sSave">OK</button>
   </div>
   <input type="file" id="sFile" accept=".json" hidden>
-  <p class="small" style="margin-top:24px;text-align:center">Tempo v28 · Rc4st</p>
+  <p class="small" style="margin-top:24px;text-align:center">Tempo v29 · Rc4st</p>
 </div>
 
 <div class="sheet" id="menu">
@@ -1527,11 +1534,11 @@ const openSettings = () => {
   $("lChs").textContent = P ? "Mes thèmes — Nom : mots-clés" : "Mes chantiers — Nom : mots-clés";
   $("lTeam").textContent = P ? "Mes proches" : "Mon équipe";
   $("lStyle").textContent = P ? "Ma façon d'écrire mes textos et mails perso" : "Ma façon d'écrire mes mails";
-  $("sContacts").value = CFG.contacts; $("sPick").style.display = PICK ? "" : "none"; $("sStyle").value = CFG.style; $("sSil").value = String(CFG.silence); $("sAg").checked = CFG.agenda !== false;
+  $("sContacts").value = CFG.contacts; $("sPick").style.display = PICK ? "" : "none"; $("sStyle").value = CFG.style; $("sSil").value = String(CFG.silence); $("sVis").value = CFG.visual || "rond"; $("sAg").checked = CFG.agenda !== false;
   const n = (CFG.learn || []).length; $("sLearn").textContent = n ? `Tempo a retenu ${n} correction${n > 1 ? "s" : ""} de ta part.` : "Quand tu corriges un classement, Tempo le retient pour la suite.";
   show("set");
 };
-$("sSave").onclick = () => { CFG.key = $("sKey").value.trim(); CFG.profile = $("sProfile").value.trim() || DEFAULT_PROFILE; CFG.ch = $("sCh").value; CFG.team = $("sTeam").value; CFG.contacts = $("sContacts").value; CFG.style = $("sStyle").value.trim() || DEFAULT_STYLE; CFG.silence = +$("sSil").value; CFG.agenda = $("sAg").checked; CFG.msId = $("sMsId").value.trim(); CFG.calSync = $("sCal").checked; CFG.gAll = $("gAll").checked; saveCfg(); paintMailBtn(); hide(); render(); toast(CFG.key ? "Claude est branché" : "enregistré"); };
+$("sSave").onclick = () => { CFG.key = $("sKey").value.trim(); CFG.profile = $("sProfile").value.trim() || DEFAULT_PROFILE; CFG.ch = $("sCh").value; CFG.team = $("sTeam").value; CFG.contacts = $("sContacts").value; CFG.style = $("sStyle").value.trim() || DEFAULT_STYLE; CFG.silence = +$("sSil").value; CFG.visual = $("sVis").value; applyVisual(); CFG.agenda = $("sAg").checked; CFG.msId = $("sMsId").value.trim(); CFG.calSync = $("sCal").checked; CFG.gAll = $("gAll").checked; saveCfg(); paintMailBtn(); hide(); render(); toast(CFG.key ? "Claude est branché" : "enregistré"); };
 $("sPick").onclick = pickMany;
 $("sForget").onclick = () => { CFG.learn = []; saveCfg(); $("sLearn").textContent = "Corrections oubliées."; };
 $("sNotif").onclick = async () => {
@@ -1566,7 +1573,7 @@ const hint = t => { $("hint").textContent = t; };
 /* pulsar : des vagues de lumière à un rythme libre, comme des pensées */
 const rnd = (a, b) => a + Math.random() * (b - a);
 function spawnPulse(strong){
-  const R = $("ring"); if (!R || document.hidden) return;
+  const R = $("ring"); if (!R || document.hidden || CFG.visual === "const") return;
   const p = document.createElement("span"); p.className = "pulse";
   const big = strong ? rnd(1.6, 2.25) : rnd(1.25, 2.0), dx = rnd(-7, 7), dy = rnd(-7, 7);
   R.insertBefore(p, R.querySelector(".core"));
@@ -1585,6 +1592,63 @@ function spawnPulse(strong){
   setTimeout(pulseLoop, next);
 })();
 
+/* constellation : des points de lumière épars qui se rassemblent quand tu parles et se relient quand Claude réfléchit */
+const CV = $("constel"), CX = CV.getContext("2d"), CW = 320, CC = CW / 2;
+let PTS = [], kickT = -1e9, glowRGB = "46,184,196", cvDpr = 0;
+function applyVisual(){ document.body.classList.toggle("const", CFG.visual === "const"); glowRGB = getComputedStyle(document.body).getPropertyValue("--glow").trim() || glowRGB; }
+function cvInit(){
+  const dpr = Math.min(3, window.devicePixelRatio || 1);
+  if (dpr !== cvDpr) { cvDpr = dpr; CV.width = CW * dpr; CV.height = CW * dpr; CX.setTransform(dpr, 0, 0, dpr, 0, 0); }
+  if (!PTS.length) for (let i = 0; i < 84; i++) {
+    const a = Math.random() * Math.PI * 2, r = 34 + Math.pow(Math.random(), .8) * 108;
+    PTS.push({ x: CC + Math.cos(a) * r, y: CC + Math.sin(a) * r, vx: 0, vy: 0, a, r, s: .6 + Math.random() * 1.6, ph: Math.random() * 6.283, sp: (Math.random() - .5) * .0022, orb: i % 3 });
+  }
+}
+function cvFrame(t){
+  requestAnimationFrame(cvFrame);
+  if (CFG.visual !== "const" || document.hidden) return;
+  cvInit();
+  const R = $("ring"), st = R.classList.contains("think") ? "think" : R.classList.contains("on") ? "on" : R.classList.contains("ok") ? "ok" : "idle";
+  const kick = Math.max(0, 1 - (t - kickT) / 320);
+  CX.clearRect(0, 0, CW, CW);
+  // lueur centrale
+  const gl = CX.createRadialGradient(CC, CC, 0, CC, CC, st === "idle" ? 70 : 95);
+  gl.addColorStop(0, `rgba(${glowRGB},${st === "idle" ? .10 : .20 + kick * .2})`); gl.addColorStop(1, `rgba(${glowRGB},0)`);
+  CX.fillStyle = gl; CX.fillRect(0, 0, CW, CW);
+  for (const p of PTS) {
+    p.a += p.sp * (st === "think" ? 7 : st === "on" ? 2.2 : 1);
+    let tr, ta = p.a, squash = 1;
+    if (st === "idle") tr = p.r + Math.sin(t / 1900 + p.ph) * 12;
+    else if (st === "on") tr = 26 + (p.r - 34) * .36 - kick * 16;
+    else if (st === "think") { tr = [34, 62, 90][p.orb]; ta = p.a + (p.orb % 2 ? -1 : 1) * t / (700 + p.orb * 420); squash = [1, .58, .82][p.orb]; }
+    else tr = 5 + p.r * .06;
+    const rot = st === "think" ? t / 2600 : 0;
+    let tx = Math.cos(ta) * tr, ty = Math.sin(ta) * tr * squash;
+    const cx = tx * Math.cos(rot) - ty * Math.sin(rot), cy = tx * Math.sin(rot) + ty * Math.cos(rot);
+    tx = CC + cx; ty = CC + cy;
+    const k = st === "idle" ? .005 : st === "on" ? .03 : st === "think" ? .055 : .09;
+    const w = st === "idle" ? .16 : .06;
+    p.vx = (p.vx + (tx - p.x) * k + Math.sin(t / 900 + p.ph * 3) * w) * .87;
+    p.vy = (p.vy + (ty - p.y) * k + Math.cos(t / 1100 + p.ph * 2) * w) * .87;
+    p.x += p.vx; p.y += p.vy;
+  }
+  // fils entre les pensées proches
+  const maxD = st === "think" ? 42 : st === "on" ? 32 : 28, la = st === "think" ? .42 : st === "on" ? .3 + kick * .2 : .13;
+  CX.lineWidth = .7;
+  for (let i = 0; i < PTS.length; i++) for (let j = i + 1; j < PTS.length; j++) {
+    const a = PTS[i], b = PTS[j], dx = a.x - b.x, dy = a.y - b.y, d2 = dx * dx + dy * dy;
+    if (d2 < maxD * maxD) { const d = Math.sqrt(d2); CX.strokeStyle = `rgba(${glowRGB},${la * (1 - d / maxD)})`; CX.beginPath(); CX.moveTo(a.x, a.y); CX.lineTo(b.x, b.y); CX.stroke(); }
+  }
+  // points de lumière
+  for (const p of PTS) {
+    const al = Math.min(1, .45 + .4 * Math.sin(t / 650 + p.ph) + (st === "idle" ? 0 : .25) + kick * .4);
+    const rr = p.s * (st === "on" ? 1.1 + kick * .9 : st === "think" ? 1.15 : 1);
+    if (p.s > 1.6) { CX.fillStyle = `rgba(${glowRGB},${al * .18})`; CX.beginPath(); CX.arc(p.x, p.y, rr * 3.2, 0, 6.283); CX.fill(); }
+    CX.fillStyle = `rgba(${glowRGB},${al})`; CX.beginPath(); CX.arc(p.x, p.y, rr, 0, 6.283); CX.fill();
+  }
+}
+requestAnimationFrame(cvFrame);
+
 function ringState(s){ const r = $("ring"); r.classList.remove("on", "think", "ok"); if (s) r.classList.add(s); }
 function flashOk(){ ringState("ok"); setTimeout(() => { if (!listening) ringState(""); }, 900); }
 function idle(){
@@ -1597,7 +1661,7 @@ function startListen(){
   finalTxt = ""; interim = "";
   rec = new SR(); rec.lang = "fr-FR"; rec.continuous = true; rec.interimResults = true;
   rec.onresult = e => {
-    const R = $("ring"); R.classList.add("kick"); clearTimeout(R._k); R._k = setTimeout(() => R.classList.remove("kick"), 160);
+    kickT = performance.now(); const R = $("ring"); R.classList.add("kick"); clearTimeout(R._k); R._k = setTimeout(() => R.classList.remove("kick"), 160);
     interim = "";
     for (let i = e.resultIndex; i < e.results.length; i++) {
       const r = e.results[i];
@@ -1673,7 +1737,7 @@ function switchSpace(sp){
   CATS = sp === "perso" ? CATS_PERSO : CATS_PRO;
   S = LS.get(SKEY(sp), null) || { items: [], doneDays: [] };
   showFar = false; showDone = false;
-  paintSpace(); render(); vib(10);
+  paintSpace(); applyVisual(); render(); vib(10);
   toast(sp === "perso" ? "vie perso" : "boulot");
 }
 $("spc").onclick = e => { const b = e.target.closest("button"); if (b) switchSpace(b.dataset.sp); };
@@ -1717,7 +1781,7 @@ function handleShare(){
 }
 if ("serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).catch(() => {});
 const autoMail = () => { if (CFG.msId && MS.rt && CFG.key && Date.now() - (S.lastMailCheck || 0) > 20 * 60000) checkMail(false); };
-paintSpace(); render(); paintMailBtn();
+paintSpace(); applyVisual(); render(); paintMailBtn();
 gHandleRedirect();
 handleImport();
 window.addEventListener("hashchange", handleImport);
