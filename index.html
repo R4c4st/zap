@@ -279,7 +279,7 @@ body.const .ring.on{transform:none}
     <button class="ok" id="sSave">OK</button>
   </div>
   <input type="file" id="sFile" accept=".json" hidden>
-  <p class="small" style="margin-top:24px;text-align:center">Tempo v32 · Rc4st</p>
+  <p class="small" style="margin-top:24px;text-align:center">Tempo v33 · Rc4st</p>
 </div>
 
 <div class="sheet" id="menu">
@@ -1786,10 +1786,11 @@ async function enablePush(){
     const { key } = await pFn({ action: "key" });
     let sub = await reg.pushManager.getSubscription();
     if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: u8(key) });
-    await pFn({ action: "subscribe", sub: sub.toJSON() });
+    const sr = await pFn({ action: "subscribe", sub: sub.toJSON() });
+    if (!sr.ok) { toast("abonnement refusé : " + (sr.error || "?"), "", null, 8000); return; }
     LS.set("tempo_push", true); await syncReminders(true);
     const t = await pFn({ action: "test" });
-    toast(t.ok ? "rappels activés ✓ — une notification de test arrive" : "abonné, mais le test a échoué (" + (t.why || "?") + ")", "", null, 7000);
+    toast(t.ok ? "rappels activés ✓ — une notification de test arrive" : "test échoué : " + (t.why || "?") + " " + (t.detail || "").slice(0, 60), "", null, 9000);
     paintPush();
   } catch (e) { toast("échec de l'activation des rappels"); }
 }
