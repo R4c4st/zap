@@ -242,7 +242,7 @@ body.const .ring.on{transform:none}
   </div>
   <label class="small" style="display:flex;gap:10px;align-items:center;margin-top:22px"><input type="checkbox" id="sAg" style="width:auto"> proposer d'ajouter les rendez-vous à mon agenda</label>
   <div class="lab">Visuel d'écoute</div>
-  <select id="sVis"><option value="rond">le rond (pulsar)</option><option value="const">la constellation</option></select>
+  <select id="sVis"><option value="const">la constellation</option><option value="rond">le rond (pulsar)</option></select>
   <div class="lab">Fin de dictée</div>
   <select id="sSil"><option value="0">je touche le rond pour finir</option><option value="2">après 2 s de silence</option><option value="3">après 3 s de silence</option><option value="5">après 5 s de silence</option></select>
   <p class="small">Tu peux aussi finir en disant « c'est tout ».</p>
@@ -252,7 +252,7 @@ body.const .ring.on{transform:none}
     <button class="ok" id="sSave">OK</button>
   </div>
   <input type="file" id="sFile" accept=".json" hidden>
-  <p class="small" style="margin-top:24px;text-align:center">Tempo v29 · Rc4st</p>
+  <p class="small" style="margin-top:24px;text-align:center">Tempo v30 · Rc4st</p>
 </div>
 
 <div class="sheet" id="menu">
@@ -1534,7 +1534,7 @@ const openSettings = () => {
   $("lChs").textContent = P ? "Mes thèmes — Nom : mots-clés" : "Mes chantiers — Nom : mots-clés";
   $("lTeam").textContent = P ? "Mes proches" : "Mon équipe";
   $("lStyle").textContent = P ? "Ma façon d'écrire mes textos et mails perso" : "Ma façon d'écrire mes mails";
-  $("sContacts").value = CFG.contacts; $("sPick").style.display = PICK ? "" : "none"; $("sStyle").value = CFG.style; $("sSil").value = String(CFG.silence); $("sVis").value = CFG.visual || "rond"; $("sAg").checked = CFG.agenda !== false;
+  $("sContacts").value = CFG.contacts; $("sPick").style.display = PICK ? "" : "none"; $("sStyle").value = CFG.style; $("sSil").value = String(CFG.silence); $("sVis").value = CFG.visual === "rond" ? "rond" : "const"; $("sAg").checked = CFG.agenda !== false;
   const n = (CFG.learn || []).length; $("sLearn").textContent = n ? `Tempo a retenu ${n} correction${n > 1 ? "s" : ""} de ta part.` : "Quand tu corriges un classement, Tempo le retient pour la suite.";
   show("set");
 };
@@ -1573,7 +1573,7 @@ const hint = t => { $("hint").textContent = t; };
 /* pulsar : des vagues de lumière à un rythme libre, comme des pensées */
 const rnd = (a, b) => a + Math.random() * (b - a);
 function spawnPulse(strong){
-  const R = $("ring"); if (!R || document.hidden || CFG.visual === "const") return;
+  const R = $("ring"); if (!R || document.hidden || CFG.visual !== "rond") return;
   const p = document.createElement("span"); p.className = "pulse";
   const big = strong ? rnd(1.6, 2.25) : rnd(1.25, 2.0), dx = rnd(-7, 7), dy = rnd(-7, 7);
   R.insertBefore(p, R.querySelector(".core"));
@@ -1595,7 +1595,8 @@ function spawnPulse(strong){
 /* constellation : des points de lumière épars qui se rassemblent quand tu parles et se relient quand Claude réfléchit */
 const CV = $("constel"), CX = CV.getContext("2d"), CW = 320, CC = CW / 2;
 let PTS = [], kickT = -1e9, glowRGB = "46,184,196", cvDpr = 0;
-function applyVisual(){ document.body.classList.toggle("const", CFG.visual === "const"); glowRGB = getComputedStyle(document.body).getPropertyValue("--glow").trim() || glowRGB; }
+const isConst = () => CFG.visual !== "rond";
+function applyVisual(){ document.body.classList.toggle("const", isConst()); glowRGB = getComputedStyle(document.body).getPropertyValue("--glow").trim() || glowRGB; }
 function cvInit(){
   const dpr = Math.min(3, window.devicePixelRatio || 1);
   if (dpr !== cvDpr) { cvDpr = dpr; CV.width = CW * dpr; CV.height = CW * dpr; CX.setTransform(dpr, 0, 0, dpr, 0, 0); }
@@ -1606,7 +1607,7 @@ function cvInit(){
 }
 function cvFrame(t){
   requestAnimationFrame(cvFrame);
-  if (CFG.visual !== "const" || document.hidden) return;
+  if (!isConst() || document.hidden) return;
   cvInit();
   const R = $("ring"), st = R.classList.contains("think") ? "think" : R.classList.contains("on") ? "on" : R.classList.contains("ok") ? "ok" : "idle";
   const kick = Math.max(0, 1 - (t - kickT) / 320);
