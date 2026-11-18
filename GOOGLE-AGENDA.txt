@@ -1,0 +1,44 @@
+BRANCHER GOOGLE AGENDA SUR TEMPO (≈ 10 min, plutôt sur PC)
+Compte à utiliser partout : rac4st@gmail.com
+
+A. CRÉER LE PROJET GOOGLE
+1. Va sur console.cloud.google.com (connecté avec rac4st@gmail.com).
+   Accepte les conditions si on te les demande. Pas de carte bancaire.
+2. En haut, à côté du logo : "Sélectionner un projet" > "Nouveau projet"
+   Nom : Tempo > Créer. Vérifie ensuite que "Tempo" est bien sélectionné en haut.
+
+B. ACTIVER L'AGENDA
+3. Dans la recherche en haut, tape "Google Calendar API" > ouvre-la > ACTIVER.
+
+C. ÉCRAN D'AUTORISATION
+4. Menu ☰ > "API et services" > "Écran de consentement OAuth" (ou "Google Auth Platform").
+   - Nom de l'application : Tempo
+   - E-mail d'assistance : rac4st@gmail.com
+   - Type d'audience : EXTERNE
+   - Coordonnées : rac4st@gmail.com > Créer.
+5. Dans "Audience" : bouton "PUBLIER L'APPLICATION" > Confirmer.
+   (Sinon Google te déconnecte tous les 7 jours. L'appli reste privée : toi seul l'utilises.)
+
+D. CRÉER L'IDENTIFIANT
+6. "Clients" (ou "Identifiants" > "+ Créer des identifiants" > "ID client OAuth").
+   - Type d'application : APPLICATION WEB
+   - Nom : Tempo
+   - Origines JavaScript autorisées : https://r4c4st.github.io
+   - URI de redirection autorisés :   https://r4c4st.github.io/zap/
+   > Créer.
+7. Une fenêtre affiche "ID client" et "Code secret du client".
+   Garde-la ouverte (ou télécharge le JSON).
+   NE M'ENVOIE PAS le code secret dans la conversation.
+
+E. LES DONNER À TEMPO (en sécurité)
+8. Dis-moi "c'est fait" : je t'ouvre une fenêtre Supabase où tu colles
+   - GOOGLE_CLIENT_ID     = l'ID client
+   - GOOGLE_CLIENT_SECRET = le code secret
+   Ils restent sur le serveur, jamais dans l'appli ni dans le chat.
+
+F. CONNECTER
+9. Sur le téléphone : Tempo > ··· > réglages > Google Agenda > "connecter Google Agenda"
+   > choisis rac4st@gmail.com.
+   Google affiche "Google n'a pas validé cette application" : c'est normal (c'est TON appli).
+   Touche "Paramètres avancés" > "Accéder à Tempo (non sécurisé)" > coche l'agenda > Continuer.
+10. Tu reviens dans Tempo : "Google Agenda connecté ✓". Fini.
