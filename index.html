@@ -228,7 +228,7 @@ body{background:radial-gradient(700px 460px at 50% 26%,rgba(var(--glow),.10),tra
     <button class="ok" id="sSave">OK</button>
   </div>
   <input type="file" id="sFile" accept=".json" hidden>
-  <p class="small" style="margin-top:24px;text-align:center">Tempo v23 · Rc4st</p>
+  <p class="small" style="margin-top:24px;text-align:center">Tempo v24 · Rc4st</p>
 </div>
 
 <div class="sheet" id="menu">
@@ -948,7 +948,8 @@ async function gHandleRedirect(){
   if (st !== LS.get("tempo_gstate", "")) { toast("connexion Google invalide, recommence"); return true; }
   try {
     const r = await gFn({ action: "exchange", code: p.get("code"), redirect_uri: gRedirect() });
-    if (!r.j.refresh_token) { toast("Google n'a pas donné l'accès, recommence"); return true; }
+    if (!r.j.refresh_token) { toast("Google n'a pas donné l'accès (" + (r.j.error || "?") + "), recommence"); return true; }
+    if (r.j.scope && !r.j.scope.includes("calendar")) { toast("coche bien l'accès à l'agenda, puis reconnecte", "", null, 8000); return true; }
     G = { rt: r.j.refresh_token, at: r.j.access_token, exp: Date.now() + ((r.j.expires_in || 3600) - 120) * 1000 }; saveG();
     toast("Google Agenda connecté ✓"); render();
     S.items.filter(gWants).forEach(i => gSync(i));
@@ -960,6 +961,7 @@ async function gToken(){
   if (!G.rt) return null;
   try {
     const r = await gFn({ action: "refresh", refresh_token: G.rt });
+    if (!r.j.access_token) { G.lastErr = "jeton " + (r.j.error || r.j.error_description || "?"); saveG(); }
     if (r.j.access_token) { G.at = r.j.access_token; G.exp = Date.now() + ((r.j.expires_in || 3600) - 120) * 1000; saveG(); return G.at; }
     if (r.j.error === "invalid_grant") { G = {}; saveG(); toast("reconnecte Google Agenda (··· > réglages)"); }
   } catch (e) {}
@@ -988,7 +990,13 @@ async function gSync(it){
     const r = await fetch(base + (it.gId ? "/" + encodeURIComponent(it.gId) : ""), { method: it.gId ? "PATCH" : "POST", headers: { Authorization: "Bearer " + t, "content-type": "application/json" }, body: JSON.stringify(ev) });
     if ((r.status === 404 || r.status === 410) && it.gId) { it.gId = null; save(); return gSync(it); }
     if (r.ok && !it.gId) { it.gId = (await r.json()).id; save(); render(); }
-  } catch (e) {}
+    if (!r.ok) {
+      let msg = ""; try { msg = ((await r.json()).error || {}).message || ""; } catch (e2) {}
+      G.lastErr = r.status + " " + msg; saveG();
+      if (r.status === 403 || r.status === 401) toast("agenda refusé : reconnecte Google et coche l'accès à l'agenda", "", null, 9000);
+      else toast("agenda : erreur " + r.status, "", null, 6000);
+    }
+  } catch (e) { G.lastErr = "réseau " + e.message; saveG(); toast("agenda injoignable"); }
 }
 async function gDel(it){
   if (!it || !it.gId || !gOn()) return;
@@ -997,7 +1005,7 @@ async function gDel(it){
   it.gId = null; save();
 }
 function paintG(){
-  $("gState").textContent = gOn() ? "connecté ✓ — tes rendez-vous s'inscrivent tout seuls dans ton Google Agenda, passent en « ✓ » quand c'est fait et bougent quand tu reportes." : "Tes rendez-vous s'inscrivent tout seuls dans ton Google Agenda, sans aucune touche.";
+  $("gState").textContent = (G.lastErr ? "dernière erreur : " + G.lastErr + " — " : "") + (gOn() ? "connecté ✓ — tes rendez-vous s'inscrivent tout seuls dans ton Google Agenda, passent en « ✓ » quand c'est fait et bougent quand tu reportes." : "Tes rendez-vous s'inscrivent tout seuls dans ton Google Agenda, sans aucune touche.");
   $("gGo").style.display = gOn() ? "none" : ""; $("gOff").style.display = gOn() ? "" : "none"; $("gAll").checked = CFG.gAll !== false;
 }
 $("gGo").onclick = gLogin;
