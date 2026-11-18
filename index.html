@@ -207,6 +207,10 @@ body{background:radial-gradient(700px 460px at 50% 26%,rgba(var(--glow),.10),tra
   <button id="sPick" style="margin-top:10px;font-size:14px;color:rgb(var(--glow));display:none">＋ ajouter depuis mes contacts</button>
   <div class="lab" id="lStyle">Ma façon d'écrire mes mails</div>
   <textarea id="sStyle" rows="8"></textarea>
+  <div class="lab">Google Agenda</div>
+  <p class="small" id="gState"></p>
+  <label class="small" style="display:flex;gap:10px;align-items:center;margin-top:10px"><input type="checkbox" id="gAll" style="width:auto"> aussi les tâches avec une heure (rappels), pas seulement les rendez-vous</label>
+  <div class="foot" style="margin-top:10px"><div class="l"><button id="gGo" style="color:var(--fg)">connecter Google Agenda</button><button id="gOff">déconnecter</button></div></div>
   <div id="msBox" style="display:none">
   <div class="lab">Outlook perso (lecture des mails)</div>
   <input id="sMsId" placeholder="ID d'application (client) Azure">
@@ -224,7 +228,7 @@ body{background:radial-gradient(700px 460px at 50% 26%,rgba(var(--glow),.10),tra
     <button class="ok" id="sSave">OK</button>
   </div>
   <input type="file" id="sFile" accept=".json" hidden>
-  <p class="small" style="margin-top:24px;text-align:center">Tempo v22 · Rc4st</p>
+  <p class="small" style="margin-top:24px;text-align:center">Tempo v23 · Rc4st</p>
 </div>
 
 <div class="sheet" id="menu">
@@ -719,7 +723,9 @@ async function capture(text, src, kind){
   if (nmm) parts.push(`${nmm} mail${nmm > 1 ? "s" : ""} prêt${nmm > 1 ? "s" : ""}`);
   if (nt) parts.push(`${nt} texto${nt > 1 ? "s" : ""} prêt${nt > 1 ? "s" : ""}`);
   if (other) parts.push(`${other} modifiée${other > 1 ? "s" : ""}`);
-  const ag = added.filter(wantsAgenda);
+  const ag = gOn() ? [] : added.filter(wantsAgenda);
+  const gAdded = gOn() ? added.filter(gWants) : [];
+  if (gAdded.length) parts.push("📅 dans l'agenda");
   const canOpen = navigator.userActivation ? navigator.userActivation.isActive : false;
   if (ag.length && CFG.agenda !== false && canOpen) { addToAgenda(ag[0]); toast("rendez-vous noté · agenda ouvert"); }
   else if (ag.length && CFG.agenda !== false) toast((ag[0].cat === "rdv" ? "rendez-vous noté" : parts.join(" · ")) + " · l'ajouter à l'agenda ?", "ajouter", () => addToAgenda(ag[0]), 9000);
@@ -752,7 +758,7 @@ function whenLabel(i){
   if (i.time && ["now","matin","aprem","soir","demain"].includes(b)) parts.push(i.time.replace(":", "h"));
   if (i.due && (b === "semaine" || b === "tard")) { const d = new Date(i.due + "T12:00"); parts.push(WD[d.getDay()] + " " + d.getDate()); }
   if (i.due && i.due < today()) parts.push("en retard");
-  if (i.inCal) parts.push("📅 agenda");
+  if (i.inCal || i.gId) parts.push("📅 agenda");
   if (i.rec) parts.push("↻ " + REC[i.rec]);
   if (i.note) parts.push(i.note);
   return parts.join(" · ");
@@ -762,7 +768,7 @@ function whenLabel(i){
 let showDone = false, showFar = false;
 const FAR = ["semaine", "tard"];
 const sortIn = (a, b) => (b.u - a.u) || ((a.due || "9") + (a.time || "99")).localeCompare((b.due || "9") + (b.time || "99")) || (b.created - a.created);
-function actLabel(i){ return i.cat === "rdv" && !i.inCal ? "agenda" : isList(i) ? "pris" : i.cat === "message" && i.mail && i.mail.via === "wa" ? "WhatsApp" : i.cat === "appel" ? "appeler" : i.mail ? "envoyer" : (i.cat === "mail" || i.cat === "message") ? "rédiger" : "ouvrir"; }
+function actLabel(i){ return i.cat === "rdv" && gOn() ? "ouvrir" : i.cat === "rdv" && !i.inCal ? "agenda" : isList(i) ? "pris" : i.cat === "message" && i.mail && i.mail.via === "wa" ? "WhatsApp" : i.cat === "appel" ? "appeler" : i.mail ? "envoyer" : (i.cat === "mail" || i.cat === "message") ? "rédiger" : "ouvrir"; }
 function itHTML(i, fresh, nosw){
   const row = `<div class="it u${i.u}${i.done ? " done" : ""}" data-id="${i.id}"${fresh ? ' style="opacity:0;transform:translateY(8px)"' : ""}>
     <button class="dot" data-a="done" aria-label="réglé"></button>
@@ -870,6 +876,7 @@ async function msTokenReq(params){
 }
 async function msHandleRedirect(){
   const p = new URLSearchParams(location.search), code = p.get("code"), pk = LS.get("zap_pkce", null);
+  if ((p.get("state") || "").startsWith("gs_")) return false;
   if (!code && !p.get("error")) return false;
   history.replaceState(null, "", location.pathname);
   if (p.get("error")) { toast("connexion Outlook annulée"); return true; }
@@ -914,8 +921,91 @@ async function checkMail(manual){
 function paintMailBtn(){ $("bMail").style.display = CFG.msId && (MS.rt || MS.at) ? "" : "none"; }
 
 /* agenda Outlook : chaque tâche datée = un événement ; faite = « ✓ » en tête, sans rappel */
+/* ===== Google Agenda (le secret Google reste côté Supabase) ===== */
+const G_FN = "https://jifaszjdhretgorxlpvs.supabase.co/functions/v1/tempo-google";
+const G_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImppZmFzempkaHJldGdvcnhscHZzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ1NTgyODAsImV4cCI6MjExMDEzNDI4MH0.5a5JCoUMqwoPTvIIkh6arKDXiMcheiaB2hr1_6Iay8M";
+const G_SCOPE = "https://www.googleapis.com/auth/calendar.events";
+let G = LS.get("tempo_g", {});
+const saveG = () => LS.set("tempo_g", G);
+const gOn = () => !!G.rt;
+const gRedirect = () => location.origin + location.pathname;
+async function gFn(body){
+  const r = await fetch(G_FN, { method: "POST", headers: { "content-type": "application/json", Authorization: "Bearer " + G_KEY, apikey: G_KEY }, body: JSON.stringify(body) });
+  let j = {}; try { j = await r.json(); } catch (e) {} return { ok: r.ok, j };
+}
+async function gLogin(){
+  let c; try { c = await gFn({ action: "config" }); } catch (e) { return toast("serveur injoignable"); }
+  if (!c.j.ready) return toast("Google pas encore configuré côté serveur");
+  const st = "gs_" + b64u(crypto.getRandomValues(new Uint8Array(12)));
+  LS.set("tempo_gstate", st);
+  location.href = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(c.j.client_id)}&redirect_uri=${encodeURIComponent(gRedirect())}&response_type=code&scope=${encodeURIComponent(G_SCOPE)}&access_type=offline&prompt=consent&state=${st}`;
+}
+async function gHandleRedirect(){
+  const p = new URLSearchParams(location.search), st = p.get("state") || "";
+  if (!st.startsWith("gs_")) return false;
+  history.replaceState(null, "", location.pathname);
+  if (p.get("error")) { toast("connexion Google annulée"); return true; }
+  if (st !== LS.get("tempo_gstate", "")) { toast("connexion Google invalide, recommence"); return true; }
+  try {
+    const r = await gFn({ action: "exchange", code: p.get("code"), redirect_uri: gRedirect() });
+    if (!r.j.refresh_token) { toast("Google n'a pas donné l'accès, recommence"); return true; }
+    G = { rt: r.j.refresh_token, at: r.j.access_token, exp: Date.now() + ((r.j.expires_in || 3600) - 120) * 1000 }; saveG();
+    toast("Google Agenda connecté ✓"); render();
+    S.items.filter(gWants).forEach(i => gSync(i));
+  } catch (e) { toast("échec connexion Google"); }
+  LS.set("tempo_gstate", ""); return true;
+}
+async function gToken(){
+  if (G.at && G.exp > Date.now()) return G.at;
+  if (!G.rt) return null;
+  try {
+    const r = await gFn({ action: "refresh", refresh_token: G.rt });
+    if (r.j.access_token) { G.at = r.j.access_token; G.exp = Date.now() + ((r.j.expires_in || 3600) - 120) * 1000; saveG(); return G.at; }
+    if (r.j.error === "invalid_grant") { G = {}; saveG(); toast("reconnecte Google Agenda (··· > réglages)"); }
+  } catch (e) {}
+  return null;
+}
+const gWants = i => !!(i && i.due && !isMemo(i) && !isList(i) && (i.cat === "rdv" || i.gForce || (CFG.gAll !== false && i.time)));
+async function gSync(it){
+  if (!gOn() || !it) return;
+  if (!gWants(it)) { if (it.gId) gDel(it); return; }
+  const t = await gToken(); if (!t) return;
+  const dur = it.cat === "rdv" ? 60 : 30;
+  let start, end;
+  if (it.time) { const b = new Date(`${it.due}T${it.time}:00`), e = new Date(b.getTime() + dur * 60000);
+    const f = d => `${ymd(d)}T${pad(d.getHours())}:${pad(d.getMinutes())}:00`;
+    start = { dateTime: f(b), timeZone: "Europe/Paris" }; end = { dateTime: f(e), timeZone: "Europe/Paris" }; }
+  else { start = { date: it.due }; end = { date: ymd(addDays(1, new Date(it.due + "T12:00"))) }; }
+  const ev = {
+    summary: (it.done ? "✓ " : "") + (it.ch ? "[" + it.ch + "] " : "") + it.title,
+    description: (it.note ? it.note + "\n\n" : "") + (it.done ? "Fait le " + new Date(it.doneAt).toLocaleString("fr-FR") + "\n" : "") + "— Tempo",
+    start, end, transparency: it.done ? "transparent" : "opaque",
+    reminders: { useDefault: false, overrides: it.done || !it.time ? [] : [{ method: "popup", minutes: it.cat === "rdv" ? 30 : 0 }] }
+  };
+  if (it.done) ev.colorId = "8";
+  const base = "https://www.googleapis.com/calendar/v3/calendars/primary/events";
+  try {
+    const r = await fetch(base + (it.gId ? "/" + encodeURIComponent(it.gId) : ""), { method: it.gId ? "PATCH" : "POST", headers: { Authorization: "Bearer " + t, "content-type": "application/json" }, body: JSON.stringify(ev) });
+    if ((r.status === 404 || r.status === 410) && it.gId) { it.gId = null; save(); return gSync(it); }
+    if (r.ok && !it.gId) { it.gId = (await r.json()).id; save(); render(); }
+  } catch (e) {}
+}
+async function gDel(it){
+  if (!it || !it.gId || !gOn()) return;
+  const t = await gToken(); if (!t) return;
+  try { await fetch("https://www.googleapis.com/calendar/v3/calendars/primary/events/" + encodeURIComponent(it.gId), { method: "DELETE", headers: { Authorization: "Bearer " + t } }); } catch (e) {}
+  it.gId = null; save();
+}
+function paintG(){
+  $("gState").textContent = gOn() ? "connecté ✓ — tes rendez-vous s'inscrivent tout seuls dans ton Google Agenda, passent en « ✓ » quand c'est fait et bougent quand tu reportes." : "Tes rendez-vous s'inscrivent tout seuls dans ton Google Agenda, sans aucune touche.";
+  $("gGo").style.display = gOn() ? "none" : ""; $("gOff").style.display = gOn() ? "" : "none"; $("gAll").checked = CFG.gAll !== false;
+}
+$("gGo").onclick = gLogin;
+$("gOff").onclick = () => { G = {}; saveG(); paintG(); toast("Google Agenda déconnecté"); };
+
 const calOn = () => CFG.calSync !== false && CFG.msId && (MS.rt || MS.at);
 async function calSync(it){
+  if (gOn()) return gSync(it);
   if (!it || !calOn()) return;
   if (!it.due) { if (it.evId) calDel(it); return; }
   const t = await msToken(); if (!t) return;
@@ -937,6 +1027,7 @@ async function calSync(it){
   } catch (e) {}
 }
 async function calDel(it){
+  if (gOn()) return gDel(it);
   if (!it || !it.evId || !calOn()) return;
   const t = await msToken(); if (!t) return;
   try { await fetch("https://graph.microsoft.com/v1.0/me/events/" + it.evId, { method: "DELETE", headers: { Authorization: "Bearer " + t } }); } catch (e) {}
@@ -1066,6 +1157,7 @@ function act(it){
     location.href = "tel:" + (num ? num.replace(/[^\d+]/g, "") : "");
     return;
   }
+  if (it.cat === "rdv" && gOn()) { openEdit(it); return; }
   if (it.cat === "rdv" && !it.inCal) { addToAgenda(it); toast("ajouté à l'agenda"); return; }
   if (isList(it)) { markDone(it); vib([12, 50, 18]); flashOk(); render(); toast("✓ " + it.title, "annuler", () => { unDone(it); render(); }); return; }
   if (it.cat === "message" && it.mail) { sendSms(it); return; }
@@ -1340,6 +1432,7 @@ const wantsAgenda = i => i.due && !i.done && !i.inCal && (i.cat === "rdv" || (i.
 $("eCal").onclick = () => {
   if (!cur) return;
   const o = { title: $("eTitle").value, ch: $("eCh").value, note: $("eNote").value, due: $("eDate").value || today(), time: $("eTime").value, cat: $("eCat").value };
+  if (gOn()) { const it = cur; Object.assign(it, { title: o.title, ch: o.ch, note: o.note, due: o.due, time: o.time || null, gForce: true }); save(); gSync(it); toast("envoyé dans Google Agenda"); return; }
   openAgenda(o); cur.inCal = Date.now(); save();
 };
 $("eShare").onclick = async () => {
@@ -1402,7 +1495,7 @@ $("mClose").onclick = hide;
 $("mSet").onclick = () => { hide(); setTimeout(openSettings, 60); };
 const openSettings = () => {
   $("sKey").value = CFG.key || ""; $("sProfile").value = CFG.profile; $("sCh").value = CFG.ch; $("sTeam").value = CFG.team;
-  $("sMsId").value = CFG.msId || ""; $("sCal").checked = CFG.calSync !== false;
+  $("sMsId").value = CFG.msId || ""; $("sCal").checked = CFG.calSync !== false; paintG();
   $("sMsState").textContent = MS.rt || MS.at ? `connecté : ${MS.user || "Outlook"} — Tempo relève tes mails à l'ouverture (toutes les 20 min max) et via « mails » sous le rond.` : "Tempo lit tes mails (sans jamais en envoyer ni en supprimer) et en tire les actions à faire. Il faut Claude branché.";
   const P = SPACE === "perso";
   $("lProf").textContent = (P ? "Qui je suis — vie privée" : "Qui je suis — travail") + " (lu par Claude à chaque tri)";
@@ -1413,7 +1506,7 @@ const openSettings = () => {
   const n = (CFG.learn || []).length; $("sLearn").textContent = n ? `Tempo a retenu ${n} correction${n > 1 ? "s" : ""} de ta part.` : "Quand tu corriges un classement, Tempo le retient pour la suite.";
   show("set");
 };
-$("sSave").onclick = () => { CFG.key = $("sKey").value.trim(); CFG.profile = $("sProfile").value.trim() || DEFAULT_PROFILE; CFG.ch = $("sCh").value; CFG.team = $("sTeam").value; CFG.contacts = $("sContacts").value; CFG.style = $("sStyle").value.trim() || DEFAULT_STYLE; CFG.silence = +$("sSil").value; CFG.agenda = $("sAg").checked; CFG.msId = $("sMsId").value.trim(); CFG.calSync = $("sCal").checked; saveCfg(); paintMailBtn(); hide(); render(); toast(CFG.key ? "Claude est branché" : "enregistré"); };
+$("sSave").onclick = () => { CFG.key = $("sKey").value.trim(); CFG.profile = $("sProfile").value.trim() || DEFAULT_PROFILE; CFG.ch = $("sCh").value; CFG.team = $("sTeam").value; CFG.contacts = $("sContacts").value; CFG.style = $("sStyle").value.trim() || DEFAULT_STYLE; CFG.silence = +$("sSil").value; CFG.agenda = $("sAg").checked; CFG.msId = $("sMsId").value.trim(); CFG.calSync = $("sCal").checked; CFG.gAll = $("gAll").checked; saveCfg(); paintMailBtn(); hide(); render(); toast(CFG.key ? "Claude est branché" : "enregistré"); };
 $("sPick").onclick = pickMany;
 $("sForget").onclick = () => { CFG.learn = []; saveCfg(); $("sLearn").textContent = "Corrections oubliées."; };
 $("sNotif").onclick = async () => {
@@ -1577,6 +1670,7 @@ function handleShare(){
 if ("serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).catch(() => {});
 const autoMail = () => { if (CFG.msId && MS.rt && CFG.key && Date.now() - (S.lastMailCheck || 0) > 20 * 60000) checkMail(false); };
 paintSpace(); render(); paintMailBtn();
+gHandleRedirect();
 handleImport();
 window.addEventListener("hashchange", handleImport);
 msHandleRedirect().then(was => { if (!was) { handleShare(); autoMail(); } paintMailBtn(); });
