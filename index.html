@@ -713,7 +713,7 @@ async function capture(text, src, kind){
   if (other) parts.push(`${other} modifiée${other > 1 ? "s" : ""}`);
   const ag = added.filter(wantsAgenda);
   const canOpen = navigator.userActivation ? navigator.userActivation.isActive : false;
-  if (ag.length && CFG.agenda !== false && canOpen) { addToAgenda(ag[0]); }
+  if (ag.length && CFG.agenda !== false && canOpen) { addToAgenda(ag[0]); toast("rendez-vous noté · agenda ouvert"); }
   else if (ag.length && CFG.agenda !== false) toast((ag[0].cat === "rdv" ? "rendez-vous noté" : parts.join(" · ")) + " · l'ajouter à l'agenda ?", "ajouter", () => addToAgenda(ag[0]), 9000);
   else toast(parts.join(" · ") || "rien compris, redis-le", parts.length ? "annuler" : "", () => {
     S.items = S.items.filter(i => !ids.includes(i.id)); U.undo.reverse().forEach(f => f()); save(); render();
