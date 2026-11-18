@@ -149,6 +149,27 @@ body.const .ring.on{transform:none}
 .tabs button{font-size:22px;color:var(--mut)} .tabs button.on{color:var(--fg)}
 #hist .it{padding:11px 0}
 #edit,#pp{z-index:45}
+.ritH{font-size:30px;font-weight:200;margin-top:6px}
+.ritMsg{font-size:17px;line-height:1.5;margin:12px 0 4px;color:var(--fg)}
+.ritN{flex:none;width:22px;text-align:center;font-size:20px;font-weight:200;color:rgb(var(--glow))}
+.ritF{flex:none;font-size:13px;color:rgb(var(--glow));padding:6px 0 6px 10px;letter-spacing:.5px}
+.ritBig{font-size:40px;font-weight:200}
+.bars{display:flex;gap:10px;align-items:flex-end;height:120px;margin-top:22px}
+.bar{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:4px;font-size:11px;color:var(--mut)}
+.bar i{display:block;width:100%;max-width:26px;border-radius:8px;background:linear-gradient(180deg,rgba(var(--glow),.9),rgba(var(--glow),.35))}
+.bar b{font-weight:400;color:var(--fg);font-size:12px}
+#focus{position:fixed;inset:0;z-index:55;background:linear-gradient(180deg,var(--air1),#fff);display:none;flex-direction:column;align-items:center;justify-content:center;padding:30px}
+#focus.show{display:flex}
+.fX{position:absolute;top:calc(22px + env(safe-area-inset-top));right:26px;font-size:14px;color:var(--mut)}
+.fSvg{width:min(78vw,320px);height:min(78vw,320px);transform:rotate(-90deg)}
+.fBg{fill:none;stroke:rgba(var(--glow),.12);stroke-width:3}
+.fArc{fill:none;stroke:rgb(var(--glow));stroke-width:3;stroke-linecap:round;transition:stroke-dashoffset .25s linear;filter:drop-shadow(0 0 6px rgba(var(--glow),.6))}
+.fCore{position:absolute;top:50%;left:50%;width:min(78vw,320px);height:min(78vw,320px);transform:translate(-50%,calc(-50% - 60px));border-radius:50%;background:radial-gradient(circle,rgba(var(--glow),.22),transparent 60%);animation:breathe 6s ease-in-out infinite;pointer-events:none}
+.fTime{margin-top:-205px;font-size:54px;font-weight:200;letter-spacing:1px;height:150px;display:flex;align-items:center}
+.fTitle{margin-top:70px;font-size:21px;text-align:center;line-height:1.4;max-width:520px}
+.fStep{margin-top:14px;font-size:15px;color:var(--mut);text-align:center;line-height:1.5;max-width:460px;min-height:22px}
+.fBtns{display:flex;gap:30px;align-items:center;margin-top:36px;font-size:15px}
+.fBtns .ok{padding:13px 28px;border-radius:999px;background:var(--fg);color:var(--bg);font-weight:500}
 .toast{position:fixed;left:50%;bottom:calc(26px + env(safe-area-inset-bottom));transform:translate(-50%,20px);opacity:0;transition:.3s;font-size:14px;display:flex;gap:18px;padding:12px 20px;border-radius:999px;background:var(--sheet);border:1px solid var(--faint);z-index:60;white-space:nowrap;letter-spacing:.2px}
 .toast.show{opacity:1;transform:translate(-50%,0)}
 .toast button{color:rgb(var(--glow));font-weight:500}
@@ -209,7 +230,7 @@ body.const .ring.on{transform:none}
   </div>
   <button id="eMk" style="margin-top:18px;font-size:14px;color:rgb(var(--glow))">✉ préparer un message</button>
   <div class="foot">
-    <div class="l"><button id="eCal">agenda</button><button id="eShare">envoyer</button><button id="eDel" class="del">supprimer</button></div>
+    <div class="l"><button id="eFocus" style="color:rgb(var(--glow))">focus</button><button id="eCal">agenda</button><button id="eShare">envoyer</button><button id="eDel" class="del">supprimer</button></div>
     <button class="ok" id="eSave">OK</button>
   </div>
 </div>
@@ -241,6 +262,12 @@ body.const .ring.on{transform:none}
   <div class="foot" style="margin-top:10px"><div class="l"><button id="sMsGo" style="color:var(--fg)">connecter Outlook</button><button id="sMsOff">déconnecter</button></div></div>
   </div>
   <label class="small" style="display:flex;gap:10px;align-items:center;margin-top:22px"><input type="checkbox" id="sAg" style="width:auto"> proposer d'ajouter les rendez-vous à mon agenda</label>
+  <div class="lab">Rituels</div>
+  <label class="small" style="display:flex;gap:10px;align-items:center"><input type="checkbox" id="rOn" style="width:auto"> point du matin, bilan du soir et bilan du dimanche</label>
+  <div class="two"><div><div class="lab">Matin</div><input type="time" id="rM"></div><div><div class="lab">Soir</div><input type="time" id="rS"></div><div><div class="lab">Dimanche</div><input type="time" id="rW"></div></div>
+  <div class="foot" style="margin-top:12px"><div class="l"><button id="rTry1">voir le matin</button><button id="rTry2">le soir</button><button id="rTry3">la semaine</button></div></div>
+  <div class="lab">Focus (minutes)</div>
+  <select id="sFoc"><option>15</option><option>20</option><option>25</option><option>45</option></select>
   <div class="lab">Visuel d'écoute</div>
   <select id="sVis"><option value="const">la constellation</option><option value="rond">le rond (pulsar)</option></select>
   <div class="lab">Fin de dictée</div>
@@ -252,7 +279,7 @@ body.const .ring.on{transform:none}
     <button class="ok" id="sSave">OK</button>
   </div>
   <input type="file" id="sFile" accept=".json" hidden>
-  <p class="small" style="margin-top:24px;text-align:center">Tempo v31 · Rc4st</p>
+  <p class="small" style="margin-top:24px;text-align:center">Tempo v32 · Rc4st</p>
 </div>
 
 <div class="sheet" id="menu">
@@ -285,6 +312,18 @@ body.const .ring.on{transform:none}
   </div>
   <div id="mHead" style="margin-top:18px"></div>
   <div id="mList" style="margin-top:6px"></div>
+</div>
+
+<div class="sheet full" id="ritual"><div id="ritBody"></div></div>
+
+<div id="focus">
+  <button id="fStop" class="fX">arrêter</button>
+  <svg viewBox="0 0 320 320" class="fSvg"><circle cx="160" cy="160" r="140" class="fBg"/><circle cx="160" cy="160" r="140" id="fArc" class="fArc"/></svg>
+  <div class="fCore"></div>
+  <div class="fTime" id="fTime">25:00</div>
+  <div class="fTitle" id="fTitle"></div>
+  <div class="fStep" id="fStep"></div>
+  <div class="fBtns"><button id="fPause">pause</button><button id="fDone" class="ok">c'est fait</button></div>
 </div>
 
 <div class="toast" id="toast"><span id="tTxt"></span><button id="tBtn"></button></div>
@@ -339,7 +378,7 @@ if (!CFG.profile) CFG.profile = DEFAULT_PROFILE;
 const pickPer = () => Object.fromEntries(PER.map(k => [k, CFG[k]]));
 if (!CFG.sp) CFG.sp = { pro: pickPer(), perso: Object.assign({}, PERSO_DEFAULTS) };
 Object.assign(CFG, CFG.sp[SPACE]);
-const save = () => LS.set(SKEY(SPACE), S);
+const save = () => { LS.set(SKEY(SPACE), S); schedulePushSync(); };
 const saveCfg = () => { CFG.sp[SPACE] = pickPer(); LS.set("zap_cfg", CFG); };
 
 const CATS_PRO = { appel: "appel", rdv: "rendez-vous", message: "texto", mail: "mail", memo: "mémo", materiel: "matériel", equipe: "équipe", chantier: "chantier", remarque: "remarque" };
@@ -1232,7 +1271,7 @@ function openPostpone(it){
     const it2 = pp; hide();
     if (b.dataset.n === "date") { openEdit(it2); setTimeout(() => { try { $("eDate").showPicker(); } catch (er) { $("eDate").focus(); } }, 350); return; }
     const before = { due: it2.due, time: it2.time, u: it2.u };
-    ch[+b.dataset.n][1](it2); it2.notified = false; save(); render(); calSync(it2);
+    ch[+b.dataset.n][1](it2); it2.notified = false; it2.ppN = (it2.ppN || 0) + 1; save(); render(); calSync(it2);
     toast("reporté · " + ch[+b.dataset.n][0], "annuler", () => { Object.assign(it2, before); save(); render(); calSync(it2); });
   };
   show("pp");
@@ -1467,6 +1506,7 @@ $("eCal").onclick = () => {
   if (gOn()) { const it = cur; Object.assign(it, { title: o.title, ch: o.ch, note: o.note, due: o.due, time: o.time || null, gForce: true }); save(); gSync(it); toast("envoyé dans Google Agenda"); return; }
   openAgenda(o); cur.inCal = Date.now(); save();
 };
+$("eFocus").onclick = () => { if (!cur) return; const id = cur.id; hide(); setTimeout(() => startFocus(id, SPACE), 150); };
 $("eShare").onclick = async () => {
   const txt = ($("eCh").value ? "[" + $("eCh").value + "] " : "") + $("eTitle").value + ($("eNote").value ? "\n" + $("eNote").value : "");
   try { if (navigator.share) await navigator.share({ text: txt }); else { await navigator.clipboard.writeText(txt); toast("copié"); } } catch (e) {}
@@ -1534,16 +1574,19 @@ const openSettings = () => {
   $("lChs").textContent = P ? "Mes thèmes — Nom : mots-clés" : "Mes chantiers — Nom : mots-clés";
   $("lTeam").textContent = P ? "Mes proches" : "Mon équipe";
   $("lStyle").textContent = P ? "Ma façon d'écrire mes textos et mails perso" : "Ma façon d'écrire mes mails";
-  $("sContacts").value = CFG.contacts; $("sPick").style.display = PICK ? "" : "none"; $("sStyle").value = CFG.style; $("sSil").value = String(CFG.silence); $("sVis").value = CFG.visual === "rond" ? "rond" : "const"; $("sAg").checked = CFG.agenda !== false;
+  $("sContacts").value = CFG.contacts; $("sPick").style.display = PICK ? "" : "none"; $("sStyle").value = CFG.style; $("sSil").value = String(CFG.silence); { const R = RIT(); $("rOn").checked = R.on; $("rM").value = R.matin; $("rS").value = R.soir; $("rW").value = R.semaine; $("sFoc").value = String(CFG.focusMin || 25); } $("sVis").value = CFG.visual === "rond" ? "rond" : "const"; $("sAg").checked = CFG.agenda !== false;
   const n = (CFG.learn || []).length; $("sLearn").textContent = n ? `Tempo a retenu ${n} correction${n > 1 ? "s" : ""} de ta part.` : "Quand tu corriges un classement, Tempo le retient pour la suite.";
   show("set");
 };
-$("sSave").onclick = () => { CFG.key = $("sKey").value.trim(); CFG.profile = $("sProfile").value.trim() || DEFAULT_PROFILE; CFG.ch = $("sCh").value; CFG.team = $("sTeam").value; CFG.contacts = $("sContacts").value; CFG.style = $("sStyle").value.trim() || DEFAULT_STYLE; CFG.silence = +$("sSil").value; CFG.visual = $("sVis").value; applyVisual(); CFG.agenda = $("sAg").checked; CFG.msId = $("sMsId").value.trim(); CFG.calSync = $("sCal").checked; CFG.gAll = $("gAll").checked; saveCfg(); paintMailBtn(); hide(); render(); toast(CFG.key ? "Claude est branché" : "enregistré"); };
+$("sSave").onclick = () => { CFG.key = $("sKey").value.trim(); CFG.profile = $("sProfile").value.trim() || DEFAULT_PROFILE; CFG.ch = $("sCh").value; CFG.team = $("sTeam").value; CFG.contacts = $("sContacts").value; CFG.style = $("sStyle").value.trim() || DEFAULT_STYLE; CFG.silence = +$("sSil").value; LS.set("tempo_ritcfg", { on: $("rOn").checked, matin: $("rM").value || "08:00", soir: $("rS").value || "18:30", semaine: $("rW").value || "19:00" }); CFG.focusMin = +$("sFoc").value; schedulePushSync(); CFG.visual = $("sVis").value; applyVisual(); CFG.agenda = $("sAg").checked; CFG.msId = $("sMsId").value.trim(); CFG.calSync = $("sCal").checked; CFG.gAll = $("gAll").checked; saveCfg(); paintMailBtn(); hide(); render(); toast(CFG.key ? "Claude est branché" : "enregistré"); };
 $("sPick").onclick = pickMany;
+$("rTry1").onclick = () => { hide(); setTimeout(() => openRitual("matin"), 150); };
+$("rTry2").onclick = () => { hide(); setTimeout(() => openRitual("soir"), 150); };
+$("rTry3").onclick = () => { hide(); setTimeout(() => openRitual("semaine"), 150); };
 $("sForget").onclick = () => { CFG.learn = []; saveCfg(); $("sLearn").textContent = "Corrections oubliées."; };
 $("sNotif").onclick = async () => {
-  if (!("Notification" in window)) return toast("pas de notifications ici");
-  const p = await Notification.requestPermission(); toast(p === "granted" ? "rappels activés" : "refusé dans Android");
+  if (pushOn()) { const t = await pFn({ action: "test" }); if (!t.ok) { LS.set("tempo_push", false); return enablePush(); } toast("notification de test envoyée"); return; }
+  enablePush();
 };
 $("sExp").onclick = () => {
   const b = new Blob([JSON.stringify({ S, CFG: Object.assign({}, CFG, { key: "" }) }, null, 1)], { type: "application/json" });
@@ -1716,13 +1759,268 @@ async function checkReminders(){
   const t = today(), hm = nowHM(), h = new Date().getHours();
   const due = S.items.filter(i => !i.done && !i.notified && i.due && (i.due < t || (i.due === t && (i.time ? i.time <= hm : h >= 8))));
   if (!due.length) return;
-  if ("Notification" in window && Notification.permission === "granted") {
+  if (!pushOn() && "Notification" in window && Notification.permission === "granted") {
     try { const reg = await navigator.serviceWorker.ready;
       for (const i of due.slice(0, 5)) reg.showNotification(i.title, { body: whenLabel(i), tag: i.id, icon: "icon-192.png", badge: "icon-192.png" });
     } catch (e) {}
   }
   due.forEach(i => i.notified = true); save(); render();
 }
+
+/* ===== A. RAPPELS QUI SONNENT (Web Push via Supabase) ===== */
+const P_FN = "https://jifaszjdhretgorxlpvs.supabase.co/functions/v1/tempo-push";
+let DEVICE = LS.get("tempo_dev", "");
+if (!DEVICE) { DEVICE = b64u(crypto.getRandomValues(new Uint8Array(18))); LS.set("tempo_dev", DEVICE); }
+async function pFn(body){
+  const r = await fetch(P_FN, { method: "POST", headers: { "content-type": "application/json", Authorization: "Bearer " + G_KEY, apikey: G_KEY }, body: JSON.stringify(Object.assign({ device: DEVICE }, body)) });
+  let j = {}; try { j = await r.json(); } catch (e) {} return j;
+}
+function pushOn(){ return !!LS.get("tempo_push", false); }
+function u8(b64){ const p = "=".repeat((4 - b64.length % 4) % 4), s = atob((b64 + p).replace(/-/g, "+").replace(/_/g, "/")); return Uint8Array.from(s, c => c.charCodeAt(0)); }
+async function enablePush(){
+  if (!("serviceWorker" in navigator) || !("PushManager" in window)) return toast("notifications impossibles ici");
+  const perm = await Notification.requestPermission();
+  if (perm !== "granted") return toast("autorise les notifications pour Tempo dans Android", "", null, 7000);
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const { key } = await pFn({ action: "key" });
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: u8(key) });
+    await pFn({ action: "subscribe", sub: sub.toJSON() });
+    LS.set("tempo_push", true); await syncReminders(true);
+    const t = await pFn({ action: "test" });
+    toast(t.ok ? "rappels activés ✓ — une notification de test arrive" : "abonné, mais le test a échoué (" + (t.why || "?") + ")", "", null, 7000);
+    paintPush();
+  } catch (e) { toast("échec de l'activation des rappels"); }
+}
+function spaceState(sp){ return sp === SPACE ? S : (LS.get(SKEY(sp), null) || { items: [], doneDays: [] }); }
+function putSpace(sp, st){ if (sp === SPACE) { S = st; save(); } else LS.set(SKEY(sp), st); }
+const RIT = () => Object.assign({ on: true, matin: "08:00", soir: "18:30", semaine: "19:00" }, LS.get("tempo_ritcfg", {}));
+var pushT = null;
+function schedulePushSync(){ if (!pushOn()) return; clearTimeout(pushT); pushT = setTimeout(() => syncReminders(), 2500); }
+async function syncReminders(){
+  if (!pushOn()) return;
+  const list = [], now = Date.now(), dt = (d, t) => new Date(`${d}T${t}:00`);
+  for (const sp of ["pro", "perso"]) {
+    for (const i of spaceState(sp).items || []) {
+      if (i.done || !i.due || !i.time || isMemo(i) || isList(i)) continue;
+      const at = dt(i.due, i.time);
+      const tag = (sp === "perso" ? "Perso · " : "") + (i.ch ? i.ch : CATS_PRO[i.cat] || "");
+      if (i.cat === "rdv") list.push({ at: new Date(at.getTime() - 30 * 60000).toISOString(), title: "Dans 30 min · " + i.title, body: tag, url: `./?task=${i.id}&sp=${sp}`, tag: i.id + "-30" });
+      list.push({ at: at.toISOString(), title: i.title, body: tag || "c'est l'heure", url: `./?task=${i.id}&sp=${sp}`, tag: i.id });
+    }
+  }
+  const R = RIT(), rs = LS.get("tempo_rit", {});
+  if (R.on) for (let k = 0; k < 8; k++) {
+    const d = ymd(addDays(k)), dow = addDays(k).getDay();
+    if (!(k === 0 && rs.matin === d)) list.push({ at: dt(d, R.matin).toISOString(), title: "Ton point du matin", body: "1 minute pour choisir tes 3 priorités", url: "./?ritual=matin", tag: "rit-matin" });
+    if (dow === 0) { if (!(k === 0 && rs.semaine === d)) list.push({ at: dt(d, R.semaine).toISOString(), title: "Ton bilan de la semaine", body: "Regarde le chemin parcouru", url: "./?ritual=semaine", tag: "rit-semaine" }); }
+    else if (!(k === 0 && rs.soir === d)) list.push({ at: dt(d, R.soir).toISOString(), title: "On ferme la journée ?", body: "1 minute : ce qui est fait, ce qui glisse à demain", url: "./?ritual=soir", tag: "rit-soir" });
+  }
+  const F = LS.get("tempo_focus", null);
+  if (F && F.end > now) list.push({ at: new Date(F.end).toISOString(), title: "Focus terminé", body: F.title, url: "./?focus=end", tag: "focus" });
+  try { await pFn({ action: "sync", reminders: list.filter(r => Date.parse(r.at) > now - 30000) }); } catch (e) {}
+}
+function paintPush(){
+  const b = $("sNotif"); if (!b) return;
+  b.textContent = pushOn() ? "tester les rappels" : "activer les rappels";
+}
+
+/* ===== C. AGENDA DU JOUR (lecture Google) ===== */
+async function gEvents(day){
+  if (!gOn()) return [];
+  const t = await gToken(); if (!t) return [];
+  const a = new Date(day + "T00:00:00"), b = new Date(day + "T23:59:59");
+  try {
+    const r = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events?singleEvents=true&orderBy=startTime&timeMin=${encodeURIComponent(a.toISOString())}&timeMax=${encodeURIComponent(b.toISOString())}&maxResults=50`, { headers: { Authorization: "Bearer " + t } });
+    if (!r.ok) return [];
+    const j = await r.json();
+    return (j.items || []).filter(e => e.status !== "cancelled" && !(e.summary || "").startsWith("✓ ")).map(e => ({
+      title: e.summary || "(sans titre)", allDay: !!e.start.date, tempo: (e.description || "").includes("— Tempo"),
+      s: e.start.dateTime ? new Date(e.start.dateTime) : null, e: e.end && e.end.dateTime ? new Date(e.end.dateTime) : null
+    }));
+  } catch (e) { return []; }
+}
+const hm = d => pad(d.getHours()) + ":" + pad(d.getMinutes());
+function freeSlots(events, from, to){
+  const busy = events.filter(e => e.s && e.e).map(e => [e.s.getHours() * 60 + e.s.getMinutes(), e.e.getHours() * 60 + e.e.getMinutes()]).sort((x, y) => x[0] - y[0]);
+  const out = []; let cur = from;
+  for (const [s, e] of busy) { if (s > cur) out.push([cur, Math.min(s, to)]); cur = Math.max(cur, e); if (cur >= to) break; }
+  if (cur < to) out.push([cur, to]);
+  return out.filter(([s, e]) => e - s >= 30);
+}
+
+/* ===== B. RITUELS ===== */
+function allOpen(){
+  const out = [];
+  for (const sp of ["pro", "perso"]) for (const i of spaceState(sp).items || []) if (!i.done && !isMemo(i) && !isList(i)) out.push({ i, sp });
+  return out;
+}
+async function claudeText(system, user, max){
+  const r = await fetch("https://api.anthropic.com/v1/messages", { method: "POST",
+    headers: { "content-type": "application/json", "x-api-key": CFG.key, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
+    body: JSON.stringify({ model: "claude-haiku-5-5", max_tokens: max || 600, system, messages: [{ role: "user", content: user }] }) });
+  if (!r.ok) throw new Error("API " + r.status);
+  return ((await r.json()).content || []).map(c => c.text || "").join("").trim();
+}
+let RITUAL = null;
+function openRitual(kind){
+  RITUAL = { kind, plan: [] };
+  $("ritBody").innerHTML = `<p class="small" style="margin-top:30px">un instant…</p>`;
+  show("ritual");
+  if (kind === "matin") ritMatin(); else if (kind === "soir") ritSoir(); else ritSemaine();
+}
+function ritDone(kind){ const rs = LS.get("tempo_rit", {}); rs[kind] = today(); LS.set("tempo_rit", rs); schedulePushSync(); }
+async function ritMatin(){
+  const d = new Date(), hello = d.getHours() < 12 ? "Bonjour Raphaël" : "Re-bonjour Raphaël";
+  const evs = await gEvents(today());
+  const cand = allOpen().filter(({ i }) => { const b = bucket(i); return ["now", "matin", "aprem", "soir", "today"].includes(b) || (i.u === 3) || (!i.due && i.u >= 2); });
+  const nowMin = Math.max(d.getHours() * 60 + d.getMinutes() + 15, 8 * 60), slots = freeSlots(evs, Math.ceil(nowMin / 30) * 30, 18 * 60 + 30);
+  let plan = null;
+  if (CFG.key && cand.length) {
+    try {
+      const sys = `Tu prépares le point du matin de Raphaël (TDA probable : il faut peu de choix, clairs, et un ordre). Il est ${WD[d.getDay()]} ${nowHM()}.
+QUI IL EST : ${CFG.profile}
+Choisis ses 3 PRIORITÉS du jour parmi les tâches (les plus importantes, urgentes ou qui débloquent quelqu'un) et place chacune à une heure réaliste DANS un créneau libre (évite les événements). Garde une tâche qui a déjà une heure à cette heure-là. Pro en journée, perso plutôt en fin de journée sauf urgence.
+Réponds UNIQUEMENT en JSON : {"msg":"une phrase courte et encourageante, tutoiement, sans emoji","plan":[{"id":"…","time":"HH:MM","why":"5 mots max"}]}`;
+      const usr = `CRÉNEAUX LIBRES : ${slots.map(([s, e]) => pad(Math.floor(s / 60)) + ":" + pad(s % 60) + "-" + pad(Math.floor(e / 60)) + ":" + pad(e % 60)).join(", ") || "aucun"}
+ÉVÉNEMENTS : ${evs.filter(e => !e.tempo).map(e => (e.allDay ? "journée" : hm(e.s) + "-" + hm(e.e)) + " " + e.title).join(" | ") || "aucun"}
+TÂCHES :
+${cand.slice(0, 40).map(({ i, sp }) => `- id=${i.id} [${sp}] u${i.u} ${i.title}${i.ch ? " (" + i.ch + ")" : ""}${i.due ? " due " + i.due : ""}${i.time ? " à " + i.time : ""}`).join("\n")}`;
+      const raw = await claudeText(sys, usr, 700);
+      plan = JSON.parse(raw.slice(raw.indexOf("{"), raw.lastIndexOf("}") + 1));
+    } catch (e) { plan = null; }
+  }
+  if (!plan) {
+    const pick = cand.slice().sort((a, b) => (b.i.u - a.i.u) || (a.i.due || "9").localeCompare(b.i.due || "9")).slice(0, 3);
+    let k = 0; const times = [];
+    for (const [s, e] of slots) for (let m = s; m + 30 <= e && times.length < 6; m += 60) times.push(pad(Math.floor(m / 60)) + ":" + pad(m % 60));
+    plan = { msg: cand.length ? "Trois choses, dans l'ordre. Le reste peut attendre." : "Rien d'urgent aujourd'hui. Profite de l'élan pour avancer sur ce qui compte.", plan: pick.map(({ i }) => ({ id: i.id, time: i.time || times[k++] || "", why: "" })) };
+  }
+  const byId = Object.fromEntries(allOpen().map(x => [x.i.id, x]));
+  RITUAL.plan = (plan.plan || []).filter(p => byId[p.id]).slice(0, 3).map(p => Object.assign({}, p, byId[p.id]));
+  const evHtml = evs.filter(e => !e.tempo).length ? evs.filter(e => !e.tempo).map(e => `<div class="it" style="padding:8px 0"><span class="dot" style="opacity:.5"></span><div class="tx"><div class="tt" style="font-size:15px">${esc(e.title)}</div><div class="sub">${e.allDay ? "toute la journée" : hm(e.s) + " – " + hm(e.e)}</div></div></div>`).join("") : `<p class="small">${gOn() ? "rien dans ton agenda aujourd'hui." : "connecte Google Agenda pour voir ta journée ici."}</p>`;
+  $("ritBody").innerHTML = `
+    <div class="ritH">${hello}</div>
+    <p class="ritMsg">${esc(plan.msg || "")}</p>
+    <div class="lab">Tes 3 priorités</div>
+    ${RITUAL.plan.length ? RITUAL.plan.map((p, n) => `<div class="it u${p.i.u}" data-rp="${n}"><span class="ritN">${n + 1}</span><div class="tx"><div class="tt">${esc(p.i.title)}</div><div class="sub">${p.time ? p.time.replace(":", "h") : "dès que possible"}${p.why ? " · " + esc(p.why) : ""}${p.sp === "perso" ? " · perso" : ""}</div></div><button class="ritF" data-rf="${n}">focus</button></div>`).join("") : `<p class="small">aucune tâche en attente. tu peux dicter ce qui te passe par la tête.</p>`}
+    <div class="lab">Ton agenda aujourd'hui</div>${evHtml}
+    <div class="foot"><div class="l"><button id="ritLater">plus tard</button></div><button class="ok" id="ritGo">${RITUAL.plan.length ? "c'est parti" : "OK"}</button></div>`;
+}
+async function ritSoir(){
+  const t = today(), done = [], left = [];
+  for (const sp of ["pro", "perso"]) for (const i of spaceState(sp).items || []) {
+    if (isMemo(i) || isList(i)) continue;
+    if (i.done && i.doneAt && ymd(new Date(i.doneAt)) === t) done.push({ i, sp });
+    else if (!i.done && i.due && i.due <= t) left.push({ i, sp });
+  }
+  RITUAL.left = left;
+  let msg = done.length ? `${done.length} chose${done.length > 1 ? "s" : ""} réglée${done.length > 1 ? "s" : ""} aujourd'hui.` : "Journée sans case cochée : ça arrive, demain on repart.";
+  if (CFG.key && (done.length || left.length)) { try { msg = await claudeText("Tu fais le bilan du soir de Raphaël en UNE phrase de 20 mots max : reconnais ce qu'il a fait (concret), dédramatise ce qui reste. Tutoiement, chaleureux, sans emoji, sans flatterie excessive.", `FAIT : ${done.map(x => x.i.title).join(" ; ") || "rien"}\nRESTE : ${left.map(x => x.i.title).join(" ; ") || "rien"}`, 120); } catch (e) {} }
+  $("ritBody").innerHTML = `
+    <div class="ritH">On ferme la journée</div>
+    <p class="ritMsg">${esc(msg)}</p>
+    ${done.length ? `<div class="lab">Réglé aujourd'hui · ${done.length}</div>` + done.map(({ i }) => `<div class="it done"><span class="dot"></span><div class="tx"><div class="tt">${esc(i.title)}</div></div></div>`).join("") : ""}
+    ${left.length ? `<div class="lab">Encore ouvert · ${left.length}</div>` + left.map(({ i }) => `<div class="it u${i.u}"><span class="dot"></span><div class="tx"><div class="tt">${esc(i.title)}</div></div></div>`).join("") : ""}
+    <div class="foot"><div class="l"><button id="ritLater">plus tard</button></div><button class="ok" id="ritGo">${left.length ? "tout glisser à demain" : "bonne soirée"}</button></div>`;
+}
+async function ritSemaine(){
+  const since = Date.now() - 7 * 86400000, days = Array(7).fill(0), byCh = {}, sp2 = { pro: 0, perso: 0 }, stuck = [];
+  for (const sp of ["pro", "perso"]) for (const i of spaceState(sp).items || []) {
+    if (isMemo(i) || isList(i)) continue;
+    if (i.done && i.doneAt > since) { const k = 6 - Math.floor((Date.now() - i.doneAt) / 86400000); if (k >= 0) days[k]++; sp2[sp]++; const c = i.ch || (sp === "perso" ? "perso" : "sans chantier"); byCh[c] = (byCh[c] || 0) + 1; }
+    if (!i.done && (i.ppN || 0) >= 2) stuck.push(i);
+  }
+  const total = sp2.pro + sp2.perso, mx = Math.max(1, ...days);
+  const top = Object.entries(byCh).sort((a, b) => b[1] - a[1]).slice(0, 4);
+  let msg = total ? `${total} chose${total > 1 ? "s" : ""} réglée${total > 1 ? "s" : ""} cette semaine.` : "Semaine calme côté cases cochées. On relance lundi, une chose à la fois.";
+  if (CFG.key && total) { try { msg = await claudeText("Tu fais le bilan de la semaine de Raphaël en 2 phrases courtes (35 mots max) : ce qui avance bien, puis un seul conseil concret pour la semaine prochaine (par ex. sur les tâches repoussées ou l'équilibre pro/perso). Tutoiement, direct, bienveillant, sans emoji.", `Réglées : ${total} (pro ${sp2.pro}, perso ${sp2.perso}). Par chantier/thème : ${top.map(([k, v]) => k + " " + v).join(", ")}. Repoussées plusieurs fois : ${stuck.map(i => i.title).join(" ; ") || "aucune"}.`, 160); } catch (e) {} }
+  const lbl = Array.from({ length: 7 }, (_, k) => WD[addDays(k - 6).getDay()].slice(0, 1).toUpperCase());
+  $("ritBody").innerHTML = `
+    <div class="ritH">Ta semaine</div>
+    <p class="ritMsg">${esc(msg)}</p>
+    <div class="bars">${days.map((v, k) => `<div class="bar"><i style="height:${Math.round(8 + 80 * v / mx)}px;opacity:${v ? 1 : .25}"></i><b>${v || ""}</b><span>${lbl[k]}</span></div>`).join("")}</div>
+    <div class="two" style="margin-top:20px"><div><div class="lab">Pro</div><div class="ritBig">${sp2.pro}</div></div><div><div class="lab">Perso</div><div class="ritBig">${sp2.perso}</div></div></div>
+    ${top.length ? `<div class="lab">Là où tu as avancé</div><p style="font-size:15px;line-height:1.7">${top.map(([k, v]) => `${esc(k)} · ${v}`).join("<br>")}</p>` : ""}
+    ${stuck.length ? `<div class="lab">Repoussées plusieurs fois</div>` + stuck.slice(0, 5).map(i => `<div class="it u${i.u}"><span class="dot"></span><div class="tx"><div class="tt">${esc(i.title)}</div><div class="sub">reportée ${i.ppN} fois</div></div></div>`).join("") : ""}
+    <div class="foot"><div class="l"></div><button class="ok" id="ritGo">nouvelle semaine</button></div>`;
+}
+$("ritual").addEventListener("click", e => {
+  const f = e.target.closest("[data-rf]");
+  if (f) { const p = RITUAL.plan[+f.dataset.rf]; applyPlan(); ritDone("matin"); hide(); setTimeout(() => startFocus(p.i.id, p.sp), 200); return; }
+  if (e.target.closest("#ritLater")) { hide(); return; }
+  if (!e.target.closest("#ritGo") || !RITUAL) return;
+  const k = RITUAL.kind;
+  if (k === "matin") { applyPlan(); toast(RITUAL.plan.length ? "c'est parti · priorités placées" : "bonne journée"); }
+  if (k === "soir" && RITUAL.left.length) {
+    const tm = ymd(addDays(1)), touched = {};
+    for (const { i, sp } of RITUAL.left) { i.due = tm; i.notified = false; touched[sp] = true; }
+    for (const sp of Object.keys(touched)) { const st = spaceState(sp); st.items = st.items.map(x => (RITUAL.left.find(l => l.i.id === x.id) || { i: x }).i); putSpace(sp, st); }
+    RITUAL.left.forEach(({ i }) => gSync(i));
+    toast("tout glisse à demain · bonne soirée");
+  }
+  ritDone(k); hide(); render();
+});
+function applyPlan(){
+  if (!RITUAL || RITUAL.kind !== "matin") return;
+  const touched = {};
+  for (const p of RITUAL.plan) {
+    const st = spaceState(p.sp), it = st.items.find(x => x.id === p.i.id); if (!it) continue;
+    it.due = today(); if (p.time && /^\d\d:\d\d$/.test(p.time)) it.time = p.time; if (it.u < 2) it.u = 2; it.notified = false; it.prio = today();
+    touched[p.sp] = st; gSync(it).then(() => putSpace(p.sp, st));
+  }
+  for (const sp of Object.keys(touched)) putSpace(sp, touched[sp]);
+  render();
+}
+function autoRitual(){
+  const R = RIT(); if (!R.on || document.querySelector(".sheet.show") || listening || typing) return;
+  const rs = LS.get("tempo_rit", {}), shown = LS.get("tempo_ritshown", {}), t = today(), hmNow = nowHM(), dow = new Date().getDay();
+  const want = hmNow >= R.matin && hmNow < "12:00" ? "matin" : dow === 0 && hmNow >= R.semaine ? "semaine" : hmNow >= R.soir && dow !== 0 ? "soir" : null;
+  if (!want || rs[want] === t || shown[want] === t) return;
+  shown[want] = t; LS.set("tempo_ritshown", shown);
+  openRitual(want);
+}
+
+/* ===== D. MODE FOCUS ===== */
+let FOC = null, focT = null, wake = null;
+async function startFocus(id, sp){
+  sp = sp || SPACE;
+  const st = spaceState(sp), it = st.items.find(x => x.id === id); if (!it) return;
+  const min = +(CFG.focusMin || 25);
+  FOC = { id, sp, title: it.title, end: Date.now() + min * 60000, total: min * 60000, paused: 0 };
+  LS.set("tempo_focus", { id, sp, title: it.title, end: FOC.end }); schedulePushSync();
+  $("fTitle").textContent = it.title; $("fStep").textContent = "…"; $("fPause").textContent = "pause";
+  $("focus").classList.add("show"); vib(15);
+  try { wake = await navigator.wakeLock.request("screen"); } catch (e) {}
+  clearInterval(focT); focT = setInterval(focTick, 250); focTick();
+  const fallback = { appel: "Cherche le numéro et pose ton pouce sur « appeler ».", mail: "Ouvre le brouillon et écris juste la première phrase.", message: "Ouvre la conversation et tape le premier mot.", rdv: "Note sur quoi tu dois être prêt, en une ligne.", materiel: "Liste les 3 références dont tu as besoin.", facture: "Ouvre l'appli de ta banque, rien de plus." };
+  let step = fallback[it.cat] || "Prends 2 minutes : écris la toute première action, la plus petite possible.";
+  if (CFG.key) { try { step = await claudeText("Donne à Raphaël UN tout premier pas, concret et physique, faisable en 2 minutes maximum, pour démarrer cette tâche sans réfléchir. Une seule phrase, 15 mots max, à l'impératif, tutoiement, sans emoji.", `Tâche : ${it.title}${it.ch ? " (" + it.ch + ")" : ""}${it.note ? " — " + it.note : ""}`, 80); } catch (e) {} }
+  if (FOC && FOC.id === id) $("fStep").textContent = step;
+}
+function focTick(){
+  if (!FOC) return;
+  const left = FOC.paused ? FOC.paused : FOC.end - Date.now();
+  const l = Math.max(0, left), m = Math.floor(l / 60000), s = Math.floor(l % 60000 / 1000);
+  $("fTime").textContent = `${m}:${pad(s)}`;
+  const C = 2 * Math.PI * 140; $("fArc").style.strokeDasharray = C; $("fArc").style.strokeDashoffset = C * (l / FOC.total);
+  if (l <= 0 && !FOC.paused) { clearInterval(focT); vib([200, 120, 200, 120, 400]); $("fTime").textContent = "terminé"; $("fStep").textContent = "Bravo. C'est fait, ou on relance 5 minutes ?"; $("fPause").textContent = "+5 min"; FOC.over = true; }
+}
+function stopFocus(){ clearInterval(focT); FOC = null; LS.set("tempo_focus", null); schedulePushSync(); $("focus").classList.remove("show"); try { wake && wake.release(); } catch (e) {} wake = null; }
+$("fPause").onclick = () => {
+  if (!FOC) return;
+  if (FOC.over) { FOC.over = false; FOC.end = Date.now() + 5 * 60000; FOC.total = 5 * 60000; $("fPause").textContent = "pause"; clearInterval(focT); focT = setInterval(focTick, 250); }
+  else if (FOC.paused) { FOC.end = Date.now() + FOC.paused; FOC.paused = 0; $("fPause").textContent = "pause"; }
+  else { FOC.paused = FOC.end - Date.now(); $("fPause").textContent = "reprendre"; }
+  LS.set("tempo_focus", FOC.paused ? null : { id: FOC.id, sp: FOC.sp, title: FOC.title, end: FOC.end }); schedulePushSync();
+};
+$("fDone").onclick = () => {
+  if (!FOC) return; const { id, sp } = FOC; stopFocus();
+  const st = spaceState(sp), it = st.items.find(x => x.id === id);
+  if (it) { if (sp === SPACE) markDone(it); else { it.done = true; it.doneAt = Date.now(); putSpace(sp, st); gSync(it); } flashOk(); render(); toast("réglé · bien joué"); }
+};
+$("fStop").onclick = stopFocus;
 
 /* ===== espaces pro / perso ===== */
 function paintSpace(){
@@ -1779,17 +2077,29 @@ function handleShare(){
   const parts = [p.get("title"), p.get("text"), p.get("url")].filter(Boolean);
   if (parts.length) { history.replaceState(null, "", location.pathname); capture(parts.join(" — "), "partage"); }
   else if (p.get("quick")) { history.replaceState(null, "", location.pathname); startListen(); }
+  else if (p.get("ritual")) { history.replaceState(null, "", location.pathname); setTimeout(() => openRitual(p.get("ritual")), 300); }
+  else if (p.get("task")) {
+    history.replaceState(null, "", location.pathname);
+    const sp = p.get("sp") === "perso" ? "perso" : "pro"; if (sp !== SPACE) switchSpace(sp);
+    const it = S.items.find(i => i.id === p.get("task")); if (it) setTimeout(() => openEdit(it), 300);
+  }
+  else if (p.get("focus")) { history.replaceState(null, "", location.pathname); const F = LS.get("tempo_focus", null); if (F) { startFocus(F.id, F.sp); } }
+  else return false;
+  return true;
 }
 if ("serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).catch(() => {});
 const autoMail = () => { if (CFG.msId && MS.rt && CFG.key && Date.now() - (S.lastMailCheck || 0) > 20 * 60000) checkMail(false); };
-paintSpace(); applyVisual(); render(); paintMailBtn();
+paintSpace(); applyVisual(); render(); paintMailBtn(); paintPush();
 gHandleRedirect();
 handleImport();
 window.addEventListener("hashchange", handleImport);
-msHandleRedirect().then(was => { if (!was) { handleShare(); autoMail(); } paintMailBtn(); });
+msHandleRedirect().then(was => {
+  if (!was) { const had = handleShare(); autoMail(); if (!had) { const F = LS.get("tempo_focus", null); if (F && F.end > Date.now()) startFocus(F.id, F.sp); else setTimeout(autoRitual, 900); } }
+  paintMailBtn(); if (pushOn()) syncReminders();
+});
 checkReminders();
 setInterval(() => { checkReminders(); if (!listening && !typing && !cur) render(); }, 60000);
-document.addEventListener("visibilitychange", () => { if (!document.hidden) { render(); checkReminders(); autoMail(); askAck(); } });
+document.addEventListener("visibilitychange", () => { if (!document.hidden) { render(); checkReminders(); autoMail(); askAck(); setTimeout(autoRitual, 700); } });
 </script>
 </body>
 </html>
