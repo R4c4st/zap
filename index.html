@@ -302,7 +302,7 @@ body.const .ring.on{transform:none}
     <button class="ok" id="sSave">OK</button>
   </div>
   <input type="file" id="sFile" accept=".json" hidden>
-  <p class="small" style="margin-top:24px;text-align:center">Tempo v34 · Rc4st</p>
+  <p class="small" style="margin-top:24px;text-align:center">Tempo v35 · Rc4st</p>
 </div>
 
 <div class="sheet" id="menu">
@@ -693,7 +693,10 @@ RÈGLES
 - title : court, commence par un verbe à l'infinitif, compréhensible seul.
 - u : 3 = aujourd'hui / bloquant / client qui attend ; 2 = cette semaine, important ; 1 = quand il pourra.
 - Place chaque action dans un moment réaliste de sa journée via due (YYYY-MM-DD) et time (HH:MM) : matin 09:00, après-midi 14:00, fin de journée 17:30. Un appel urgent sans heure → dès que possible aujourd'hui. Sans indice de date et pas urgent → due null.
-- note : détail utile (référence, quantité, nom) ou "".
+- note : détail utile, court et naturel, en français parlé (référence, quantité, nom, lieu, contrainte). Ne répète pas le title. N'écris JAMAIS une date au format AAAA-MM-JJ dans title ou note : écris « vendredi 20 », « demain soir ». Sinon "".
+- HÉSITATIONS : s'il hésite entre deux moments (« demain vers 19h, ou plutôt vendredi »), place la tâche au PREMIER moment réaliste (due + time au début du créneau) et écris l'autre option dans note (« sinon vendredi 20 »). Un créneau « 19h-19h30 » → time 19:00.
+- CONTEXTE : s'il explique sa journée (« je serai à Nancy vers 19h après Marne-la-Vallée »), garde seulement ce qui aide à faire la tâche (« de retour à Nancy vers 19h »), pas le récit.
+- PLUSIEURS CHOSES PRÉCISES dans une même mission (plusieurs colis avec des points relais, plusieurs pièces à récupérer…) : crée UNE action par chose identifiable (ex. « Récupérer le colis Vinted au relais du Tabac Saint-Max »), sinon une seule action globale.
 ${SPACE === "perso" ? `- VIE PRIVÉE : cat "rdv" pour un rendez-vous à prendre ou à honorer ; "facture" pour payer/régler (date limite dans due si dite) ; "tache" pour une chose à faire ; "remarque" pour une idée ou une info.
 - COURSES : chaque article à acheter = UNE entrée séparée, cat "courses", title = juste l'article avec la quantité si dite (« Lait », « 6 œufs »), sans verbe, due null.
 - "ch" contient le thème (Enfants, Maison, Voiture…) au lieu d'un chantier.
