@@ -187,7 +187,7 @@ body{background:radial-gradient(700px 460px at 50% 26%,rgba(var(--glow),.10),tra
   </div>
   <button id="eMk" style="margin-top:18px;font-size:14px;color:rgb(var(--glow))">✉ préparer un message</button>
   <div class="foot">
-    <div class="l"><button id="eCal">agenda Outlook</button><button id="eShare">envoyer</button><button id="eDel" class="del">supprimer</button></div>
+    <div class="l"><button id="eCal">agenda</button><button id="eShare">envoyer</button><button id="eDel" class="del">supprimer</button></div>
     <button class="ok" id="eSave">OK</button>
   </div>
 </div>
@@ -214,7 +214,7 @@ body{background:radial-gradient(700px 460px at 50% 26%,rgba(var(--glow),.10),tra
   <label class="small" style="display:flex;gap:10px;align-items:center;margin-top:10px"><input type="checkbox" id="sCal" style="width:auto"> mettre mes tâches datées dans l'agenda Outlook (cochées « ✓ » quand c'est fait)</label>
   <div class="foot" style="margin-top:10px"><div class="l"><button id="sMsGo" style="color:var(--fg)">connecter Outlook</button><button id="sMsOff">déconnecter</button></div></div>
   </div>
-  <label class="small" style="display:flex;gap:10px;align-items:center;margin-top:22px"><input type="checkbox" id="sAg" style="width:auto"> proposer d'ajouter les rendez-vous à mon agenda Outlook</label>
+  <label class="small" style="display:flex;gap:10px;align-items:center;margin-top:22px"><input type="checkbox" id="sAg" style="width:auto"> proposer d'ajouter les rendez-vous à mon agenda</label>
   <div class="lab">Fin de dictée</div>
   <select id="sSil"><option value="0">je touche le rond pour finir</option><option value="2">après 2 s de silence</option><option value="3">après 3 s de silence</option><option value="5">après 5 s de silence</option></select>
   <p class="small">Tu peux aussi finir en disant « c'est tout ».</p>
@@ -224,7 +224,7 @@ body{background:radial-gradient(700px 460px at 50% 26%,rgba(var(--glow),.10),tra
     <button class="ok" id="sSave">OK</button>
   </div>
   <input type="file" id="sFile" accept=".json" hidden>
-  <p class="small" style="margin-top:24px;text-align:center">Tempo v18 · Rc4st</p>
+  <p class="small" style="margin-top:24px;text-align:center">Tempo v19 · Rc4st</p>
 </div>
 
 <div class="sheet" id="menu">
@@ -1283,12 +1283,27 @@ function agendaUrl(o){
   const q = new URLSearchParams({ path: "/calendar/action/compose", rru: "addevent", subject: (o.ch ? "[" + o.ch + "] " : "") + o.title, body: o.note || "", startdt: st, enddt: en, allday: t ? "false" : "true" });
   return "https://outlook.live.com/calendar/0/deeplink/compose?" + q.toString();
 }
-function addToAgenda(it){ window.open(agendaUrl(it), "_blank"); it.inCal = Date.now(); save(); render(); }
+/* Android : ouvre directement l'appli agenda du téléphone (Outlook, Samsung Agenda, Google Agenda…) */
+const IS_ANDROID = /Android/i.test(navigator.userAgent);
+function agendaIntent(o){
+  const dv = o.due || today(), dur = o.cat === "rdv" ? 60 : 30;
+  let b, e, all = !o.time;
+  if (o.time) { b = new Date(`${dv}T${o.time}:00`); e = new Date(b.getTime() + dur * 60000); }
+  else { b = new Date(`${dv}T00:00:00`); e = new Date(b.getTime() + 86400000); }
+  const x = v => encodeURIComponent(v || "");
+  return "intent://#Intent;action=android.intent.action.INSERT;type=vnd.android.cursor.dir/event"
+    + ";S.title=" + x((o.ch ? "[" + o.ch + "] " : "") + o.title)
+    + ";S.description=" + x(o.note || "")
+    + ";l.beginTime=" + b.getTime() + ";l.endTime=" + e.getTime() + ";B.allDay=" + (all ? "true" : "false")
+    + ";S.browser_fallback_url=" + x(agendaUrl(o)) + ";end";
+}
+function openAgenda(o){ if (IS_ANDROID) location.href = agendaIntent(o); else window.open(agendaUrl(o), "_blank"); }
+function addToAgenda(it){ openAgenda(it); it.inCal = Date.now(); save(); render(); }
 const wantsAgenda = i => i.due && !i.done && !i.inCal && (i.cat === "rdv" || (i.time && i.cat !== "courses" && i.cat !== "memo" && /\b(rdv|rendez|reunion|visite|vpi|coiffeur|medecin|dentiste|garage|rappel)\b/.test(norm(i.title))));
 $("eCal").onclick = () => {
   if (!cur) return;
   const o = { title: $("eTitle").value, ch: $("eCh").value, note: $("eNote").value, due: $("eDate").value || today(), time: $("eTime").value, cat: $("eCat").value };
-  window.open(agendaUrl(o), "_blank"); cur.inCal = Date.now(); save();
+  openAgenda(o); cur.inCal = Date.now(); save();
 };
 $("eShare").onclick = async () => {
   const txt = ($("eCh").value ? "[" + $("eCh").value + "] " : "") + $("eTitle").value + ($("eNote").value ? "\n" + $("eNote").value : "");
