@@ -114,7 +114,9 @@ body{background:radial-gradient(700px 460px at 50% 26%,rgba(var(--glow),.10),tra
 .swbg{position:absolute;inset:0;display:flex;justify-content:space-between;align-items:center;padding:0 26px;font-size:13px;letter-spacing:1px;text-transform:uppercase;color:var(--mut)}
 .swbg span{opacity:0;transition:opacity .2s,color .2s}
 .sw.dirR .swbg .r,.sw.dirL .swbg .l{opacity:1}
-.sw.goR .swbg .r{color:var(--ok)} .sw.goL .swbg .l{color:rgb(var(--glow))}
+.sw.goR .swbg .r{color:var(--ok)} .sw.goL .swbg .l{color:var(--u3)}
+.sw{-webkit-touch-callout:none}
+.it.press{opacity:.55;transition:opacity .4s}
 .farbar{display:block;width:100%;margin-top:34px;padding:14px 0;border-top:1px solid var(--faint);border-bottom:1px solid var(--faint);font-size:12px;letter-spacing:2.2px;text-transform:uppercase;color:var(--mut);text-align:left}
 .far{display:none}.far.show{display:block}
 .menu{display:flex;flex-direction:column}
@@ -221,7 +223,7 @@ body{background:radial-gradient(700px 460px at 50% 26%,rgba(var(--glow),.10),tra
     <button class="ok" id="sSave">OK</button>
   </div>
   <input type="file" id="sFile" accept=".json" hidden>
-  <p class="small" style="margin-top:24px;text-align:center">Tempo v16 · Rc4st</p>
+  <p class="small" style="margin-top:24px;text-align:center">Tempo v17 · Rc4st</p>
 </div>
 
 <div class="sheet" id="menu">
@@ -744,7 +746,7 @@ function itHTML(i, fresh, nosw){
     <button class="dot" data-a="done" aria-label="réglé"></button>
     <div class="tx" data-a="edit"><div class="tt">${esc(i.title)}</div>${whenLabel(i) ? `<div class="sub">${esc(whenLabel(i))}</div>` : ""}</div></div>`;
   if (nosw || i.done) return row;
-  return `<div class="sw"><div class="swbg"><span class="r">${actLabel(i)} →</span><span class="l">← reporter</span></div>${row}</div>`;
+  return `<div class="sw"><div class="swbg"><span class="r">${actLabel(i)} →</span><span class="l">← supprimer</span></div>${row}</div>`;
 }
 function render(fresh){
   fresh = fresh || [];
@@ -939,14 +941,28 @@ let swipedAt = 0, sw = null;
 document.addEventListener("pointerdown", e => {
   const row = e.target.closest(".sw .it"); if (!row || e.button > 0) return;
   sw = { row, x: e.clientX, y: e.clientY, dx: 0, on: false, id: e.pointerId };
+  /* appui long = reporter */
+  const me = sw; row.classList.add("press");
+  me.lp = setTimeout(() => {
+    row.classList.remove("press");
+    if (sw !== me || me.on) return;
+    sw = null; swipedAt = Date.now(); vib(15);
+    const it = S.items.find(i => i.id === row.dataset.id); if (it) openPostpone(it);
+  }, 520);
 });
+document.addEventListener("contextmenu", e => { if (e.target.closest(".sw")) e.preventDefault(); });
+function deleteItem(it){
+  const idx = S.items.indexOf(it); if (idx < 0) return;
+  S.items.splice(idx, 1); save(); render(); calDel(it); vib(12);
+  toast("supprimé", "annuler", () => { S.items.splice(idx, 0, it); save(); render(); calSync(it); });
+}
 document.addEventListener("pointermove", e => {
   if (!sw || e.pointerId !== sw.id) return;
   const dx = e.clientX - sw.x, dy = e.clientY - sw.y;
   if (!sw.on) {
-    if (Math.abs(dy) > 12 && Math.abs(dy) > Math.abs(dx)) { sw = null; return; }
+    if (Math.abs(dy) > 12 && Math.abs(dy) > Math.abs(dx)) { clearTimeout(sw.lp); sw.row.classList.remove("press"); sw = null; return; }
     if (Math.abs(dx) < 14) return;
-    sw.on = true; sw.row.style.transition = "none";
+    sw.on = true; clearTimeout(sw.lp); sw.row.classList.remove("press"); sw.row.style.transition = "none";
     try { sw.row.setPointerCapture(sw.id); } catch (er) {}
   }
   sw.dx = dx;
@@ -958,12 +974,13 @@ document.addEventListener("pointermove", e => {
 });
 function endSwipe(){
   if (!sw) return; const s = sw; sw = null;
+  clearTimeout(s.lp); s.row.classList.remove("press");
   if (!s.on) return;
   swipedAt = Date.now();
   s.row.style.transition = ""; s.row.style.transform = "";
   s.row.parentNode.classList.remove("goR", "goL", "dirR", "dirL");
   const it = S.items.find(i => i.id === s.row.dataset.id); if (!it) return;
-  if (s.dx > 90) act(it); else if (s.dx < -90) openPostpone(it);
+  if (s.dx > 90) act(it); else if (s.dx < -90) deleteItem(it);
 }
 document.addEventListener("pointerup", endSwipe);
 document.addEventListener("pointercancel", endSwipe);
