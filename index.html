@@ -37,7 +37,7 @@ body{background:radial-gradient(700px 460px at 50% 26%,rgba(var(--glow),.10),tra
 .gl b{display:block;font-size:24px;font-weight:200;color:var(--fg);letter-spacing:0;text-transform:none;margin-bottom:2px;position:relative}
 .gl.hot b::after{content:"";position:absolute;top:6px;margin-left:5px;width:6px;height:6px;border-radius:50%;background:var(--u3);box-shadow:0 0 8px var(--u3)}
 /* ring */
-.stage{height:min(40vh,360px);display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative}
+.stage{height:min(46vh,420px);padding-top:56px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative}
 .ring{width:168px;height:168px;border-radius:50%;position:relative;display:grid;place-items:center;transition:transform .5s cubic-bezier(.2,.8,.2,1)}
 .ring::before{content:"";position:absolute;inset:0;border-radius:50%;border:1px solid rgba(var(--glow),.35);background:radial-gradient(circle,rgba(var(--glow),.10) 0%,rgba(var(--glow),.04) 55%,transparent 72%);box-shadow:0 0 50px rgba(var(--glow),.10);transition:.5s}
 .ring::after{content:"";position:absolute;inset:-14px;border-radius:50%;border:1px solid rgba(var(--glow),.12);animation:breathe 9s ease-in-out infinite}
@@ -56,11 +56,10 @@ body{background:radial-gradient(700px 460px at 50% 26%,rgba(var(--glow),.10),tra
 @keyframes beat{0%,100%{transform:scale(.8)}50%{transform:scale(1.15)}}
 .ripple{position:absolute;inset:0;border-radius:50%;opacity:0;pointer-events:none;background:radial-gradient(circle,rgba(var(--glow),.42) 0%,rgba(var(--glow),.20) 32%,rgba(var(--glow),.06) 55%,transparent 70%)}
 /* au repos : des ronds dans l'eau, lents, qui naissent du cœur et s'éloignent */
-.ring .ripple{animation:pond 5.4s cubic-bezier(.25,.6,.35,1) infinite}
-.ring .ripple:nth-child(2){animation-delay:1.8s}.ring .ripple:nth-child(3){animation-delay:3.6s}
+.ring .ripple{display:none}
+.pulse{position:absolute;inset:0;border-radius:50%;pointer-events:none;opacity:0;background:radial-gradient(circle,rgba(var(--glow),.46) 0%,rgba(var(--glow),.22) 30%,rgba(var(--glow),.07) 54%,transparent 70%);will-change:transform,opacity}
 @keyframes pond{0%{transform:scale(.15);opacity:0}12%{opacity:.9}55%{opacity:.35}100%{transform:scale(1.5);opacity:0}}
-.ring.on .ripple{animation:rip 2.4s ease-out infinite}
-.ring.on .ripple:nth-child(2){animation-delay:.8s}.ring.on .ripple:nth-child(3){animation-delay:1.6s}
+
 @keyframes rip{0%{transform:scale(.25);opacity:0}10%{opacity:1}100%{transform:scale(1.85);opacity:0}}
 .ring.ok::before{border-color:var(--ok);box-shadow:0 0 70px rgba(127,216,166,.35)}
 .ring.ok .core{background:var(--ok);box-shadow:0 0 24px var(--ok)}
@@ -76,8 +75,7 @@ body{background:radial-gradient(700px 460px at 50% 26%,rgba(var(--glow),.10),tra
 .ring.think .core{width:18px;height:18px;animation:thinkpulse 1.15s ease-in-out infinite}
 @keyframes thinkpulse{0%,100%{transform:scale(.8);box-shadow:0 0 14px rgba(var(--glow),.7)}50%{transform:scale(1.25);box-shadow:0 0 34px rgba(var(--glow),1)}}
 .ring.think .core::after{animation:halo 1.15s ease-in-out infinite}
-.ring.think .ripple{animation:rip 1.8s ease-out infinite}
-.ring.think .ripple:nth-child(2){animation-delay:.6s}.ring.think .ripple:nth-child(3){animation-delay:1.2s}
+
 
 .hint{margin-top:30px;font-size:14px;color:var(--mut);letter-spacing:.3px;min-height:20px;text-align:center;padding:0 30px;transition:.3s}
 .live{margin-top:26px;font-size:21px;line-height:1.45;text-align:center;padding:0 30px;max-height:28vh;overflow:auto;font-weight:300}
@@ -247,7 +245,7 @@ body{background:radial-gradient(700px 460px at 50% 26%,rgba(var(--glow),.10),tra
     <button class="ok" id="sSave">OK</button>
   </div>
   <input type="file" id="sFile" accept=".json" hidden>
-  <p class="small" style="margin-top:24px;text-align:center">Tempo v27 · Rc4st</p>
+  <p class="small" style="margin-top:24px;text-align:center">Tempo v28 · Rc4st</p>
 </div>
 
 <div class="sheet" id="menu">
@@ -1565,6 +1563,28 @@ $("mask").onclick = hide;
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 let rec = null, finalTxt = "", interim = "", listening = false, typing = false, silT = null;
 const hint = t => { $("hint").textContent = t; };
+/* pulsar : des vagues de lumière à un rythme libre, comme des pensées */
+const rnd = (a, b) => a + Math.random() * (b - a);
+function spawnPulse(strong){
+  const R = $("ring"); if (!R || document.hidden) return;
+  const p = document.createElement("span"); p.className = "pulse";
+  const big = strong ? rnd(1.6, 2.25) : rnd(1.25, 2.0), dx = rnd(-7, 7), dy = rnd(-7, 7);
+  R.insertBefore(p, R.querySelector(".core"));
+  const dur = strong ? rnd(1600, 2600) : rnd(3200, 6200), peak = strong ? rnd(.75, 1) : rnd(.45, .95);
+  p.animate([
+    { transform: `translate(0,0) scale(${rnd(.08, .22)})`, opacity: 0 },
+    { transform: `translate(${dx * .4}px,${dy * .4}px) scale(${big * .35})`, opacity: peak, offset: rnd(.12, .25) },
+    { transform: `translate(${dx}px,${dy}px) scale(${big})`, opacity: 0 }
+  ], { duration: dur, easing: "cubic-bezier(.2,.6,.3,1)" }).onfinish = () => p.remove();
+}
+(function pulseLoop(){
+  const R = $("ring"), st = R && R.classList.contains("think") ? "think" : R && R.classList.contains("on") ? "on" : "idle";
+  spawnPulse(st !== "idle");
+  if (st === "idle" && Math.random() < .28) setTimeout(() => spawnPulse(false), rnd(180, 600));
+  const next = st === "think" ? rnd(220, 620) : st === "on" ? rnd(350, 1100) : rnd(700, 3200);
+  setTimeout(pulseLoop, next);
+})();
+
 function ringState(s){ const r = $("ring"); r.classList.remove("on", "think", "ok"); if (s) r.classList.add(s); }
 function flashOk(){ ringState("ok"); setTimeout(() => { if (!listening) ringState(""); }, 900); }
 function idle(){
