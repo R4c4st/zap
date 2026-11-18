@@ -221,7 +221,7 @@ body{background:radial-gradient(700px 460px at 50% 26%,rgba(var(--glow),.10),tra
     <button class="ok" id="sSave">OK</button>
   </div>
   <input type="file" id="sFile" accept=".json" hidden>
-  <p class="small" style="margin-top:24px;text-align:center">Tempo v15 · Rc4st</p>
+  <p class="small" style="margin-top:24px;text-align:center">Tempo v16 · Rc4st</p>
 </div>
 
 <div class="sheet" id="menu">
@@ -1000,7 +1000,7 @@ function sendSms(it, picked){
   if (m.via === "wa") {
     const intl = num.replace(/^\+/, "").replace(/^0(\d{9})$/, "33$1");
     location.href = `https://wa.me/${intl}?text=${encodeURIComponent(m.body || "")}`;
-    setTimeout(() => { markDone(it); hide(); render(); toast("WhatsApp parti · réglé", "annuler", () => { unDone(it); render(); }); }, 600);
+    waitAck(it, "WhatsApp", m.to);
     return;
   }
   if (!num && PICK && !picked) {
@@ -1009,7 +1009,7 @@ function sendSms(it, picked){
     return;
   }
   location.href = `sms:${num}?body=${encodeURIComponent(m.body || "")}`;
-  setTimeout(() => { markDone(it); hide(); render(); toast("texto parti · réglé", "annuler", () => { unDone(it); render(); }); }, 600);
+  waitAck(it, "texto", m.to);
 }
 function act(it){
   if (it.cat === "appel") {
@@ -1034,11 +1034,14 @@ function act(it){
   if (it.cat === "mail") { openEdit(it); makeMail(); return; }
   openEdit(it);
 }
+/* on ne coche qu'après confirmation : la tâche reste tant que tu n'as pas dit « oui » */
+function waitAck(it, kind, who){ S.pendingAck = { id: it.id, at: Date.now(), who: who || "", kind }; save(); hide(); render(); }
 function askAck(){
   const p = S.pendingAck; if (!p || Date.now() - p.at < 2500) return;
   const it = S.items.find(i => i.id === p.id); S.pendingAck = null; save();
   if (!it || it.done) return;
-  setTimeout(() => toast(`appel${p.who ? " avec " + p.who : ""} fait ?`, "oui, réglé", () => { markDone(it); render(); }), 400);
+  const q = !p.kind ? `appel${p.who ? " avec " + p.who : ""} fait ?` : `${p.kind}${p.who ? " à " + p.who : ""} envoyé ?`;
+  setTimeout(() => toast(q, "oui, réglé", () => { if (it.mail) it.mail.sent = Date.now(); markDone(it); render(); flashOk(); }, 10000), 400);
 }
 
 /* reporter */
@@ -1216,10 +1219,8 @@ function sendMail(it, picked){
   }
   if (to && c && !c.email) setContact(c.name, { email: to });
   location.href = `mailto:${encodeURIComponent(to).replace(/%40/g, "@")}?subject=${encodeURIComponent(m.subject || "")}&body=${encodeURIComponent(m.body || "")}`;
-  setTimeout(() => {
-    it.mail.sent = Date.now(); markDone(it); hide(); render();
-    toast("mail parti · réglé", "annuler", () => { unDone(it); render(); });
-  }, 600);
+  if (!to) setTimeout(() => toast(`pas d'adresse pour ${m.to || "ce mail"} : tape-la dans Outlook`), 300);
+  waitAck(it, "mail", m.to);
 }
 $("eSave").onclick = () => {
   if (!cur) return;
@@ -1409,10 +1410,10 @@ $("bPaste").onclick = async () => {
 /* ===== fx ===== */
 function vib(p){ try { navigator.vibrate && navigator.vibrate(p); } catch (e) {} }
 let tt = null;
-function toast(msg, btn, fn){
+function toast(msg, btn, fn, ms){
   $("tTxt").textContent = msg; const b = $("tBtn");
   b.textContent = btn || ""; b.style.display = btn ? "" : "none"; b.onclick = () => { fn && fn(); $("toast").classList.remove("show"); };
-  $("toast").classList.add("show"); clearTimeout(tt); tt = setTimeout(() => $("toast").classList.remove("show"), btn ? 4000 : 2200);
+  $("toast").classList.add("show"); clearTimeout(tt); tt = setTimeout(() => $("toast").classList.remove("show"), ms || (btn ? 4000 : 2200));
 }
 
 /* ===== reminders ===== */
