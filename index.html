@@ -41,10 +41,12 @@ body{background:radial-gradient(700px 460px at 50% 26%,rgba(var(--glow),.10),tra
 .ring{width:168px;height:168px;border-radius:50%;position:relative;display:grid;place-items:center;transition:transform .5s cubic-bezier(.2,.8,.2,1)}
 .ring::before{content:"";position:absolute;inset:0;border-radius:50%;border:1.5px solid rgba(var(--glow),.75);box-shadow:0 0 40px rgba(var(--glow),.12),inset 0 0 30px rgba(var(--glow),.06);transition:.5s}
 .ring::after{content:"";position:absolute;inset:-14px;border-radius:50%;border:1px solid rgba(var(--glow),.12);animation:breathe 9s ease-in-out infinite}
-.core{width:10px;height:10px;border-radius:50%;background:rgb(var(--glow));box-shadow:0 0 18px rgba(var(--glow),.8);transition:.4s}
+.core{width:12px;height:12px;border-radius:50%;background:rgb(var(--glow));box-shadow:0 0 18px rgba(var(--glow),.8);transition:width .4s,height .4s,background .4s;position:relative}
+.core::after{content:"";position:absolute;inset:-14px;border-radius:50%;background:radial-gradient(circle,rgba(var(--glow),.35),transparent 70%);animation:halo 4.2s ease-in-out infinite}
+@keyframes halo{0%,100%{transform:scale(.7);opacity:.5}50%{transform:scale(1.35);opacity:1}}
 @keyframes breathe{0%,100%{transform:scale(.96);opacity:.35}45%{transform:scale(1.06);opacity:1}}
-.core{animation:corebreathe 9s ease-in-out infinite}
-@keyframes corebreathe{0%,100%{transform:scale(.85);opacity:.75}45%{transform:scale(1.15);opacity:1}}
+.core{animation:corebreathe 4.2s ease-in-out infinite}
+@keyframes corebreathe{0%,100%{transform:scale(.88);opacity:.8}30%{transform:scale(1.06);opacity:.95}50%{transform:scale(1.14);opacity:1}72%{transform:scale(1.02);opacity:.92}}
 .ring::before{animation:ringbreathe 9s ease-in-out infinite}
 @keyframes ringbreathe{0%,100%{transform:scale(.985)}45%{transform:scale(1.015)}}
 .ring.on{transform:scale(1.08)}
@@ -57,8 +59,20 @@ body{background:radial-gradient(700px 460px at 50% 26%,rgba(var(--glow),.10),tra
 @keyframes rip{0%{transform:scale(1);opacity:.6}100%{transform:scale(1.9);opacity:0}}
 .ring.ok::before{border-color:var(--ok);box-shadow:0 0 70px rgba(127,216,166,.35)}
 .ring.ok .core{background:var(--ok);box-shadow:0 0 24px var(--ok)}
-.ring.think .core{animation:think 1s linear infinite}
-@keyframes think{0%{transform:translateX(-30px)}50%{transform:translateX(30px)}100%{transform:translateX(-30px)}}
+/* réflexion de l'IA : arc lumineux qui tourne + ondes + cœur qui pulse */
+.orbit{position:absolute;inset:-6px;border-radius:50%;opacity:0;transition:opacity .5s;pointer-events:none;
+  background:conic-gradient(from 0deg,transparent 0 55%,rgba(var(--glow),.15) 70%,rgba(var(--glow),.95) 92%,#fff 96%,transparent 100%);
+  -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 4px),#000 calc(100% - 3px));mask:radial-gradient(farthest-side,transparent calc(100% - 4px),#000 calc(100% - 3px))}
+.orbit.o2{inset:-18px;opacity:0;background:conic-gradient(from 180deg,transparent 0 70%,rgba(var(--glow),.55) 95%,transparent 100%)}
+.ring.think .orbit{opacity:1;animation:spin 1.15s linear infinite}
+.ring.think .orbit.o2{opacity:.7;animation:spin 2.3s linear infinite reverse}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ring.think::before{border-color:rgba(var(--glow),.35);box-shadow:0 0 60px rgba(var(--glow),.25),inset 0 0 40px rgba(var(--glow),.12)}
+.ring.think .core{width:18px;height:18px;animation:thinkpulse 1.15s ease-in-out infinite}
+@keyframes thinkpulse{0%,100%{transform:scale(.8);box-shadow:0 0 14px rgba(var(--glow),.7)}50%{transform:scale(1.25);box-shadow:0 0 34px rgba(var(--glow),1)}}
+.ring.think .core::after{animation:halo 1.15s ease-in-out infinite}
+.ring.think .ripple{animation:rip 1.8s ease-out infinite}
+.ring.think .ripple:nth-child(2){animation-delay:.6s}.ring.think .ripple:nth-child(3){animation-delay:1.2s}
 
 .hint{margin-top:30px;font-size:14px;color:var(--mut);letter-spacing:.3px;min-height:20px;text-align:center;padding:0 30px;transition:.3s}
 .live{margin-top:26px;font-size:21px;line-height:1.45;text-align:center;padding:0 30px;max-height:28vh;overflow:auto;font-weight:300}
@@ -139,7 +153,7 @@ body{background:radial-gradient(700px 460px at 50% 26%,rgba(var(--glow),.10),tra
 <div class="glance" id="glance"></div>
 
 <div class="stage">
-  <button class="ring" id="ring" aria-label="Parler"><span class="ripple"></span><span class="ripple"></span><span class="ripple"></span><span class="core"></span></button>
+  <button class="ring" id="ring" aria-label="Parler"><span class="ripple"></span><span class="ripple"></span><span class="ripple"></span><span class="orbit"></span><span class="orbit o2"></span><span class="core"></span></button>
   <div class="hint" id="hint"></div>
   <div class="live" id="live"></div>
   <textarea class="typed" id="typed" rows="2" placeholder="écris en vrac…"></textarea>
@@ -228,7 +242,7 @@ body{background:radial-gradient(700px 460px at 50% 26%,rgba(var(--glow),.10),tra
     <button class="ok" id="sSave">OK</button>
   </div>
   <input type="file" id="sFile" accept=".json" hidden>
-  <p class="small" style="margin-top:24px;text-align:center">Tempo v24 · Rc4st</p>
+  <p class="small" style="margin-top:24px;text-align:center">Tempo v25 · Rc4st</p>
 </div>
 
 <div class="sheet" id="menu">
