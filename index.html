@@ -224,7 +224,7 @@ body{background:radial-gradient(700px 460px at 50% 26%,rgba(var(--glow),.10),tra
     <button class="ok" id="sSave">OK</button>
   </div>
   <input type="file" id="sFile" accept=".json" hidden>
-  <p class="small" style="margin-top:24px;text-align:center">Tempo v21 · Rc4st</p>
+  <p class="small" style="margin-top:24px;text-align:center">Tempo v22 · Rc4st</p>
 </div>
 
 <div class="sheet" id="menu">
@@ -368,16 +368,24 @@ function contactOf(it){
   const n = norm(it.title + " " + (it.note || ""));
   return contacts().find(c => n.includes(norm(c.name).split(" ")[0])) || null;
 }
-const findContact = n => { const k = norm(n).split(" ")[0]; return contacts().find(c => norm(c.name).split(" ")[0] === k) || null; };
+const findContact = n => {
+  const all = contacts(), f = norm(n).trim(), k = f.split(" ")[0];
+  return all.find(c => norm(c.name) === f) || all.find(c => f.includes(norm(c.name))) || all.find(c => norm(c.name).split(" ")[0] === k) || null;
+};
+const contactIn = n => { const all = contacts(); return all.find(c => c.name.includes(" ") && n.includes(norm(c.name))) || all.find(c => n.includes(norm(c.name).split(" ")[0])) || null; };
 function localMail(seg, title){
   const n = norm(seg);
-  const c = contacts().find(c => n.includes(norm(c.name).split(" ")[0]));
+  const c = contactIn(n);
   if (!c) return null;
   if (!/\b(mail|ecri\w*|envoy\w*|demand\w*|previen\w*|informe\w*|dis a|dire a|compte[- ]rendu|cr)\b/.test(n)) return null;
   let ask = title.replace(new RegExp("^(envoyer un mail|faire un mail|ecrire|écrire|mail|demander|prévenir|prevenir|informer|dire)\\s+(a|à)?\\s*" + c.name.split(" ")[0] + "\\s*(pour|de|que|qu')?\\s*", "i"), "").trim();
-  const subj = ask.charAt(0).toUpperCase() + ask.slice(1);
+  ask = ask.replace(/^(s'il|si elle|si il)\s+(a|as)\b/i, "est-ce que tu as").replace(/^(s'il|si elle|si il)\s+est\b/i, "est-ce que tu es")
+           .replace(/^(s'il|si elle|si il)\s+peut\b/i, "est-ce que tu peux").replace(/^(s'il|si elle|si il)\s+/i, "est-ce que tu ")
+           .replace(/^si\s+/i, "est-ce que ");
+  if (/^est-ce que/i.test(ask) && !/\?$/.test(ask)) ask += " ?";
+  const subj = title;
   const first = (ask.split(" ")[0] || "").toLowerCase();
-  const line = /(er|ir|re)$/.test(first) ? "Peux-tu " + ask.charAt(0).toLowerCase() + ask.slice(1) + " ?" : subj + (/[.?!]$/.test(subj) ? "" : ".");
+  const line = /^est-ce que/i.test(ask) ? ask.charAt(0).toUpperCase() + ask.slice(1) : /(er|ir|re)$/.test(first) ? "Peux-tu " + ask.charAt(0).toLowerCase() + ask.slice(1) + " ?" : subj + (/[.?!]$/.test(subj) ? "" : ".");
   return { to: c.name, subject: subj, body: `Bonjour ${c.name.split(" ")[0]},\n\n${line}\n\nMerci,\nRaphaël` };
 }
 
@@ -1530,6 +1538,36 @@ function switchSpace(sp){
 $("spc").onclick = e => { const b = e.target.closest("button"); if (b) switchSpace(b.dataset.sp); };
 
 /* ===== boot ===== */
+/* import de contacts par lien : …/zap/#contacts=<lignes> (rien n'est stocké en ligne) */
+function importContacts(text, space){
+  const sp = space || "pro";
+  const cur0 = sp === SPACE ? CFG.contacts : (CFG.sp[sp] || {}).contacts || "";
+  const parse = t => t.split("\n").map(l => l.trim()).filter(Boolean).map(l => {
+    const parts = l.split(":").map(x => (x || "").trim()), name = parts.shift();
+    const email = parts.find(p => p.includes("@")) || "", phone = parts.find(p => /^[+\d][\d .\-()]{7,}$/.test(p)) || "";
+    return { name, email, phone, role: parts.filter(p => p && p !== email && p !== phone).join(" ") };
+  }).filter(c => c.name);
+  const all = parse(cur0); let n = 0;
+  for (const c of parse(text)) {
+    const full = norm(c.name), first = full.split(" ")[0];
+    let e = all.find(x => norm(x.name) === full) || all.find(x => !x.name.includes(" ") && norm(x.name) === first);
+    if (e) { if (!e.name.includes(" ")) e.name = c.name; if (c.email) e.email = c.email; if (c.phone && !e.phone) e.phone = c.phone; if (c.role) e.role = c.role; }
+    else all.push(c);
+    n++;
+  }
+  const out = all.map(contactLine).join("\n");
+  if (sp === SPACE) { CFG.contacts = out; saveCfg(); } else { CFG.sp[sp] = Object.assign({}, CFG.sp[sp], { contacts: out }); saveCfg(); }
+  return n;
+}
+function handleImport(){
+  const h = location.hash || "";
+  const m = h.match(/^#(contacts|contacts-perso)=(.+)$/); if (!m) return false;
+  let txt = ""; try { txt = decodeURIComponent(m[2]); } catch (e) { return false; }
+  history.replaceState(null, "", location.pathname + location.search);
+  const n = importContacts(txt, m[1] === "contacts-perso" ? "perso" : "pro");
+  setTimeout(() => toast(`${n} contact${n > 1 ? "s" : ""} ${m[1] === "contacts-perso" ? "perso" : "pro"} ajouté${n > 1 ? "s" : ""}`), 400);
+  return true;
+}
 function handleShare(){
   const p = new URLSearchParams(location.search);
   const parts = [p.get("title"), p.get("text"), p.get("url")].filter(Boolean);
@@ -1539,6 +1577,8 @@ function handleShare(){
 if ("serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).catch(() => {});
 const autoMail = () => { if (CFG.msId && MS.rt && CFG.key && Date.now() - (S.lastMailCheck || 0) > 20 * 60000) checkMail(false); };
 paintSpace(); render(); paintMailBtn();
+handleImport();
+window.addEventListener("hashchange", handleImport);
 msHandleRedirect().then(was => { if (!was) { handleShare(); autoMail(); } paintMailBtn(); });
 checkReminders();
 setInterval(() => { checkReminders(); if (!listening && !typing && !cur) render(); }, 60000);
