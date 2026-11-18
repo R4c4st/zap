@@ -150,6 +150,29 @@ body.const .ring.on{transform:none}
 #hist .it{padding:11px 0}
 #edit,#pp{z-index:45}
 .ritH{font-size:30px;font-weight:200;margin-top:6px}
+.rpTop{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--mut)}
+.rpT{font-weight:200;font-size:30px;margin:6px 0 4px}
+.rpP{font-size:13px;color:var(--mut)}
+.rpSum{font-size:16px;line-height:1.6;margin:18px 0 6px}
+.rpK{display:flex;flex-wrap:wrap;gap:22px;margin:18px 0 4px}
+.rpK div{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--mut)}
+.rpK b{display:block;font-size:26px;font-weight:200;color:var(--fg);letter-spacing:0;text-transform:none}
+.rpH{font-weight:400;font-size:12px;letter-spacing:2px;text-transform:uppercase;color:rgb(var(--glow));margin:28px 0 6px;padding-bottom:6px;border-bottom:1px solid var(--faint)}
+.rpR{display:flex;gap:14px;padding:9px 0;font-size:15px;line-height:1.4;border-bottom:1px solid var(--faint)}
+.rpD{flex:none;width:66px;color:var(--mut);font-size:13px;padding-top:1px}
+.rpS{font-size:12.5px;color:var(--mut);margin-top:2px}
+.rpM{white-space:pre-wrap;font-family:inherit;font-size:13px;color:var(--mut);margin:6px 0 0;line-height:1.45}
+.rpBtns{display:flex;flex-wrap:wrap;gap:20px;align-items:center;margin:30px 0 10px;font-size:15px}
+.rpBtns .ok{padding:12px 26px;border-radius:999px;background:var(--fg);color:var(--bg);font-weight:500}
+@media print{
+  @page{margin:16mm}
+  body{background:#fff!important;padding:0}
+  body>*{display:none!important}
+  #report{display:block!important;position:static!important;transform:none!important;visibility:visible!important;max-height:none!important;overflow:visible!important;box-shadow:none;border-radius:0;padding:0;background:#fff}
+  .noprint{display:none!important}
+  .rpR{break-inside:avoid}
+  .rpH{color:#1a8f9c}
+}
 .ritMsg{font-size:17px;line-height:1.5;margin:12px 0 4px;color:var(--fg)}
 .ritN{flex:none;width:22px;text-align:center;font-size:20px;font-weight:200;color:rgb(var(--glow))}
 .ritF{flex:none;font-size:13px;color:rgb(var(--glow));padding:6px 0 6px 10px;letter-spacing:.5px}
@@ -279,11 +302,12 @@ body.const .ring.on{transform:none}
     <button class="ok" id="sSave">OK</button>
   </div>
   <input type="file" id="sFile" accept=".json" hidden>
-  <p class="small" style="margin-top:24px;text-align:center">Tempo v33 · Rc4st</p>
+  <p class="small" style="margin-top:24px;text-align:center">Tempo v34 · Rc4st</p>
 </div>
 
 <div class="sheet" id="menu">
   <div class="menu">
+    <button id="mRep">rapport</button>
     <button id="mMemo">mémos & frais</button>
     <button id="mHist">historique & chantiers</button>
     <button id="mSet">réglages</button>
@@ -315,6 +339,7 @@ body.const .ring.on{transform:none}
 </div>
 
 <div class="sheet full" id="ritual"><div id="ritBody"></div></div>
+<div class="sheet full" id="report"><div id="repBody"></div></div>
 
 <div id="focus">
   <button id="fStop" class="fX">arrêter</button>
@@ -752,6 +777,7 @@ function localDone(text){
 
 async function capture(text, src, kind){
   text = (text || "").trim(); if (!text) { idle(); return; }
+  if (kind !== "mail" && isReportReq(text)) { openReport(text); return true; }
   let parsed = null, viaAI = false, U = { n: 0, done: [], undo: [] };
   if (CFG.key) {
     ringState("think"); hint(kind === "mail" ? "je lis tes mails…" : "je range…");
@@ -1516,6 +1542,7 @@ $("eShare").onclick = async () => {
 $("bSet").onclick = () => show("menu");
 $("mHist").onclick = () => { hide(); setTimeout(openHist, 60); };
 $("mMemo").onclick = () => { hide(); setTimeout(openMemos, 60); };
+$("mRep").onclick = () => { hide(); setTimeout(() => { toast("dis par exemple : « sors-moi un état Arvato sur 3 mois »", "", null, 6000); startListen(); }, 120); };
 
 /* mémos & frais */
 let mRb = "depense", mShowPaid = false;
@@ -2022,6 +2049,136 @@ $("fDone").onclick = () => {
   if (it) { if (sp === SPACE) markDone(it); else { it.done = true; it.doneAt = Date.now(); putSpace(sp, st); gSync(it); } flashOk(); render(); toast("réglé · bien joué"); }
 };
 $("fStop").onclick = stopFocus;
+
+/* ===== RAPPORTS À LA DEMANDE ===== */
+const NUMW = { un: 1, une: 1, deux: 2, trois: 3, quatre: 4, cinq: 5, six: 6, sept: 7, huit: 8, neuf: 9, dix: 10, douze: 12, quinze: 15 };
+const isReportReq = t => { const n = norm(t); return /\b(etat|rapport|recap\w*|bilan|historique|synthese)\b/.test(n) && /\b(sors|sort|sortir|fais|faire|genere|generer|prepare|preparer|donne|donner|montre|montrer|edite|editer|imprime|je veux|il me faut|envoie)\b/.test(n); };
+function parsePeriod(n){
+  const now = new Date(), end = new Date(now); end.setHours(23, 59, 59, 999);
+  let from = null, to = end, label = "";
+  const m = n.match(/\b(\d+|un|une|deux|trois|quatre|cinq|six|sept|huit|neuf|dix|douze|quinze)\s+(derniers?\s+|dernieres?\s+)?(jours?|semaines?|mois|ans?|annees?)\b/);
+  if (/\bmois dernier\b/.test(n)) { from = new Date(now.getFullYear(), now.getMonth() - 1, 1); to = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59); label = "le mois dernier"; }
+  else if (/\bsemaine derniere\b/.test(n)) { const d = new Date(now); d.setDate(d.getDate() - ((d.getDay() + 6) % 7) - 7); d.setHours(0, 0, 0, 0); from = d; to = new Date(d.getTime() + 7 * 86400000 - 1); label = "la semaine dernière"; }
+  else if (/\bannee derniere\b/.test(n)) { from = new Date(now.getFullYear() - 1, 0, 1); to = new Date(now.getFullYear() - 1, 11, 31, 23, 59, 59); label = "l'année dernière"; }
+  else if (m) { const v = NUMW[m[1]] || +m[1], u = m[3]; from = new Date(now); if (/^jour/.test(u)) from.setDate(from.getDate() - v); else if (/^sem/.test(u)) from.setDate(from.getDate() - 7 * v); else if (/^mois/.test(u)) from.setMonth(from.getMonth() - v); else from.setFullYear(from.getFullYear() - v); label = `${v} ${u.replace(/s$/, "")}${v > 1 && !/s$/.test(u) && u !== "mois" ? "s" : ""}`; }
+  else if (/\bcette semaine\b/.test(n)) { const d = new Date(now); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); d.setHours(0, 0, 0, 0); from = d; label = "cette semaine"; }
+  else if (/\bce mois\b/.test(n)) { from = new Date(now.getFullYear(), now.getMonth(), 1); label = "ce mois-ci"; }
+  else if (/\bcette annee\b/.test(n)) { from = new Date(now.getFullYear(), 0, 1); label = "cette année"; }
+  else if (/\bdepuis\b/.test(n)) {
+    const mo = n.match(/\bdepuis (le )?(debut )?(janvier|fevrier|mars|avril|mai|juin|juillet|aout|septembre|octobre|novembre|decembre)\b/);
+    let d = mo ? new Date(now.getFullYear(), MO.map(norm).indexOf(mo[3]), 1) : dateFromText(n.slice(n.indexOf("depuis")));
+    if (d && d > now) d.setFullYear(d.getFullYear() - 1);
+    if (d) { d.setHours(0, 0, 0, 0); from = d; label = "depuis le " + d.getDate() + " " + MO[d.getMonth()]; }
+  } else if (/\b(tout|toutes|depuis le debut|tout l'historique)\b/.test(n)) { from = new Date(2000, 0, 1); label = "tout l'historique"; }
+  if (!from) { from = new Date(now); from.setMonth(from.getMonth() - 1); label = "le dernier mois"; }
+  return { from, to, label };
+}
+function parseReport(text){
+  const n = norm(text), chs = chantiers();
+  let ch = ""; for (const c of chs) if (c.keys.some(k => n.includes(k))) { ch = c.name; break; }
+  const cats = [], kw = [];
+  if (/\bsav\b/.test(n)) kw.push("sav");
+  if (/\bappels?\b/.test(n)) cats.push("appel");
+  if (/\b(mails?|courriels?)\b/.test(n)) cats.push("mail", "message");
+  if (/\b(frais|depenses?|notes? de frais)\b/.test(n)) cats.push("memo:depense");
+  if (/\b(rendez[- ]vous|rdv|reunions?)\b/.test(n)) cats.push("rdv");
+  if (/\b(materiel|commandes?)\b/.test(n)) cats.push("materiel");
+  if (!ch && !kw.length && !cats.length) {
+    const m = n.match(/\b(sur|concernant|pour|du client|client|chantier|a propos de|au sujet de)\s+(le |la |les |l')?([a-z0-9\- ]{3,30}?)(\s+(sur|depuis|des|du|ce|cette|pendant|les)\b|$)/);
+    if (m && !/^(les|des|la|le)$/.test(m[3].trim())) kw.push(m[3].trim());
+  }
+  const P = parsePeriod(n);
+  const what = ch || (kw[0] ? kw[0].toUpperCase() === "SAV" ? "SAV" : kw[0] : "") || (cats.length ? { appel: "appels", mail: "mails", "memo:depense": "frais", rdv: "rendez-vous", materiel: "matériel" }[cats[0]] : "") || (SPACE === "perso" ? "vie perso" : "toutes les actions");
+  return { ch, cats, kw, from: P.from, to: P.to, plabel: P.label, what };
+}
+function inRange(i, R){
+  const ts = [i.created, i.doneAt, i.due ? Date.parse(i.due + "T12:00") : null].filter(Boolean);
+  return ts.some(t => t >= R.from.getTime() && t <= R.to.getTime());
+}
+function matchReport(i, R){
+  const hay = norm([i.title, i.note, i.raw, i.ch, i.mail && i.mail.body, i.mail && i.mail.subject].filter(Boolean).join(" "));
+  if (R.ch && i.ch !== R.ch && !chantiers().find(c => c.name === R.ch).keys.some(k => hay.includes(k))) return false;
+  if (R.kw.length && !R.kw.every(k => hay.includes(norm(k)))) return false;
+  if (R.cats.length && !R.cats.some(c => c === "memo:depense" ? (isMemo(i) && i.rb === "depense") : i.cat === c)) return false;
+  return true;
+}
+const fdt = ts => { const d = new Date(ts); return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${String(d.getFullYear()).slice(2)}`; };
+let REPORT = null;
+async function openReport(text){
+  let R = parseReport(text);
+  if (CFG.key) {
+    ringState("think"); hint("je prépare le rapport…");
+    try {
+      const raw = await claudeText(`Tu transformes une demande de rapport de Raphaël en filtre JSON. Aujourd'hui : ${ymd(new Date())}. Chantiers/thèmes connus : ${chantiers().map(c => c.name).join(", ")}.
+Réponds UNIQUEMENT en JSON : {"ch":"nom exact d'un chantier connu ou \\"\\"","kw":["mots-clés à chercher (ex. sav, nom de client inconnu)"],"cats":["appel|mail|message|rdv|materiel|memo:depense"],"from":"YYYY-MM-DD","to":"YYYY-MM-DD","what":"sujet court du rapport"}. Période par défaut : le dernier mois.`, text, 300);
+      const j = JSON.parse(raw.slice(raw.indexOf("{"), raw.lastIndexOf("}") + 1));
+      const f = new Date(j.from + "T00:00:00"), t = new Date(j.to + "T23:59:59");
+      if (!isNaN(f) && !isNaN(t)) R = { ch: chantiers().find(c => c.name === j.ch) ? j.ch : "", kw: (j.kw || []).filter(Boolean).slice(0, 3), cats: (j.cats || []).filter(Boolean), from: f, to: t, plabel: "", what: j.what || R.what };
+    } catch (e) {}
+  }
+  const items = S.items.filter(i => inRange(i, R) && matchReport(i, R));
+  const done = items.filter(i => i.done && !isMemo(i)).sort((a, b) => (a.doneAt || 0) - (b.doneAt || 0));
+  const open = items.filter(i => !i.done && !isMemo(i) && !isList(i)).sort((a, b) => (a.due || "9").localeCompare(b.due || "9"));
+  const mails = items.filter(i => i.mail && i.mail.body && (i.mail.sent || i.done)).sort((a, b) => (a.doneAt || a.created) - (b.doneAt || b.created));
+  const notes = items.filter(i => isMemo(i) && i.rb !== "depense"), frais = items.filter(i => isMemo(i) && i.rb === "depense");
+  const calls = done.filter(i => i.cat === "appel").length, totF = frais.reduce((a, i) => a + (+i.amount || 0), 0);
+  const per = `du ${R.from.getDate()} ${MO[R.from.getMonth()]} ${R.from.getFullYear()} au ${R.to.getDate()} ${MO[R.to.getMonth()]} ${R.to.getFullYear()}`;
+  REPORT = { R, per, done, open, mails, notes, frais, calls, totF, summary: "" };
+  idle();
+  paintReport();
+  show("report");
+  if (CFG.key && items.length) {
+    try {
+      REPORT.summary = await claudeText(`Tu rédiges la synthèse d'un état d'activité pour Raphaël Castellanos (${SPACE === "pro" ? "référent technique, OCI Connect Nancy" : "usage personnel"}). 3 à 5 phrases factuelles, claires, professionnelles, en français, sans inventer : ce qui a été fait, ce qui est en cours, points d'attention. Pas de titre, pas de liste, pas d'emoji.`,
+        `Sujet : ${R.what} — période ${per}\nFAIT :\n${done.map(i => `- ${fdt(i.doneAt || i.created)} ${i.title}${i.note ? " (" + i.note + ")" : ""}`).join("\n") || "rien"}\nEN COURS :\n${open.map(i => `- ${i.title}${i.due ? " pour le " + i.due : ""}`).join("\n") || "rien"}\nNOTES :\n${notes.map(i => "- " + i.title).join("\n") || "rien"}\nFRAIS : ${frais.length} pour ${eur(totF)}`, 400);
+      paintReport();
+    } catch (e) {}
+  }
+}
+function reportText(){
+  const X = REPORT, L = [];
+  L.push(`ÉTAT — ${X.R.what.toUpperCase()}`, X.per.charAt(0).toUpperCase() + X.per.slice(1), `Édité le ${fdt(Date.now())}${SPACE === "pro" ? " — Raphaël Castellanos, référent technique agence" : ""}`, "");
+  if (X.summary) L.push("SYNTHÈSE", X.summary, "");
+  L.push(`EN CHIFFRES : ${X.done.length} action(s) réalisée(s) · ${X.calls} appel(s) · ${X.mails.length} mail(s) · ${X.open.length} en cours${X.frais.length ? " · frais " + eur(X.totF) : ""}`, "");
+  if (X.done.length) { L.push("ACTIONS RÉALISÉES"); X.done.forEach(i => L.push(`${fdt(i.doneAt || i.created)}  ${i.title}${i.ch ? " [" + i.ch + "]" : ""}${i.note ? " — " + i.note : ""}`)); L.push(""); }
+  if (X.mails.length) { L.push("MAILS ET MESSAGES"); X.mails.forEach(i => { L.push(`${fdt(i.mail.sent || i.doneAt || i.created)}  À ${i.mail.to || "?"} — ${i.mail.subject || i.title}`, ...i.mail.body.split("\n").map(l => "    " + l), ""); }); }
+  if (X.open.length) { L.push("EN COURS / À VENIR"); X.open.forEach(i => L.push(`${i.due ? fdt(Date.parse(i.due + "T12:00")) : "  —   "}  ${i.title}${i.ch ? " [" + i.ch + "]" : ""}`)); L.push(""); }
+  if (X.notes.length) { L.push("NOTES, INFOS ET IDÉES"); X.notes.forEach(i => L.push(`${fdt(i.created)}  ${i.title}${i.note ? " — " + i.note : ""}`)); L.push(""); }
+  if (X.frais.length) { L.push("FRAIS"); X.frais.forEach(i => L.push(`${fdt(Date.parse((i.due || today()) + "T12:00"))}  ${i.title}${i.ch ? " [" + i.ch + "]" : ""}  ${eur(i.amount)}${i.done ? " (remboursé)" : ""}`)); L.push(`TOTAL : ${eur(X.totF)}`, ""); }
+  if (!X.done.length && !X.open.length && !X.notes.length && !X.frais.length) L.push("Aucune action trouvée sur cette période.");
+  L.push("— Tempo");
+  return L.join("\n");
+}
+function paintReport(){
+  const X = REPORT, sec = (t, h) => h ? `<h3 class="rpH">${t}</h3>${h}` : "";
+  const row = (d, t, s) => `<div class="rpR"><span class="rpD">${d}</span><div><div>${esc(t)}</div>${s ? `<div class="rpS">${esc(s)}</div>` : ""}</div></div>`;
+  $("repBody").innerHTML = `
+    <div class="rpTop">Tempo · état d'activité</div>
+    <h1 class="rpT">${esc(X.R.what.charAt(0).toUpperCase() + X.R.what.slice(1))}</h1>
+    <div class="rpP">${X.per}${SPACE === "pro" ? " · Raphaël Castellanos, référent technique agence" : ""}</div>
+    ${X.summary ? `<p class="rpSum">${esc(X.summary)}</p>` : (CFG.key ? `<p class="rpSum" style="color:var(--mut)">synthèse en cours…</p>` : "")}
+    <div class="rpK"><div><b>${X.done.length}</b>réalisées</div><div><b>${X.calls}</b>appels</div><div><b>${X.mails.length}</b>mails</div><div><b>${X.open.length}</b>en cours</div>${X.frais.length ? `<div><b>${eur(X.totF).replace(",00", "")}</b>frais</div>` : ""}</div>
+    ${sec("Actions réalisées", X.done.map(i => row(fdt(i.doneAt || i.created), i.title, [i.ch, i.note].filter(Boolean).join(" · "))).join(""))}
+    ${sec("Mails et messages", X.mails.map(i => `<div class="rpR"><span class="rpD">${fdt(i.mail.sent || i.doneAt || i.created)}</span><div><div>À ${esc(i.mail.to || "?")} — ${esc(i.mail.subject || i.title)}</div><pre class="rpM">${esc(i.mail.body)}</pre></div></div>`).join(""))}
+    ${sec("En cours / à venir", X.open.map(i => row(i.due ? fdt(Date.parse(i.due + "T12:00")) : "—", i.title, i.ch || "")).join(""))}
+    ${sec("Notes, infos et idées", X.notes.map(i => row(fdt(i.created), i.title, i.note || "")).join(""))}
+    ${sec("Frais", X.frais.length ? X.frais.map(i => row(fdt(Date.parse((i.due || today()) + "T12:00")), i.title + " — " + eur(i.amount), [i.ch, i.done ? "remboursé" : ""].filter(Boolean).join(" · "))).join("") + `<div class="rpR"><span class="rpD"></span><div><b>Total : ${eur(X.totF)}</b></div></div>` : "")}
+    ${!X.done.length && !X.open.length && !X.notes.length && !X.frais.length ? `<p class="empty" style="margin-top:30px">Aucune action trouvée sur cette période.</p>` : ""}
+    <div class="rpBtns noprint"><button id="rpPdf" class="ok">PDF</button><button id="rpTxt">texte</button><button id="rpMail">envoyer</button><button id="rpClose">fermer</button></div>`;
+}
+$("report").addEventListener("click", async e => {
+  if (!REPORT) return;
+  if (e.target.closest("#rpClose")) { hide(); return; }
+  if (e.target.closest("#rpPdf")) { document.title = `Etat ${REPORT.R.what} ${fdt(Date.now()).replace(/\//g, "-")}`; window.print(); setTimeout(() => document.title = "Tempo", 1500); return; }
+  const txt = reportText(), name = `etat-${norm(REPORT.R.what).replace(/[^a-z0-9]+/g, "-")}-${today()}.txt`;
+  if (e.target.closest("#rpTxt")) {
+    const f = new File([txt], name, { type: "text/plain" });
+    try { if (navigator.canShare && navigator.canShare({ files: [f] })) { await navigator.share({ files: [f], title: name }); return; } } catch (er) { if (er && er.name === "AbortError") return; }
+    const a = document.createElement("a"); a.href = URL.createObjectURL(f); a.download = name; a.click(); toast("fichier texte téléchargé");
+    return;
+  }
+  if (e.target.closest("#rpMail")) location.href = `mailto:?subject=${encodeURIComponent("État " + REPORT.R.what + " — " + REPORT.per)}&body=${encodeURIComponent(txt)}`;
+});
 
 /* ===== espaces pro / perso ===== */
 function paintSpace(){
