@@ -224,7 +224,7 @@ body{background:radial-gradient(700px 460px at 50% 26%,rgba(var(--glow),.10),tra
     <button class="ok" id="sSave">OK</button>
   </div>
   <input type="file" id="sFile" accept=".json" hidden>
-  <p class="small" style="margin-top:24px;text-align:center">Tempo v19 · Rc4st</p>
+  <p class="small" style="margin-top:24px;text-align:center">Tempo v20 · Rc4st</p>
 </div>
 
 <div class="sheet" id="menu">
@@ -1295,9 +1295,36 @@ function agendaIntent(o){
     + ";S.title=" + x((o.ch ? "[" + o.ch + "] " : "") + o.title)
     + ";S.description=" + x(o.note || "")
     + ";l.beginTime=" + b.getTime() + ";l.endTime=" + e.getTime() + ";B.allDay=" + (all ? "true" : "false")
-    + ";S.browser_fallback_url=" + x(agendaUrl(o)) + ";end";
+    + ";end";
 }
-function openAgenda(o){ if (IS_ANDROID) location.href = agendaIntent(o); else window.open(agendaUrl(o), "_blank"); }
+function icsFile(o){
+  const dv = (o.due || today()).replace(/-/g, ""), dur = o.cat === "rdv" ? 60 : 30;
+  const esc2 = t => (t || "").replace(/[\\,;]/g, m => "\\" + m).replace(/\n/g, "\\n");
+  let when;
+  if (o.time) { const [H, M] = o.time.split(":").map(Number), e = new Date(2000, 0, 1, H, M + dur);
+    when = `DTSTART;TZID=Europe/Paris:${dv}T${pad(H)}${pad(M)}00\r\nDTEND;TZID=Europe/Paris:${dv}T${pad(e.getHours())}${pad(e.getMinutes())}00`; }
+  else when = `DTSTART;VALUE=DATE:${dv}\r\nDTEND;VALUE=DATE:${ymd(addDays(1, new Date((o.due || today()) + "T12:00"))).replace(/-/g, "")}`;
+  const ics = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Rc4st//Tempo//FR", "BEGIN:VEVENT", "UID:" + uid() + "@tempo",
+    "DTSTAMP:" + new Date().toISOString().replace(/[-:]/g, "").slice(0, 15) + "Z", when, "SUMMARY:" + esc2((o.ch ? "[" + o.ch + "] " : "") + o.title),
+    "DESCRIPTION:" + esc2(o.note || ""), "BEGIN:VALARM", "TRIGGER:-PT15M", "ACTION:DISPLAY", "DESCRIPTION:Rappel", "END:VALARM", "END:VEVENT", "END:VCALENDAR"].join("\r\n");
+  return new File([ics], "rdv.ics", { type: "text/calendar" });
+}
+async function agendaFile(o){
+  const f = icsFile(o);
+  try { if (navigator.canShare && navigator.canShare({ files: [f] })) { await navigator.share({ files: [f], title: o.title }); return; } } catch (e) { if (e && e.name === "AbortError") return; }
+  const a = document.createElement("a"); a.href = URL.createObjectURL(f); a.download = "rdv.ics"; a.click();
+  toast("fichier agenda téléchargé · ouvre-le depuis la notification");
+}
+function openAgenda(o){
+  if (!IS_ANDROID) { window.open(agendaUrl(o), "_blank"); return; }
+  let left = false; const mark = () => { left = true; };
+  document.addEventListener("visibilitychange", mark, { once: true });
+  try { location.href = agendaIntent(o); } catch (e) {}
+  setTimeout(() => {
+    document.removeEventListener("visibilitychange", mark);
+    if (!left && document.visibilityState === "visible") toast("l'agenda ne s'est pas ouvert", "autre méthode", () => agendaFile(o), 9000);
+  }, 1800);
+}
 function addToAgenda(it){ openAgenda(it); it.inCal = Date.now(); save(); render(); }
 const wantsAgenda = i => i.due && !i.done && !i.inCal && (i.cat === "rdv" || (i.time && i.cat !== "courses" && i.cat !== "memo" && /\b(rdv|rendez|reunion|visite|vpi|coiffeur|medecin|dentiste|garage|rappel)\b/.test(norm(i.title))));
 $("eCal").onclick = () => {
