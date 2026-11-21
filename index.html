@@ -302,7 +302,7 @@ body.const .ring.on{transform:none}
     <button class="ok" id="sSave">OK</button>
   </div>
   <input type="file" id="sFile" accept=".json" hidden>
-  <p class="small" style="margin-top:24px;text-align:center">Tempo v36 · Rc4st</p>
+  <p class="small" style="margin-top:24px;text-align:center">Tempo v37 · Rc4st</p>
 </div>
 
 <div class="sheet" id="menu">
@@ -1883,9 +1883,12 @@ function freeSlots(events, from, to){
 }
 
 /* ===== B. RITUELS ===== */
+const isWE = (d = new Date()) => d.getDay() === 0 || d.getDay() === 6;
+/* jour ouvré suivant pour le pro (vendredi → lundi) */
+function nextWorkDay(from){ let d = addDays(1); while (isWE(d)) d = new Date(d.getTime() + 86400000); return d; }
 function allOpen(){
   const out = [];
-  for (const sp of ["pro", "perso"]) for (const i of spaceState(sp).items || []) if (!i.done && !isMemo(i) && !isList(i)) out.push({ i, sp });
+  for (const sp of (isWE() ? ["perso"] : ["pro", "perso"])) for (const i of spaceState(sp).items || []) if (!i.done && !isMemo(i) && !isList(i)) out.push({ i, sp });
   return out;
 }
 async function claudeText(system, user, max){
@@ -1913,7 +1916,7 @@ async function ritMatin(){
     try {
       const sys = `Tu prépares le point du matin de Raphaël (TDA probable : il faut peu de choix, clairs, et un ordre). Il est ${WD[d.getDay()]} ${nowHM()}.
 QUI IL EST : ${CFG.profile}
-Choisis ses 3 PRIORITÉS du jour parmi les tâches (les plus importantes, urgentes ou qui débloquent quelqu'un) et place chacune à une heure réaliste DANS un créneau libre (évite les événements). Garde une tâche qui a déjà une heure à cette heure-là. Pro en journée, perso plutôt en fin de journée sauf urgence.
+Choisis ses 3 PRIORITÉS du jour parmi les tâches (les plus importantes, urgentes ou qui débloquent quelqu'un) et place chacune à une heure réaliste DANS un créneau libre (évite les événements). Garde une tâche qui a déjà une heure à cette heure-là. ${isWE() ? "C'est le WEEK-END : uniquement de la vie perso (enfants, famille, amis, maison). Aucun ton boulot, rythme tranquille." : "Pro en journée, perso plutôt en fin de journée sauf urgence."}
 Réponds UNIQUEMENT en JSON : {"msg":"une phrase courte et encourageante, tutoiement, sans emoji","plan":[{"id":"…","time":"HH:MM","why":"5 mots max"}]}`;
       const usr = `CRÉNEAUX LIBRES : ${slots.map(([s, e]) => pad(Math.floor(s / 60)) + ":" + pad(s % 60) + "-" + pad(Math.floor(e / 60)) + ":" + pad(e % 60)).join(", ") || "aucun"}
 ÉVÉNEMENTS : ${evs.filter(e => !e.tempo).map(e => (e.allDay ? "journée" : hm(e.s) + "-" + hm(e.e)) + " " + e.title).join(" | ") || "aucun"}
@@ -1942,7 +1945,7 @@ ${cand.slice(0, 40).map(({ i, sp }) => `- id=${i.id} [${sp}] u${i.u} ${i.title}$
 }
 async function ritSoir(){
   const t = today(), done = [], left = [];
-  for (const sp of ["pro", "perso"]) for (const i of spaceState(sp).items || []) {
+  for (const sp of (isWE() ? ["perso"] : ["pro", "perso"])) for (const i of spaceState(sp).items || []) {
     if (isMemo(i) || isList(i)) continue;
     if (i.done && i.doneAt && ymd(new Date(i.doneAt)) === t) done.push({ i, sp });
     else if (!i.done && i.due && i.due <= t) left.push({ i, sp });
@@ -1987,10 +1990,10 @@ $("ritual").addEventListener("click", e => {
   if (k === "matin") { applyPlan(); toast(RITUAL.plan.length ? "c'est parti · priorités placées" : "bonne journée"); }
   if (k === "soir" && RITUAL.left.length) {
     const tm = ymd(addDays(1)), touched = {};
-    for (const { i, sp } of RITUAL.left) { i.due = tm; i.notified = false; touched[sp] = true; }
+    for (const { i, sp } of RITUAL.left) { i.due = sp === "pro" ? ymd(nextWorkDay()) : tm; i.notified = false; touched[sp] = true; }
     for (const sp of Object.keys(touched)) { const st = spaceState(sp); st.items = st.items.map(x => (RITUAL.left.find(l => l.i.id === x.id) || { i: x }).i); putSpace(sp, st); }
     RITUAL.left.forEach(({ i }) => gSync(i));
-    toast("tout glisse à demain · bonne soirée");
+    toast(RITUAL.left.some(x => x.sp === "pro") && isWE(addDays(1)) ? "perso demain, boulot lundi · bonne soirée" : "tout glisse à demain · bonne soirée");
   }
   ritDone(k); hide(); render();
 });
@@ -2251,8 +2254,17 @@ function handleShare(){
 }
 if ("serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).catch(() => {});
 const autoMail = () => { if (CFG.msId && MS.rt && CFG.key && Date.now() - (S.lastMailCheck || 0) > 20 * 60000) checkMail(false); };
+/* week-end : on ouvre en perso ; lundi on repasse au boulot */
+function autoSpace(){
+  const t = today(), a = LS.get("tempo_autosp", {});
+  if (a.day === t) return;
+  if (isWE()) { if (SPACE !== "perso") switchSpace("perso"); a.we = true; }
+  else if (a.we) { if (SPACE !== "pro") switchSpace("pro"); a.we = false; }
+  a.day = t; LS.set("tempo_autosp", a);
+}
 paintSpace(); applyVisual(); render(); paintMailBtn(); paintPush();
 gHandleRedirect();
+autoSpace();
 handleImport();
 window.addEventListener("hashchange", handleImport);
 msHandleRedirect().then(was => {
@@ -2261,7 +2273,7 @@ msHandleRedirect().then(was => {
 });
 checkReminders();
 setInterval(() => { checkReminders(); if (!listening && !typing && !cur) render(); }, 60000);
-document.addEventListener("visibilitychange", () => { if (!document.hidden) { render(); checkReminders(); autoMail(); askAck(); setTimeout(autoRitual, 700); } });
+document.addEventListener("visibilitychange", () => { if (!document.hidden) { autoSpace(); render(); checkReminders(); autoMail(); askAck(); setTimeout(autoRitual, 700); } });
 </script>
 </body>
 </html>
