@@ -1524,6 +1524,8 @@ async function processInbox(){
   inboxRunning = true;
   const old = Date.now() - 3 * 86400000;
   q = q.filter(e => Date.parse(e.at) > old);
+  const seen = new Set();   // même notification reçue deux fois (WhatsApp la met souvent à jour) : une seule
+  q = q.filter(e => { const k = [e.kind, e.who, e.num, e.body].join("|"); if (seen.has(k)) return false; seen.add(k); return true; });
   const calls = q.filter(e => e.kind === "appel"), msgs = q.filter(e => ["sms", "whatsapp", "notif"].includes(e.kind)), ends = q.filter(e => e.kind === "fin_appel");
   let nCalls = 0; const callNames = [];
   for (const e of calls) { const sp = missedCall(e); if (sp) { nCalls++; callNames.push(e.who && !isNumLike(e.who) ? e.who : fmtNum(e.num)); } }
