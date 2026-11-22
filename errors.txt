@@ -1,0 +1,4 @@
+77:Note: Some input files use unchecked or unsafe operations.
+78:Note: Recompile with -Xlint:unchecked for details.
+141:Note: Some input files use or override a deprecated API.
+142:Note: Recompile with -Xlint:deprecation for details.
