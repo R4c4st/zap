@@ -1,0 +1,63 @@
+BRANCHER TON TÉLÉPHONE SUR TEMPO AVEC MACRODROID (≈ 15 min, une seule fois)
+
+Ce que ça fait
+- Appel manqué → Tempo crée « Rappeler X » (ou l'ajoute à la tâche « Appeler X » qui existe déjà).
+- SMS / WhatsApp reçu → Claude le lit et ne crée une action que s'il y a quelque chose à faire
+  (une question, une demande, un rendez-vous). Codes, pubs, « ok merci » : ignorés.
+- Fin d'appel avec un contact → Tempo propose « un compte rendu ? » : tu dictes, il range.
+Tempo relève tout ça à l'ouverture (et chaque minute tant qu'il est ouvert). Rien n'est gardé
+plus de 7 jours sur le serveur, et c'est effacé dès que Tempo l'a relevé.
+
+A. LE LIEN (dans Tempo)
+1. Tempo > ··· > réglages > « Téléphone · appels manqués, SMS, WhatsApp »
+   > « créer mon lien MacroDroid ». Le lien est copié tout seul.
+   Il ressemble à : https://jifaszjdhretgorxlpvs.supabase.co/functions/v1/tempo-inbox?k=XXXXXXXX
+   C'est TON lien secret : ne le partage pas. « couper » le désactive à tout moment.
+2. Test : colle-le dans Chrome en ajoutant &test=1 à la fin → la page doit afficher « Tempo : lien OK ✓ ».
+
+B. MACRODROID
+3. Play Store > installe « MacroDroid » (gratuit jusqu'à 5 macros, il en faut 3 ou 4).
+   Au premier lancement, accepte les autorisations qu'il demande (téléphone, SMS, notifications).
+   Samsung : Paramètres > Applications > MacroDroid > Batterie > « Non restreinte »
+   (sinon Android l'endort et les événements n'arrivent plus).
+
+Pour chaque macro ci-dessous : « + » (ajouter une macro) > Déclencheur > Action > Enregistrer.
+L'action est toujours « Requête HTTP » (catégorie Connectivité / Web) :
+   - Méthode : GET
+   - URL : ton lien (celui copié à l'étape 1)
+   - Paramètres de la requête (bouton « + » dans la requête HTTP) : ajoute les lignes indiquées.
+     Pour insérer une variable, utilise le bouton « ... » / texte magique et choisis-la dans la liste
+     (les noms entre crochets ci-dessous sont ceux de MacroDroid).
+   - Si ta version n'a pas de « Paramètres de la requête », ajoute-les au bout de l'URL :
+     &type=appel&nom=[call_name]&num=[call_number]  et coche « encoder l'URL » si l'option existe.
+
+MACRO 1 — Appel manqué
+   Déclencheur : Appel > « Appel manqué » (n'importe quel contact / numéro)
+   Paramètres : type = appel   ·   nom = [call_name]   ·   num = [call_number]
+
+MACRO 2 — SMS reçu
+   Déclencheur : SMS > « SMS reçu » (n'importe quel expéditeur)
+   Paramètres : type = sms   ·   nom = [sms_name]   ·   num = [sms_number]   ·   texte = [sms_message]
+
+MACRO 3 — WhatsApp reçu
+   Déclencheur : Notification > « Notification reçue » > application WhatsApp
+   (option : « ignorer les notifications en cours / de groupe » si proposée)
+   Paramètres : type = whatsapp   ·   nom = [notification_title]   ·   texte = [notification]
+
+MACRO 4 (facultative) — Fin d'appel → compte rendu
+   Déclencheur : Appel > « Appel terminé » (entrant et sortant)
+   Paramètres : type = fin   ·   nom = [call_name]   ·   num = [call_number]
+   Tempo ne propose le compte rendu que pour les gens qu'il connaît (tes contacts Tempo),
+   et seulement dans la demi-heure qui suit.
+
+C. VÉRIFIER
+4. Appelle-toi depuis un autre téléphone sans décrocher, puis ouvre Tempo :
+   « 📞 appel manqué · … → à rappeler » doit s'afficher.
+5. Dans Tempo > réglages, la ligne du pont indique « dernier événement reçu … ».
+
+Bon à savoir
+- Les SMS et WhatsApp ne sont lus que si la clé Claude est branchée. Sans Claude, Tempo ne garde
+  que les messages de tes contacts connus (« Répondre à … »).
+- Pro ou perso ? Un contact de tes contacts pro va dans le pro, un proche dans le perso.
+  Un numéro inconnu va dans l'espace ouvert (perso le week-end).
+- Numéro masqué : rien n'est créé (il n'y a personne à rappeler).

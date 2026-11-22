@@ -148,7 +148,8 @@ body.const .ring.on{transform:none}
 .tabs{display:flex;gap:22px}
 .tabs button{font-size:22px;color:var(--mut)} .tabs button.on{color:var(--fg)}
 #hist .it{padding:11px 0}
-#edit,#pp{z-index:45}
+#edit,#pp,#ack{z-index:45}
+.foot .l{flex-wrap:wrap;row-gap:10px}
 .ritH{font-size:30px;font-weight:200;margin-top:6px}
 .rpTop{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--mut)}
 .rpT{font-weight:200;font-size:30px;margin:6px 0 4px}
@@ -253,7 +254,7 @@ body.const .ring.on{transform:none}
   </div>
   <button id="eMk" style="margin-top:18px;font-size:14px;color:rgb(var(--glow))">✉ préparer un message</button>
   <div class="foot">
-    <div class="l"><button id="eFocus" style="color:rgb(var(--glow))">focus</button><button id="eCal">agenda</button><button id="eShare">envoyer</button><button id="eDel" class="del">supprimer</button></div>
+    <div class="l"><button id="eFocus" style="color:rgb(var(--glow))">focus</button><button id="eFiche">fiche</button><button id="eCal">agenda</button><button id="eShare">envoyer</button><button id="eDel" class="del">supprimer</button></div>
     <button class="ok" id="eSave">OK</button>
   </div>
 </div>
@@ -296,13 +297,26 @@ body.const .ring.on{transform:none}
   <div class="lab">Fin de dictée</div>
   <select id="sSil"><option value="0">je touche le rond pour finir</option><option value="2">après 2 s de silence</option><option value="3">après 3 s de silence</option><option value="5">après 5 s de silence</option></select>
   <p class="small">Tu peux aussi finir en disant « c'est tout ».</p>
+  <div class="lab">Reconnaissance vocale</div>
+  <select id="vMode"><option value="google">Google — gratuit, dans le téléphone</option><option value="voxtral">Voxtral (Mistral) — plus précis, payant</option></select>
+  <div id="vBox" style="display:none">
+    <input type="password" id="vKey" placeholder="clé API Mistral" style="margin-top:10px">
+    <div class="two"><div><div class="lab">Plafond par mois</div><select id="vCap"><option value="1">1 €</option><option value="2">2 €</option><option value="3">3 €</option><option value="5">5 €</option><option value="10">10 €</option></select></div><div><div class="lab">Dictée max</div><select id="vMax"><option value="60">1 min</option><option value="120">2 min</option><option value="180">3 min</option></select></div></div>
+    <p class="small" id="vUse"></p>
+  </div>
+  <div class="lab">Tempo me répond à voix haute</div>
+  <select id="vSay"><option value="auto">quand il m'écoute dès l'ouverture</option><option value="1">toujours</option><option value="0">jamais</option></select>
+  <label class="small" style="display:flex;gap:10px;align-items:center;margin-top:14px"><input type="checkbox" id="vAuto" style="width:auto"> ouvrir Tempo = il m'écoute tout de suite (idéal avec la touche latérale)</label>
+  <div class="lab">Téléphone · appels manqués, SMS, WhatsApp</div>
+  <p class="small" id="iState"></p>
+  <div class="foot" style="margin-top:10px"><div class="l"><button id="iGo" style="color:var(--fg)">créer mon lien MacroDroid</button><button id="iCopy">copier le lien</button><button id="iOff">couper</button></div></div>
   <p class="small" id="sLearn"></p>
   <div class="foot" style="flex-wrap:wrap;gap:16px">
     <div class="l" style="flex-wrap:wrap"><button id="sNotif">rappels</button><button id="sExp">sauvegarder</button><button id="sImp">restaurer</button><button id="sForget">oublier mes corrections</button></div>
     <button class="ok" id="sSave">OK</button>
   </div>
   <input type="file" id="sFile" accept=".json" hidden>
-  <p class="small" style="margin-top:24px;text-align:center">Tempo v38 · Rc4st</p>
+  <p class="small" style="margin-top:24px;text-align:center">Tempo v39 · Rc4st</p>
 </div>
 
 <div class="sheet" id="menu">
@@ -318,6 +332,12 @@ body.const .ring.on{transform:none}
   <div class="lab" style="margin-top:0">Reporter</div>
   <p id="ppTitle" style="font-size:18px;line-height:1.4;margin-bottom:18px"></p>
   <div class="menu" id="ppList"></div>
+</div>
+
+<div class="sheet" id="ack">
+  <div class="lab" style="margin-top:0" id="ackLab">Appel</div>
+  <p id="ackTitle" style="font-size:18px;line-height:1.4;margin-bottom:18px"></p>
+  <div class="menu" id="ackList"></div>
 </div>
 
 <div class="sheet full" id="hist">
@@ -340,6 +360,7 @@ body.const .ring.on{transform:none}
 
 <div class="sheet full" id="ritual"><div id="ritBody"></div></div>
 <div class="sheet full" id="report"><div id="repBody"></div></div>
+<div class="sheet full" id="fiche"><div id="ficheBody"></div></div>
 
 <div id="focus">
   <button id="fStop" class="fX">arrêter</button>
@@ -398,7 +419,7 @@ const PER = ["ch", "team", "contacts", "style", "profile", "learn"];
 let SPACE = LS.get("zap_space", "pro");
 const SKEY = sp => sp === "pro" ? "zap_state" : "zap_state_" + sp;
 let S = LS.get(SKEY(SPACE), null) || { items: [], doneDays: [] };
-let CFG = Object.assign({ key: "", ch: DEFAULT_CH, team: DEFAULT_TEAM, profile: DEFAULT_PROFILE, learn: [], contacts: DEFAULT_CONTACTS, style: DEFAULT_STYLE, silence: 3 }, LS.get("zap_cfg", {}));
+let CFG = Object.assign({ key: "", ch: DEFAULT_CH, team: DEFAULT_TEAM, profile: DEFAULT_PROFILE, learn: [], contacts: DEFAULT_CONTACTS, style: DEFAULT_STYLE, silence: 3, vMode: "google", mkey: "", vCap: 2, vMax: 120, vSay: "auto", vAuto: false }, LS.get("zap_cfg", {}));
 if (!CFG.profile) CFG.profile = DEFAULT_PROFILE;
 const pickPer = () => Object.fromEntries(PER.map(k => [k, CFG[k]]));
 if (!CFG.sp) CFG.sp = { pro: pickPer(), perso: Object.assign({}, PERSO_DEFAULTS) };
@@ -666,8 +687,16 @@ function localParsePro(text){
 }
 
 /* ===== Claude ===== */
-async function aiParse(text, kind){
+/* dernière dictée : sert à comprendre une correction juste après (« non, plutôt jeudi ») */
+let LAST = null;
+const lastItems = () => LAST && Date.now() - LAST.at < 180000 ? S.items.filter(i => LAST.ids.includes(i.id) && !i.done) : [];
+const PHONEX = `
+
+ICI CE NE SONT PAS DES DICTÉES : ce sont des événements de son téléphone (SMS, WhatsApp, notifications) relevés automatiquement. Crée une action SEULEMENT s'il y a quelque chose à faire pour lui (répondre à une question, rappeler, une demande, un rendez-vous proposé, une info importante à retenir). Ignore : codes de vérification, pubs, notifications automatiques (livraisons sans action, banque, opérateur), messages purement sociaux (« ok », « merci », un emoji). Une question d'un contact → « Répondre à <prénom> » avec la question en note. Mets toujours l'expéditeur dans note. N'utilise jamais "updates". Si rien n'est à faire : {"items":[],"updates":[]}.`;
+async function aiParse(text, kind, ctx){
   const d = new Date();
+  const last = kind ? [] : lastItems();
+  const cr = ctx && ctx.cr;
   const learn = (CFG.learn || []).slice(-25).map(l => `- « ${l.t} » → type ${l.cat}, chantier ${l.ch || "aucun"}, urgence ${l.u}${l.slot ? ", moment " + l.slot : ""}`).join("\n");
   const open = S.items.filter(i => !i.done && !isMemo(i)).slice(0, 40).map(i => `- id=${i.id} : ${i.title}${i.ch ? " [" + i.ch + "]" : ""}${i.due ? " (" + i.due + (i.time ? " " + i.time : "") + ")" : ""}`).join("\n");
   const ctc = contacts().map(c => `- ${c.name}${c.role ? " : " + c.role : ""}`).join("\n");
@@ -681,6 +710,7 @@ ${SPACE === "perso" ? "Proches" : "Équipe / contacts"} : ${CFG.team}.
 Maintenant : ${WD[d.getDay()]} ${ymd(d)}, ${nowHM()}.
 ${learn ? "\nSES CORRECTIONS PASSÉES (respecte sa façon de classer) :\n" + learn : ""}
 ${open ? "\nDÉJÀ DANS SA LISTE (avec leur id) :\n" + open : ""}
+${last.length ? "\nCE QU'IL VIENT DE NOTER (il y a moins de 3 min) :\n" + last.map(i => `- id=${i.id} : ${i.title}${i.ch ? " [" + i.ch + "]" : ""}${i.due ? " (" + i.due + (i.time ? " " + i.time : "") + ")" : ""}`).join("\n") + "\nS'il commence par « non », « plutôt », « en fait », « attends », « corrige », « change », ou s'il ne donne qu'un moment ou une précision (« jeudi », « à 14h », « c'est pour Siebert », « mets-le en urgent »), c'est une CORRECTION de ces éléments : mets-la dans \"updates\" et ne crée rien de nouveau." : ""}
 
 CONTACTS CLÉS À QUI IL ÉCRIT :
 ${ctc || "(aucun)"}
@@ -715,7 +745,9 @@ Réponds UNIQUEMENT en JSON : {"items":[{"title":"","cat":"${Object.keys(CATS).j
     headers: { "content-type": "application/json", "x-api-key": CFG.key, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
     body: JSON.stringify({ model: "claude-haiku-5-5", max_tokens: 1500, system: sys + (kind === "mail" ? `
 
-ICI CE NE SONT PAS DES DICTÉES : ce sont des mails qu'il a reçus. Extrais uniquement ce que LUI doit faire (répondre, rappeler, commander, intervenir, transmettre…). Ignore pubs, newsletters, notifications automatiques, mails purement informatifs. Mets l'expéditeur et l'objet dans note. Si une réponse est attendue d'un contact clé, prépare "mail" (réponse). Si rien n'est à faire : {"items":[],"updates":[]}.` : ""), messages: [{ role: "user", content: text }] })
+ICI CE NE SONT PAS DES DICTÉES : ce sont des mails qu'il a reçus. Extrais uniquement ce que LUI doit faire (répondre, rappeler, commander, intervenir, transmettre…). Ignore pubs, newsletters, notifications automatiques, mails purement informatifs. Mets l'expéditeur et l'objet dans note. Si une réponse est attendue d'un contact clé, prépare "mail" (réponse). Si rien n'est à faire : {"items":[],"updates":[]}.` : kind === "phone" ? PHONEX : kind === "cr" ? `
+
+ICI C'EST UN COMPTE RENDU qu'il dicte juste après un appel${cr && cr.who ? " avec " + cr.who : ""}${cr && cr.title ? " (tâche : « " + cr.title + " »)" : ""}. Ajoute au JSON un champ "summary" : le compte rendu résumé en 1 ou 2 lignes, avec SES mots (ce qui a été dit, décidé, promis). Dans "items", mets UNIQUEMENT les nouvelles choses à faire qui en découlent (rappeler, commander, envoyer, passer sur site…), sinon une liste vide. N'utilise pas "updates".` : ""), messages: [{ role: "user", content: text }] })
   });
   if (!r.ok) throw new Error("API " + r.status);
   const j = await r.json();
@@ -729,7 +761,7 @@ ICI CE NE SONT PAS DES DICTÉES : ce sont des mails qu'il a reçus. Extrais uniq
     rb: it.cat === "memo" ? (["depense", "info", "idee"].includes(it.rb) ? it.rb : (it.amount ? "depense" : "info")) : undefined,
     amount: it.cat === "memo" && it.amount != null && !isNaN(+it.amount) ? +it.amount : undefined
   })).filter(it => it.title);
-  return { items, updates: Array.isArray(obj.updates) ? obj.updates.filter(u => u && u.id) : [] };
+  return { items, updates: Array.isArray(obj.updates) ? obj.updates.filter(u => u && u.id) : [], summary: typeof obj.summary === "string" ? obj.summary.trim() : "" };
 }
 async function aiMail(it){
   const sys = `Tu rédiges un mail pour Raphaël.\n\nQUI IL EST\n${CFG.profile}\n\nCONTACTS :\n${contacts().map(c => "- " + c.name + (c.role ? " : " + c.role : "")).join("\n")}\n\nSA FAÇON D'ÉCRIRE :\n${CFG.style}\n\nN'invente ni quantité, ni référence, ni date. Réponds UNIQUEMENT en JSON : {"to":"prénom","subject":"","body":""}`;
@@ -780,17 +812,31 @@ function localDone(text){
   return { done, rest: rest.join(". ") };
 }
 
-async function capture(text, src, kind){
+async function capture(text, src, kind, ctx){
   text = (text || "").trim(); if (!text) { idle(); return; }
-  if (kind !== "mail" && isReportReq(text)) { openReport(text); return true; }
+  if (ctx && ctx.cr) return captureCR(text, ctx.cr);
+  if (!kind && isReportReq(text)) { openReport(text); return true; }
+  /* correction rapide sans Claude : « non, jeudi 14h » juste après une dictée */
+  if (!kind && !CFG.key && /^(non|plutot|en fait|attends|corrige|change)\b/.test(norm(text)) && lastItems().length) {
+    const w = parseWhen(text), its = lastItems();
+    if (w.due || w.time) {
+      const snaps = its.map(i => JSON.parse(JSON.stringify(i)));
+      its.forEach(i => { if (w.due) i.due = w.due; if (w.time) i.time = w.time; i.notified = false; calSync(i); });
+      save(); flashOk(); idle(); render(its.map(i => i.id)); vib(18);
+      const msg = "corrigé · " + whenLabel(its[0]).split(" · ").slice(0, 2).join(" · ");
+      toast(msg, "annuler", () => { its.forEach((i, n) => Object.assign(i, snaps[n])); save(); render(); });
+      if (shouldSpeak()) speak("C'est corrigé.");
+      return true;
+    }
+  }
   let parsed = null, viaAI = false, U = { n: 0, done: [], undo: [] };
   if (CFG.key) {
-    ringState("think"); hint(kind === "mail" ? "je lis tes mails…" : "je range…");
-    try { const r = await aiParse(text, kind); parsed = r.items; U = applyUpdates(r.updates); viaAI = true; } catch (e) { parsed = null; }
+    ringState("think"); hint(kind === "mail" ? "je lis tes mails…" : kind === "phone" ? "je regarde tes messages…" : "je range…");
+    try { const r = await aiParse(text, kind, ctx); parsed = r.items; U = applyUpdates(kind === "phone" ? [] : r.updates); viaAI = true; } catch (e) { parsed = null; }   // un SMS ne peut jamais cocher ni supprimer une tâche
   }
-  if (kind === "mail") {
-    if (!viaAI) { idle(); toast("il faut Claude pour lire les mails"); return false; }
-    if (!parsed.length && !U.n) { flashOk(); idle(); toast("rien à faire dans tes mails"); return true; }
+  if (kind === "mail" || kind === "phone") {
+    if (!viaAI) { idle(); if (kind === "mail") toast("il faut Claude pour lire les mails"); return false; }
+    if (!parsed.length && !U.n) { idle(); if (kind === "mail") { flashOk(); toast("rien à faire dans tes mails"); } return true; }
   }
   if (!viaAI) {
     const ld = localDone(text);
@@ -817,6 +863,10 @@ async function capture(text, src, kind){
   if (nmm) parts.push(`${nmm} mail${nmm > 1 ? "s" : ""} prêt${nmm > 1 ? "s" : ""}`);
   if (nt) parts.push(`${nt} texto${nt > 1 ? "s" : ""} prêt${nt > 1 ? "s" : ""}`);
   if (other) parts.push(`${other} modifiée${other > 1 ? "s" : ""}`);
+  if (kind === "phone" && parts.length) parts.unshift("📱 messages");
+  if (!kind && added.length) LAST = { ids: added.map(a => a.id), at: Date.now() };
+  else if (!kind && U.n && LAST) LAST.at = Date.now();
+  if (!kind && (src === "voix" || src === "texte") && shouldSpeak()) speakThenFollow(sayBack(added, U, viaAI));
   const ag = gOn() ? [] : added.filter(wantsAgenda);
   const gAdded = gOn() ? added.filter(gWants) : [];
   if (gAdded.length) parts.push("📅 dans l'agenda");
@@ -828,6 +878,86 @@ async function capture(text, src, kind){
   });
   if (CFG.key && !viaAI) setTimeout(() => toast("Claude injoignable · rangé par règles"), 2600);
   return true;
+}
+
+/* compte rendu dicté juste après un appel : rangé dans la tâche (qui passe en « fait ») + les suites */
+async function captureCR(text, cr){
+  const sp = cr.sp && cr.sp !== SPACE ? cr.sp : SPACE;
+  if (sp !== SPACE) switchSpace(sp);
+  const target = cr.id ? S.items.find(i => i.id === cr.id) : null;
+  let summary = text, items = [], viaAI = false;
+  if (CFG.key) {
+    ringState("think"); hint("je range le compte rendu…");
+    try { const r = await aiParse(text, "cr", { cr }); items = r.items.filter(i => !isMemo(i) || i.rb !== "depense" || i.amount); summary = r.summary || text; viaAI = true; } catch (e) {}
+  }
+  const now = Date.now(), stamp = nowHM().replace(":", "h");
+  const added = items.map(p => Object.assign({ id: uid(), created: now, done: false, doneAt: null, src: "compte rendu", raw: text, orig: { cat: p.cat, ch: p.ch || (target && target.ch) || "", u: p.u, slot: bucket(p) } }, p, { ch: p.ch || (target && target.ch) || "" }));
+  let snap = null;
+  if (target) {
+    snap = JSON.parse(JSON.stringify(target));
+    target.note = ((target.note ? target.note + "\n" : "") + `CR ${stamp} : ${summary}`).slice(-1200);
+    target.cr = summary;
+    if (!target.done) markDone(target); else calSync(target);
+  } else {
+    added.unshift({ id: uid(), created: now, done: false, doneAt: null, src: "compte rendu", raw: text, title: `CR appel${cr.who ? " " + cr.who : ""} : ${summary}`.slice(0, 220), cat: "memo", rb: "info", ch: "", u: 1, due: today(), time: null, note: "", orig: null });
+  }
+  if (added.length) { S.items.unshift(...added); added.forEach(calSync); }
+  save(); flashOk(); idle(); render(added.map(a => a.id)); vib([12, 50, 18]);
+  const tk = added.filter(a => !isMemo(a)).length;
+  const msg = (target ? "✓ réglé · compte rendu rangé" : "compte rendu noté") + (tk ? ` · ${tk} suite${tk > 1 ? "s" : ""} à faire` : "");
+  toast(msg, "annuler", () => {
+    S.items = S.items.filter(i => !added.some(a => a.id === i.id));
+    if (target && snap) { if (!snap.done) unDone(target); Object.keys(target).forEach(k => delete target[k]); Object.assign(target, snap); calSync(target); }
+    save(); render();
+  }, 6000);
+  if (shouldSpeak()) speak(target ? `C'est rangé${tk ? ", et " + (tk === 1 ? "une suite à faire" : tk + " suites à faire") : ""}.` : "Compte rendu noté.");
+  if (CFG.key && !viaAI) setTimeout(() => toast("Claude injoignable · compte rendu gardé tel quel"), 2600);
+  return true;
+}
+
+/* ===== Tempo parle : confirmation courte, puis il réécoute quelques secondes pour une correction ===== */
+let HANDS_FREE = false, FOLLOW = 0;
+const shouldSpeak = () => "speechSynthesis" in window && (CFG.vSay === "1" || (CFG.vSay !== "0" && HANDS_FREE));
+const lc = t => (t || "").charAt(0).toLowerCase() + (t || "").slice(1);
+function sayWhen(i){
+  const b = bucket(i), tm = i.time ? " à " + (i.time.endsWith(":00") ? i.time.slice(0, 2).replace(/^0/, "") + " heures" : i.time.replace(":", " h ").replace(/^0/, "")) : "";
+  if (b === "now") return i.u === 3 ? "tout de suite" : "maintenant";
+  if (b === "matin") return "ce matin" + tm;
+  if (b === "aprem") return "cet après-midi" + tm;
+  if (b === "soir") return "ce soir" + tm;
+  if (b === "today") return "aujourd'hui";
+  if (b === "demain") return "demain" + tm;
+  if (i.due) { const d = new Date(i.due + "T12:00"); return WD[d.getDay()] + " " + d.getDate() + tm; }
+  return "";
+}
+function sayBack(added, U, viaAI){
+  const tk = added.filter(a => !isMemo(a) && !isList(a)), shop = added.filter(isList), mem = added.filter(isMemo);
+  const out = [];
+  if (U.done.length) out.push(U.done.length === 1 ? "C'est réglé : " + lc(U.done[0].title) + "." : U.done.length + " choses réglées.");
+  const other = U.n - U.done.length;
+  if (other && !tk.length) out.push(other === 1 ? "C'est corrigé." : other + " corrections faites.");
+  if (tk.length === 1) { const w = sayWhen(tk[0]); out.push("Noté : " + lc(tk[0].title) + (w ? ", " + w : "") + "."); }
+  else if (tk.length > 1) out.push(tk.length + " choses notées : " + tk.slice(0, 3).map(i => lc(i.title)).join(", ") + (tk.length > 3 ? ", et le reste" : "") + ".");
+  if (shop.length) out.push(shop.length === 1 ? shop[0].title + " sur la liste." : shop.length + " articles sur la liste.");
+  if (mem.length) out.push(mem.length === 1 ? "Un mémo." : mem.length + " mémos.");
+  return out.join(" ") || (viaAI ? "Je n'ai rien trouvé à noter." : "Je n'ai pas compris, redis-le.");
+}
+function speak(t, then){
+  let fired = false; const done = () => { if (fired) return; fired = true; then && then(); };
+  try {
+    if (!("speechSynthesis" in window) || !t) return done();
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(t); u.lang = "fr-FR"; u.rate = 1.07; u.pitch = 1;
+    const v = speechSynthesis.getVoices().filter(v => /^fr[-_]FR/i.test(v.lang)); if (v.length) u.voice = v.find(x => /google/i.test(x.name)) || v[0];
+    u.onend = done; u.onerror = done; setTimeout(done, 2500 + t.length * 85);
+    speechSynthesis.speak(u);
+  } catch (e) { done(); }
+}
+function speakThenFollow(t){
+  speak(t, () => {
+    if (!HANDS_FREE || FOLLOW >= 2 || document.hidden || listening || typing || document.querySelector(".sheet.show")) return;
+    FOLLOW++; startListen({ follow: true, keepHF: true, noSpeech: 5000 });
+  });
 }
 
 /* ===== buckets ===== */
@@ -854,7 +984,8 @@ function whenLabel(i){
   if (i.due && i.due < today()) parts.push("en retard");
   if (i.inCal || i.gId) parts.push("📅 agenda");
   if (i.rec) parts.push("↻ " + REC[i.rec]);
-  if (i.note) parts.push(i.note);
+  if ((i.ppN || 0) >= 3) parts.push("reportée " + i.ppN + " fois");
+  if (i.note) parts.push(i.note.split("\n").pop());
   return parts.join(" · ");
 }
 
@@ -892,13 +1023,14 @@ function render(fresh){
   $("list").innerHTML = h;
   const GL = { now: "maintenant", matin: "matin", aprem: "aprem", soir: "soir", today: "aujourd'hui", demain: "demain", semaine: "semaine", tard: "plus tard" };
   $("glance").innerHTML = SLOTS.map(([k]) => { const a = open.filter(i => bucket(i) === k); return a.length ? `<button class="gl${a.some(i => i.u === 3) ? " hot" : ""}" data-g="${k}"><b>${a.length}</b>${GL[k]}</button>` : ""; }).join("") + (shop.length ? `<button class="gl" data-g="courses"><b>${shop.length}</b>courses</button>` : "") + (memoN ? `<button class="gl" data-g="memos"><b>${toPay ? eur(toPay).replace(",00", "") : memoN}</b>${toPay ? (SPACE === "pro" ? "à rembourser" : "dépensés") : "mémos"}</button>` : "");
-  paintPoint(); scheduleBrief();
+  paintPoint(); scheduleBrief(); refreshStars();
   if (fresh.length) requestAnimationFrame(() => requestAnimationFrame(() => document.querySelectorAll(".it[style]").forEach((e, n) => setTimeout(() => e.removeAttribute("style"), n * 70))));
   if (!listening && !typing) idleHint();
 }
 function idleHint(){
   const open = S.items.filter(i => !i.done && !isMemo(i)), now = open.filter(i => bucket(i) === "now").length;
-  hint(now ? `${now} chose${now > 1 ? "s" : ""} maintenant` : open.length ? "" : "");
+  const n = STARS.length;
+  hint(now ? `${now} chose${now > 1 ? "s" : ""} maintenant` : n && isConst() ? `${n} étoile${n > 1 ? "s" : ""} allumée${n > 1 ? "s" : ""} cette semaine` : "");
 }
 function streak(){
   const set = new Set(S.doneDays); let n = 0, d = new Date();
@@ -1245,7 +1377,7 @@ function sendSms(it, picked){
 }
 function act(it){
   if (it.cat === "appel") {
-    const c = contactOf(it), num = (c && c.phone) || ((it.title + " " + (it.note || "")).match(/(?:\+33|0)[1-9](?:[ .-]?\d{2}){4}/) || [])[0];
+    const tx = it.title + " " + (it.note || ""), c = contactOf(it), num = (c && c.phone) || (tx.match(/(?:\+33|0)[1-9](?:[ .-]?\d{2}){4}/) || tx.match(/\+\d{8,15}/) || [])[0];
     if (!num && PICK) {
       toast(c ? `pas de numéro pour ${c.name}` : "à qui ?", "choisir le contact", async () => {
         const k = await pickOne(c ? c.name : ""); if (!k || !k.phone) return;
@@ -1274,9 +1406,205 @@ function askAck(){
   const p = S.pendingAck; if (!p || Date.now() - p.at < 2500) return;
   const it = S.items.find(i => i.id === p.id); S.pendingAck = null; save();
   if (!it || it.done) return;
-  const q = !p.kind ? `appel${p.who ? " avec " + p.who : ""} fait ?` : `${p.kind}${p.who ? " à " + p.who : ""} envoyé ?`;
+  if (!p.kind) { setTimeout(() => openAck(it, p), 350); return; }   // retour d'un appel : on boucle
+  const q = `${p.kind}${p.who ? " à " + p.who : ""} envoyé ?`;
   setTimeout(() => toast(q, "oui, réglé", () => { if (it.mail) it.mail.sent = Date.now(); markDone(it); render(); flashOk(); }, 10000), 400);
 }
+/* retour d'appel : réglé, réglé + compte rendu dicté, ou pas joint → on replanifie */
+const nextHalf = ms => { const d = new Date(Date.now() + ms); d.setSeconds(0, 0); d.setMinutes(d.getMinutes() <= 30 ? 30 : 60); return d; };
+function openAck(it, p){
+  p = p || {};
+  $("ackLab").textContent = "Retour d'appel" + (p.who ? " · " + p.who : "");
+  $("ackTitle").textContent = it.title;
+  const retry = (d, lab) => () => {
+    const before = { due: it.due, time: it.time, note: it.note };
+    it.due = ymd(d); it.time = pad(d.getHours()) + ":" + pad(d.getMinutes()); it.notified = false; it.tries = (it.tries || 0) + 1;
+    it.note = ((it.note ? it.note + " · " : "") + "pas joint " + nowHM().replace(":", "h")).slice(-600);
+    save(); render(); calSync(it);
+    toast("je te le remets " + lab, "annuler", () => { Object.assign(it, before); save(); render(); calSync(it); });
+  };
+  const ch = [
+    ["c'est réglé", () => { markDone(it); render(); flashOk(); vib([12, 50, 18]); toast("réglé", "annuler", () => { unDone(it); render(); }); }],
+    ["réglé · je dicte le compte rendu", () => setTimeout(() => startListen({ cr: { id: it.id, title: it.title, who: p.who || "" }, keepHF: true }), 150)],
+    ["pas joint · je rappelle dans 1 h", retry(nextHalf(3600000), "dans 1 h")],
+    ["pas joint · demain matin", retry(new Date(ymd(isWE(addDays(1)) && SPACE === "pro" ? nextWorkDay() : addDays(1)) + "T09:00"), "demain 9h")],
+    ["plus tard", () => {}]
+  ];
+  $("ackList").innerHTML = ch.map(([l], n) => `<button data-n="${n}"${n === 1 ? ' style="color:rgb(var(--glow))"' : ""}>${l}</button>`).join("");
+  $("ackList").onclick = e => { const b = e.target.closest("button"); if (!b) return; hide(); ch[+b.dataset.n][1](); };
+  show("ack");
+}
+
+/* ===== PONT TÉLÉPHONE (MacroDroid → Supabase → Tempo) ===== */
+const I_FN = "https://jifaszjdhretgorxlpvs.supabase.co/functions/v1/tempo-inbox";
+async function iFn(body){
+  const r = await fetch(I_FN, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(Object.assign({ device: DEVICE }, body)) });
+  let j = {}; try { j = await r.json(); } catch (e) {} return j;
+}
+const inboxLink = () => { const t = LS.get("tempo_itok", ""); return t ? I_FN + "?k=" + t : ""; };
+async function inboxCreate(){
+  const t = b64u(crypto.getRandomValues(new Uint8Array(24)));
+  let r = {}; try { r = await iFn({ action: "register", token: t }); } catch (e) {}
+  if (!r.ok) return toast("serveur injoignable, réessaie");
+  LS.set("tempo_itok", t); paintInbox(); inboxCopy();
+}
+async function inboxCopy(){
+  const l = inboxLink(); if (!l) return;
+  try { await navigator.clipboard.writeText(l); toast("lien copié · colle-le dans MacroDroid", "", null, 5000); }
+  catch (e) { try { await navigator.share({ text: l }); } catch (er) {} }
+}
+async function inboxOff(){
+  try { await iFn({ action: "off" }); } catch (e) {}
+  LS.set("tempo_itok", ""); LS.set("tempo_ilast", null); paintInbox(); toast("pont téléphone coupé");
+}
+function paintInbox(){
+  const on = !!LS.get("tempo_itok", ""), last = LS.get("tempo_ilast", null);
+  $("iState").textContent = on
+    ? `Lien actif${last ? " · dernier événement reçu " + new Date(last).toLocaleString("fr-FR", { weekday: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : " · rien reçu pour l'instant"}. Appel manqué → « Rappeler … » ; SMS / WhatsApp → Claude ne garde que ce qui demande une action ; fin d'appel avec un contact → Tempo propose le compte rendu.`
+    : "Avec l'appli gratuite MacroDroid, Tempo reçoit tes appels manqués, tes SMS et tes WhatsApp, et en tire les actions tout seul. Guide pas à pas : MACRODROID.txt.";
+  $("iGo").textContent = on ? "recréer le lien" : "créer mon lien MacroDroid";
+  $("iCopy").style.display = on ? "" : "none"; $("iOff").style.display = on ? "" : "none";
+}
+$("iGo").onclick = () => { if (LS.get("tempo_itok", "")) toast("l'ancien lien ne marchera plus", "recréer", inboxCreate, 6000); else inboxCreate(); };
+$("iCopy").onclick = inboxCopy;
+$("iOff").onclick = inboxOff;
+let inboxBusy = false;
+async function pullInbox(){
+  if (inboxBusy || !LS.get("tempo_itok", "") || document.hidden) return;
+  inboxBusy = true;
+  try {
+    const j = await iFn({ action: "pull" });
+    if (j.ok) {
+      if (j.last_at) LS.set("tempo_ilast", j.last_at);
+      if (!j.linked) LS.set("tempo_itok", "");
+      if (j.events && j.events.length) LS.set("tempo_iq", LS.get("tempo_iq", []).concat(j.events).slice(-150));
+    }
+  } catch (e) {}
+  inboxBusy = false;
+  await processInbox();
+}
+function parseContactsTxt(t){
+  return (t || "").split("\n").map(l => l.trim()).filter(Boolean).map(l => {
+    const parts = l.split(":").map(x => (x || "").trim()), name = parts.shift();
+    return { name, phone: (parts.find(p => /^[+\d][\d .\-()]{7,}$/.test(p)) || "").replace(/[^\d+]/g, "") };
+  }).filter(c => c.name);
+}
+const last9 = n => (n || "").replace(/[^\d]/g, "").slice(-9);
+function knownContact(name, num){
+  for (const sp of [SPACE, SPACE === "pro" ? "perso" : "pro"]) {
+    const txt = sp === SPACE ? CFG.contacts : ((CFG.sp && CFG.sp[sp]) || {}).contacts;
+    for (const c of parseContactsTxt(txt)) {
+      const f = norm(c.name).split(" ")[0];
+      if ((num && c.phone && last9(c.phone) === last9(num)) || (name && f.length > 2 && norm(name).split(" ")[0] === f)) return { sp, name: c.name };
+    }
+  }
+  return null;
+}
+const isNumLike = s => /^[+\d\s.()-]{6,}$/.test(s || "");
+const fmtNum = n => { const d = (n || "").replace(/[^\d+]/g, "").replace(/^\+33/, "0").replace(/^0033/, "0"); return /^0\d{9}$/.test(d) ? d.replace(/(\d{2})(?=\d)/g, "$1 ").trim() : d; };
+const hhmm = iso => { const d = new Date(iso); return pad(d.getHours()) + "h" + pad(d.getMinutes()); };
+function missedCall(e){
+  const num = (e.num || "").replace(/[^\d+]/g, ""), raw = e.who && !isNumLike(e.who) ? e.who : "";
+  const kc = knownContact(raw, num), name = (kc && kc.name) || raw;
+  if (!name && !num) return null;                                   // numéro masqué : rien à rappeler
+  const sp = kc ? kc.sp : (isWE() ? "perso" : SPACE), st = spaceState(sp);
+  const f = name ? norm(name).split(" ")[0] : "";
+  const ex = st.items.find(i => !i.done && i.cat === "appel" && ((f && norm(i.title).includes(f)) || (num && last9(i.note).includes(last9(num)) && last9(num))));
+  if (ex) { ex.note = ((ex.note ? ex.note + " · " : "") + "t'a appelé à " + hhmm(e.at)).slice(-600); ex.u = Math.max(ex.u, 2); ex.notified = false; putSpace(sp, st); return sp; }
+  const label = name || fmtNum(num);
+  const it = { id: uid(), created: Date.now(), done: false, doneAt: null, src: "téléphone", raw: "appel manqué " + label, title: "Rappeler " + label, cat: "appel", ch: "", u: 2, due: today(), time: null, note: `appel manqué à ${hhmm(e.at)}${num && name ? " · " + fmtNum(num) : ""}`, orig: null };
+  st.items.unshift(it); putSpace(sp, st); if (sp === SPACE) calSync(it);
+  return sp;
+}
+let inboxRunning = false;
+async function processInbox(){
+  if (inboxRunning) return;
+  let q = LS.get("tempo_iq", []); if (!q.length) return;
+  if (listening || typing || document.querySelector(".sheet.show") || $("ring").classList.contains("think")) return;   // on attend un moment calme
+  inboxRunning = true;
+  const old = Date.now() - 3 * 86400000;
+  q = q.filter(e => Date.parse(e.at) > old);
+  const calls = q.filter(e => e.kind === "appel"), msgs = q.filter(e => ["sms", "whatsapp", "notif"].includes(e.kind)), ends = q.filter(e => e.kind === "fin_appel");
+  let nCalls = 0; const callNames = [];
+  for (const e of calls) { const sp = missedCall(e); if (sp) { nCalls++; callNames.push(e.who && !isNumLike(e.who) ? e.who : fmtNum(e.num)); } }
+  let keep = [];
+  if (msgs.length) {
+    if (CFG.key) {
+      const txt = msgs.map(e => `[${e.kind === "whatsapp" ? "WHATSAPP" : e.kind === "sms" ? "SMS" : "NOTIFICATION " + (e.app || "")}] De : ${e.who || fmtNum(e.num) || "?"}${e.num && e.who && !isNumLike(e.who) ? " (" + fmtNum(e.num) + ")" : ""} — reçu ${new Date(e.at).toLocaleString("fr-FR", { weekday: "long", hour: "2-digit", minute: "2-digit" })}\n${e.body || "(vide)"}`).join("\n\n");
+      let ok = false; try { ok = await capture(txt, "téléphone", "phone"); } catch (er) { ok = false; }
+      if (!ok) keep = msgs;                                          // Claude injoignable : on réessaiera
+    } else {
+      /* sans Claude : seulement les messages de tes contacts connus → « Répondre à … » */
+      for (const e of msgs) {
+        const kc = knownContact(e.who && !isNumLike(e.who) ? e.who : "", e.num); if (!kc) continue;
+        const st = spaceState(kc.sp);
+        st.items.unshift({ id: uid(), created: Date.now(), done: false, doneAt: null, src: "téléphone", raw: e.body || "", title: "Répondre à " + kc.name, cat: "message", ch: "", u: 2, due: today(), time: null, note: ((e.kind === "whatsapp" ? "WhatsApp : " : "SMS : ") + (e.body || "")).slice(0, 220), mail: { to: kc.name, subject: "", body: "", via: e.kind === "whatsapp" ? "wa" : "sms" }, orig: null });
+        putSpace(kc.sp, st);
+      }
+    }
+  }
+  LS.set("tempo_iq", keep);
+  render();
+  if (nCalls) toast(nCalls === 1 ? `📞 appel manqué · ${callNames[0]} → à rappeler` : `📞 ${nCalls} appels manqués → à rappeler`, "", null, 5000);
+  /* fin d'appel passé depuis le téléphone : on propose le compte rendu (si c'est un contact connu) */
+  const end = ends.filter(e => Date.now() - Date.parse(e.at) < 30 * 60000).pop();
+  if (end && !S.pendingAck) {
+    const raw = end.who && !isNumLike(end.who) ? end.who : "", kc = knownContact(raw, end.num);
+    if (kc || raw) {
+      const who = (kc && kc.name) || raw, sp = (kc && kc.sp) || SPACE, f = norm(who).split(" ")[0];
+      const task = spaceState(sp).items.find(i => !i.done && i.cat === "appel" && norm(i.title).includes(f));
+      setTimeout(() => toast(task ? `appel avec ${who} · « ${task.title} » c'est réglé ?` : `appel avec ${who} · un compte rendu ?`, "dicter", () => startListen({ cr: { id: task ? task.id : null, title: task ? task.title : "", who, sp } }), 12000), nCalls ? 5400 : 300);
+    }
+  }
+  inboxRunning = false;
+}
+
+/* ===== FICHE AVANT D'Y ALLER : tout ce qui touche ce chantier / ce contact ===== */
+function related(it, items){
+  const c = contactOf(it), first = c ? norm(c.name).split(" ")[0] : "";
+  const chK = it.ch ? (chantiers().find(x => x.name === it.ch) || { keys: [] }).keys : [];
+  const hay = i => norm([i.title, i.note, i.ch, i.mail && i.mail.to, i.mail && i.mail.subject].filter(Boolean).join(" "));
+  return items.filter(i => i.id !== it.id && ((it.ch && (i.ch === it.ch || chK.some(k => k.length > 2 && hay(i).includes(k)))) || (first.length > 2 && hay(i).includes(first))));
+}
+let FICHE = null;
+async function openFiche(it){
+  const rel = related(it, S.items), c = contactOf(it);
+  const open = rel.filter(i => !i.done && !isMemo(i) && !isList(i)).sort((a, b) => ((a.due || "9") + (a.time || "")).localeCompare((b.due || "9") + (b.time || ""))).slice(0, 8);
+  const done = rel.filter(i => i.done && !isMemo(i)).sort((a, b) => (b.doneAt || 0) - (a.doneAt || 0)).slice(0, 6);
+  const infos = rel.filter(i => isMemo(i) && i.rb !== "depense").sort((a, b) => b.created - a.created).slice(0, 6);
+  FICHE = { it, c, sum: "" };
+  const when = it.due ? (d => WD[d.getDay()] + " " + d.getDate() + " " + MO[d.getMonth()])(new Date(it.due + "T12:00")) + (it.time ? " · " + it.time.replace(":", "h") : "") : "";
+  const row = (d, t, s) => `<div class="rpR"><span class="rpD">${d}</span><div><div>${esc(t)}</div>${s ? `<div class="rpS">${esc(s)}</div>` : ""}</div></div>`;
+  const sec = (t, h) => h ? `<h3 class="rpH">${t}</h3>${h}` : "";
+  const paint = () => {
+    $("ficheBody").innerHTML = `
+      <div class="rpTop">Tempo · avant d'y aller</div>
+      <h1 class="rpT">${esc(it.title)}</h1>
+      <div class="rpP">${[when, it.ch, c && c.name].filter(Boolean).map(esc).join(" · ")}</div>
+      ${it.note ? `<p class="rpSum" style="font-size:15px">${esc(it.note)}</p>` : ""}
+      ${FICHE.sum ? `<p class="rpSum">${esc(FICHE.sum)}</p>` : (CFG.key && rel.length ? `<p class="rpSum" style="color:var(--mut)">je regarde ce qu'il faut avoir en tête…</p>` : "")}
+      ${sec("Encore ouvert sur ce sujet", open.map(i => row(i.due ? fdt(Date.parse(i.due + "T12:00")) : "—", i.title, i.note || "")).join(""))}
+      ${sec("Ce qui a déjà été fait", done.map(i => row(fdt(i.doneAt || i.created), i.title, i.note || "")).join(""))}
+      ${sec("Infos notées", infos.map(i => row(fdt(i.created), i.title, i.note || "")).join(""))}
+      ${!rel.length ? `<p class="empty" style="margin-top:30px">rien d'autre dans Tempo sur ce sujet pour l'instant.</p>` : ""}
+      <div class="rpBtns">${c && c.phone ? `<button id="fiCall" class="ok">appeler ${esc(c.name.split(" ")[0])}</button>` : ""}<button id="fiEdit">ouvrir la tâche</button><button id="fiClose">fermer</button></div>`;
+  };
+  paint(); show("fiche");
+  if (CFG.key && rel.length) {
+    try {
+      FICHE.sum = await claudeText("Prépare Raphaël avant ce rendez-vous ou cette tâche, en 2 phrases courtes (35 mots max) : ce qu'il doit avoir en tête et la question ou la chose à ne pas oublier. Uniquement à partir des éléments fournis, n'invente rien. Tutoiement, direct, sans emoji, texte brut.",
+        `À VENIR : ${it.title}${it.ch ? " (" + it.ch + ")" : ""}${it.note ? " — " + it.note : ""}\nENCORE OUVERT :\n${open.map(i => "- " + i.title + (i.note ? " (" + i.note + ")" : "")).join("\n") || "rien"}\nDÉJÀ FAIT :\n${done.map(i => "- " + fdt(i.doneAt || i.created) + " " + i.title + (i.note ? " (" + i.note + ")" : "")).join("\n") || "rien"}\nINFOS :\n${infos.map(i => "- " + i.title).join("\n") || "rien"}`, 160);
+    } catch (e) { FICHE.sum = ""; }
+    if (FICHE && FICHE.it === it && $("fiche").classList.contains("show")) paint();
+  }
+}
+$("fiche").addEventListener("click", e => {
+  if (!FICHE) return;
+  if (e.target.closest("#fiClose")) { hide(); return; }
+  if (e.target.closest("#fiEdit")) { const it = FICHE.it; hide(); setTimeout(() => openEdit(it), 120); return; }
+  if (e.target.closest("#fiCall") && FICHE.c) { const it = FICHE.it; S.pendingAck = { id: it.id, at: Date.now(), who: FICHE.c.name }; save(); hide(); location.href = "tel:" + FICHE.c.phone.replace(/[^\d+]/g, ""); }
+});
+$("eFiche").onclick = () => { if (!cur) return; const it = cur; hide(); setTimeout(() => openFiche(it), 120); };
 
 /* reporter */
 let pp = null;
@@ -1294,18 +1622,34 @@ function postponeChoices(){
   return c;
 }
 function openPostpone(it){
-  pp = it; const ch = postponeChoices();
-  $("ppTitle").textContent = it.title;
-  $("ppList").innerHTML = ch.map(([l], n) => `<button data-n="${n}">${l}</button>`).join("") + `<button data-n="date">choisir une date…</button>`;
+  pp = it; const ch = postponeChoices(), n0 = it.ppN || 0;
+  $("ppTitle").innerHTML = esc(it.title) + (n0 >= 2 ? `<span style="display:block;font-size:14px;color:var(--mut);margin-top:8px">déjà reportée ${n0} fois. et si on la démarrait juste 2 minutes ?</span>` : "");
+  $("ppList").innerHTML = (n0 >= 2 ? `<button data-n="go2" style="color:rgb(var(--glow))">2 minutes, maintenant</button><button data-n="cut" style="color:rgb(var(--glow))">la découper : juste le 1er pas</button>` : "")
+    + ch.map(([l], n) => `<button data-n="${n}">${l}</button>`).join("") + `<button data-n="date">choisir une date…</button>`;
   $("ppList").onclick = e => {
     const b = e.target.closest("button"); if (!b || !pp) return;
     const it2 = pp; hide();
+    if (b.dataset.n === "go2") { setTimeout(() => startFocus(it2.id, SPACE, 2), 150); return; }
+    if (b.dataset.n === "cut") { cutTask(it2); return; }
     if (b.dataset.n === "date") { openEdit(it2); setTimeout(() => { try { $("eDate").showPicker(); } catch (er) { $("eDate").focus(); } }, 350); return; }
     const before = { due: it2.due, time: it2.time, u: it2.u };
     ch[+b.dataset.n][1](it2); it2.notified = false; it2.ppN = (it2.ppN || 0) + 1; save(); render(); calSync(it2);
     toast("reporté · " + ch[+b.dataset.n][0], "annuler", () => { Object.assign(it2, before); save(); render(); calSync(it2); });
   };
   show("pp");
+}
+/* tâche qui traîne : on n'en garde que le tout premier pas, pour maintenant */
+async function cutTask(it){
+  toast("je cherche le 1er pas…", "", null, 2500);
+  let step = "";
+  if (CFG.key) { try { step = await claudeText("Raphaël repousse cette tâche depuis plusieurs jours. Donne LE tout premier pas, concret, faisable en 5 minutes maximum, formulé comme une tâche courte qui commence par un verbe à l'infinitif (8 mots max). Texte brut, sans guillemets ni point final.", `Tâche : ${it.title}${it.ch ? " (" + it.ch + ")" : ""}${it.note ? " — " + it.note : ""}`, 60); } catch (e) {} }
+  if (!step) step = { appel: "Trouver le numéro et noter les 2 questions", mail: "Écrire juste l'objet et la première phrase", message: "Écrire le premier mot du message", materiel: "Lister les 3 références nécessaires", facture: "Ouvrir l'appli de la banque", rdv: "Chercher le numéro pour prendre rendez-vous" }[it.cat] || "Ouvrir le dossier et noter la toute première action";
+  step = step.replace(/^["«\s-]+|["»\s.]+$/g, "");
+  const nx = { id: uid(), created: Date.now(), done: false, doneAt: null, src: "découpe", raw: "", title: step.charAt(0).toUpperCase() + step.slice(1), cat: it.cat === "appel" ? "appel" : SPACE === "perso" ? "tache" : (it.ch ? "chantier" : "remarque"), ch: it.ch || "", u: 3, due: today(), time: null, note: "1er pas de : " + it.title, orig: null, parent: it.id };
+  const before = { due: it.due, time: it.time };
+  it.due = ymd(SPACE === "pro" ? nextWorkDay() : addDays(1)); it.time = null; it.notified = false;
+  S.items.unshift(nx); save(); render([nx.id]); calSync(it); vib(15);
+  toast("1er pas ajouté pour maintenant", "annuler", () => { S.items = S.items.filter(i => i.id !== nx.id); Object.assign(it, before); save(); render(); calSync(it); }, 6000);
 }
 
 /* historique & chantiers */
@@ -1608,9 +1952,19 @@ const openSettings = () => {
   $("lStyle").textContent = P ? "Ma façon d'écrire mes textos et mails perso" : "Ma façon d'écrire mes mails";
   $("sContacts").value = CFG.contacts; $("sPick").style.display = PICK ? "" : "none"; $("sStyle").value = CFG.style; $("sSil").value = String(CFG.silence); { const R = RIT(); $("rOn").checked = R.on; $("rM").value = R.matin; $("rS").value = R.soir; $("rW").value = R.semaine; $("sFoc").value = String(CFG.focusMin || 25); } $("sVis").value = CFG.visual === "rond" ? "rond" : "const"; $("sAg").checked = CFG.agenda !== false;
   const n = (CFG.learn || []).length; $("sLearn").textContent = n ? `Tempo a retenu ${n} correction${n > 1 ? "s" : ""} de ta part.` : "Quand tu corriges un classement, Tempo le retient pour la suite.";
+  $("vMode").value = CFG.vMode === "voxtral" ? "voxtral" : "google"; $("vKey").value = CFG.mkey || ""; $("vCap").value = String(CFG.vCap || 2); $("vMax").value = String(CFG.vMax || 120);
+  $("vSay").value = ["auto", "1", "0"].includes(CFG.vSay) ? CFG.vSay : "auto"; $("vAuto").checked = !!CFG.vAuto;
+  paintVox(); if (CFG.mkey) voxSync().then(paintVox);
+  paintInbox();
   show("set");
 };
-$("sSave").onclick = () => { CFG.key = $("sKey").value.trim(); CFG.profile = $("sProfile").value.trim() || DEFAULT_PROFILE; CFG.ch = $("sCh").value; CFG.team = $("sTeam").value; CFG.contacts = $("sContacts").value; CFG.style = $("sStyle").value.trim() || DEFAULT_STYLE; CFG.silence = +$("sSil").value; LS.set("tempo_ritcfg", { on: $("rOn").checked, matin: $("rM").value || "08:00", soir: $("rS").value || "18:30", semaine: $("rW").value || "19:00" }); CFG.focusMin = +$("sFoc").value; schedulePushSync(); CFG.visual = $("sVis").value; applyVisual(); CFG.agenda = $("sAg").checked; CFG.msId = $("sMsId").value.trim(); CFG.calSync = $("sCal").checked; CFG.gAll = $("gAll").checked; saveCfg(); paintMailBtn(); hide(); render(); toast(CFG.key ? "Claude est branché" : "enregistré"); };
+$("vMode").onchange = paintVox;
+$("sSave").onclick = () => { CFG.key = $("sKey").value.trim(); CFG.profile = $("sProfile").value.trim() || DEFAULT_PROFILE; CFG.ch = $("sCh").value; CFG.team = $("sTeam").value; CFG.contacts = $("sContacts").value; CFG.style = $("sStyle").value.trim() || DEFAULT_STYLE; CFG.silence = +$("sSil").value; LS.set("tempo_ritcfg", { on: $("rOn").checked, matin: $("rM").value || "08:00", soir: $("rS").value || "18:30", semaine: $("rW").value || "19:00" }); CFG.focusMin = +$("sFoc").value; schedulePushSync(); CFG.visual = $("sVis").value; applyVisual(); CFG.agenda = $("sAg").checked; CFG.msId = $("sMsId").value.trim(); CFG.calSync = $("sCal").checked; CFG.gAll = $("gAll").checked;
+  const capWas = CFG.vCap, keyWas = CFG.mkey;
+  CFG.vMode = $("vMode").value; CFG.mkey = $("vKey").value.trim(); CFG.vCap = +$("vCap").value || 2; CFG.vMax = +$("vMax").value || 120; CFG.vSay = $("vSay").value; CFG.vAuto = $("vAuto").checked;
+  if (CFG.mkey && (CFG.vCap !== capWas || CFG.mkey !== keyWas)) voxSync(true);
+  saveCfg(); paintMailBtn(); hide(); render();
+  toast(CFG.vMode === "voxtral" && CFG.mkey && CFG.mkey !== keyWas ? "Voxtral branché · plafond " + eur(CFG.vCap) + " par mois" : CFG.key ? "Claude est branché" : "enregistré"); };
 $("sPick").onclick = pickMany;
 $("rTry1").onclick = () => { hide(); setTimeout(() => openRitual("matin"), 150); };
 $("rTry2").onclick = () => { hide(); setTimeout(() => openRitual("soir"), 150); };
@@ -1621,13 +1975,13 @@ $("sNotif").onclick = async () => {
   enablePush();
 };
 $("sExp").onclick = () => {
-  const b = new Blob([JSON.stringify({ S, CFG: Object.assign({}, CFG, { key: "" }) }, null, 1)], { type: "application/json" });
+  const b = new Blob([JSON.stringify({ S, CFG: Object.assign({}, CFG, { key: "", mkey: "" }) }, null, 1)], { type: "application/json" });
   const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = "tempo-" + today() + ".json"; a.click();
 };
 $("sImp").onclick = () => $("sFile").click();
 $("sFile").onchange = async e => {
   const f = e.target.files[0]; if (!f) return;
-  try { const j = JSON.parse(await f.text()); if (j.S && j.S.items) { S = j.S; if (j.CFG) CFG = Object.assign(CFG, j.CFG, { key: CFG.key }); save(); saveCfg(); hide(); render(); toast("restauré"); } }
+  try { const j = JSON.parse(await f.text()); if (j.S && j.S.items) { S = j.S; if (j.CFG) CFG = Object.assign(CFG, j.CFG, { key: CFG.key, mkey: CFG.mkey }); save(); saveCfg(); hide(); render(); toast("restauré"); } }
   catch (err) { toast("fichier illisible"); }
 };
 
@@ -1722,8 +2076,47 @@ function cvFrame(t){
     if (p.s > 1.6) { CX.fillStyle = `rgba(${glowRGB},${al * .18})`; CX.beginPath(); CX.arc(p.x, p.y, rr * 3.2, 0, 6.283); CX.fill(); }
     CX.fillStyle = `rgba(${glowRGB},${al})`; CX.beginPath(); CX.arc(p.x, p.y, rr, 0, 6.283); CX.fill();
   }
+  // ta semaine : chaque chose réglée allume une étoile dorée, reliée à la précédente
+  if (STARS.length) {
+    const dim = st === "on" || st === "think" ? .3 : 1;
+    CX.lineWidth = .9;
+    for (let k = 1; k < STARS.length; k++) {
+      const a = STARS[k - 1], b = STARS[k], d = Math.hypot(a.x - b.x, a.y - b.y);
+      if (d < 120) { CX.strokeStyle = `rgba(${STAR_RGB},${(.12 + .3 * (1 - d / 120)) * dim})`; CX.beginPath(); CX.moveTo(a.x, a.y); CX.lineTo(b.x, b.y); CX.stroke(); }
+    }
+    for (const s of STARS) {
+      const age = (t - s.born) / 1000, birth = age >= 0 && age < 1.8 ? 1 - age / 1.8 : 0;
+      const tw = .72 + .28 * Math.sin(t / 1100 + s.ph), rr = (s.u === 3 ? 2.6 : 2.1) * (1 + birth * 2.4);
+      CX.fillStyle = `rgba(${STAR_RGB},${(.14 + birth * .45) * dim})`; CX.beginPath(); CX.arc(s.x, s.y, rr * 3.2, 0, 6.283); CX.fill();
+      CX.strokeStyle = `rgba(${STAR_RGB},${.55 * tw * dim})`; CX.lineWidth = .8; CX.beginPath();
+      CX.moveTo(s.x - rr * 2.4, s.y); CX.lineTo(s.x + rr * 2.4, s.y); CX.moveTo(s.x, s.y - rr * 2.4); CX.lineTo(s.x, s.y + rr * 2.4); CX.stroke();
+      CX.fillStyle = `rgba(${STAR_RGB},${Math.min(1, tw + birth) * dim})`; CX.beginPath(); CX.arc(s.x, s.y, rr, 0, 6.283); CX.fill();
+    }
+  }
 }
 requestAnimationFrame(cvFrame);
+/* étoiles de la semaine (lundi → dimanche, pro + perso) */
+const STAR_RGB = "214,158,58";
+let STARS = [], starsSig = "", starsInit = false;
+function weekStart(){ const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return d.getTime(); }
+function hashN(s){ let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0) / 4294967296; }
+function refreshStars(){
+  const ws = weekStart(), arr = [];
+  for (const sp of ["pro", "perso"]) for (const i of spaceState(sp).items || []) if (i.done && i.doneAt >= ws && !isList(i) && !isMemo(i)) arr.push(i);
+  arr.sort((a, b) => a.doneAt - b.doneAt);
+  const sig = arr.map(i => i.id).join(","); if (sig === starsSig) return;
+  starsSig = sig;
+  const old = new Map(STARS.map(s => [s.id, s])), now = performance.now();
+  let fresh = false;
+  STARS = arr.slice(-70).map(i => {
+    const o = old.get(i.id); if (o) return o;
+    const a = hashN(i.id) * 6.283, r = 40 + Math.sqrt(hashN(i.id + "r")) * 96;
+    if (starsInit) fresh = true;
+    return { id: i.id, x: CC + Math.cos(a) * r, y: CC + Math.sin(a) * r, born: starsInit ? now : -1e9, u: i.u, ph: hashN(i.id + "p") * 6.283 };
+  });
+  starsInit = true;
+  if (fresh) kickT = now;
+}
 
 function ringState(s){ const r = $("ring"); r.classList.remove("on", "think", "ok"); if (s) r.classList.add(s); }
 function flashOk(){ ringState("ok"); setTimeout(() => { if (!listening) ringState(""); }, 900); }
@@ -1732,11 +2125,28 @@ function idle(){
   $("live").innerHTML = ""; $("acts").classList.remove("show"); $("alt").style.display = "";
   $("typed").style.display = "none"; $("typed").value = ""; idleHint();
 }
-function startListen(){
+/* ===== écoute : Voxtral (enregistrement → transcription Mistral) ou reco Google du téléphone ===== */
+let LISTEN_OPTS = {}, nsT = null;
+const listenHint = o => o.cr ? "compte rendu · je t'écoute" : o.follow ? "une correction ? sinon je me tais" : "je t'écoute";
+function startListen(opts){
+  opts = opts || {};
+  if ($("ring").classList.contains("think")) return;
+  LISTEN_OPTS = opts;
+  if (!opts.follow) FOLLOW = 0;
+  if (opts.auto) HANDS_FREE = true; else if (!opts.keepHF) HANDS_FREE = false;
+  try { window.speechSynthesis && speechSynthesis.cancel(); } catch (e) {}
+  if (voxOn()) return startRec(opts);
+  startListenSR(opts);
+}
+function startListenSR(opts){
+  opts = opts || {};
   if (!SR) { startType(); return; }
   finalTxt = ""; interim = "";
   rec = new SR(); rec.lang = "fr-FR"; rec.continuous = true; rec.interimResults = true;
+  clearTimeout(nsT);
+  if (opts.noSpeech) nsT = setTimeout(() => { if (listening && !finalTxt && !interim) { stopListen(); idle(); } }, opts.noSpeech);
   rec.onresult = e => {
+    clearTimeout(nsT);
     kickT = performance.now(); const R = $("ring"); R.classList.add("kick"); clearTimeout(R._k); R._k = setTimeout(() => R.classList.remove("kick"), 160);
     interim = "";
     for (let i = e.resultIndex; i < e.results.length; i++) {
@@ -1754,21 +2164,169 @@ function startListen(){
   };
   rec.onend = () => { if (listening) { try { rec.start(); } catch (e) {} } };
   rec.onerror = e => { if (e.error === "not-allowed") { listening = false; idle(); toast("autorise le micro"); } };
-  listening = true; ringState("on"); hint("je t'écoute");
+  listening = true; ringState("on"); hint(listenHint(opts));
   $("acts").classList.add("show"); $("alt").style.display = "none";
   try { rec.start(); } catch (e) {}
   vib(12);
 }
-function stopListen(){ listening = false; clearTimeout(silT); try { rec && rec.stop(); } catch (e) {} }
+function stopListen(){ listening = false; clearTimeout(silT); clearTimeout(nsT); try { rec && rec.stop(); } catch (e) {} rec = null; if (VOICE) stopRec(); }
 function validate(){
   if (typing) { const t = $("typed").value; idle(); capture(t, "texte"); return; }
-  const t = (finalTxt + " " + interim).trim(); stopListen(); $("acts").classList.remove("show"); capture(t, "voix");
+  const o = LISTEN_OPTS || {}, ctx = o.cr ? { cr: o.cr } : undefined;
+  if (VOICE) { listening = false; clearTimeout(silT); $("acts").classList.remove("show"); vib(8); stopRec().then(r => sendVox(r, o)); return; }
+  const t = (finalTxt + " " + interim).trim(); stopListen(); $("acts").classList.remove("show"); capture(t, "voix", undefined, ctx);
+}
+
+/* --- Voxtral --- */
+const V_FN = "https://jifaszjdhretgorxlpvs.supabase.co/functions/v1/tempo-voice";
+const V_USD_MIN = 0.0035;
+const curMonth = () => new Date().toLocaleString("sv-SE", { timeZone: "Europe/Paris" }).slice(0, 7);
+const voxUse = () => { const u = LS.get("tempo_vox", null); return u && u.month === curMonth() ? u : { month: curMonth(), usd: 0, sec: 0, cap: +CFG.vCap || 2 }; };
+/* plafond : on bascule sur Google dès qu'il ne reste plus de quoi payer une dictée max */
+const voxCapped = () => { const u = voxUse(); return u.usd + V_USD_MIN * ((+CFG.vMax || 120) / 60) > (u.cap || +CFG.vCap || 2); };
+const voxOn = () => CFG.vMode === "voxtral" && !!CFG.mkey && !!(window.MediaRecorder || window.AudioContext) && !voxCapped();
+let VOICE = null, LAST_AUDIO = null;
+const fmtSec = s => Math.floor(s / 60) + ":" + pad(Math.floor(s % 60));
+async function startRec(opts){
+  let stream;
+  try { stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1 } }); }
+  catch (e) { idle(); toast("autorise le micro pour Tempo"); return; }
+  const V = VOICE = { stream, chunks: [], pcm: [], pcmLen: 0, t0: Date.now(), spoke: false, loud: 0, lastLoud: Date.now(), floor: null, max: 0, opts };
+  const mime = ["audio/webm;codecs=opus", "audio/webm", "audio/ogg;codecs=opus", "audio/mp4"].find(m => window.MediaRecorder && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(m)) || "";
+  try {
+    V.mr = new MediaRecorder(stream, mime ? { mimeType: mime, audioBitsPerSecond: 32000 } : undefined);
+    V.mime = V.mr.mimeType || mime || "audio/webm";
+    V.mr.ondataavailable = e => { if (e.data && e.data.size) V.chunks.push(e.data); };
+    V.mr.start(1000);
+  } catch (e) { V.mr = null; }
+  /* niveau du micro : anime la constellation, détecte la fin par silence, et garde une copie WAV 16 kHz (repli) */
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext; V.ac = new AC();
+    if (V.ac.state === "suspended") { try { await V.ac.resume(); } catch (e) {} }
+    const src = V.ac.createMediaStreamSource(stream), proc = V.ac.createScriptProcessor(4096, 1, 1), mute = V.ac.createGain();
+    const ratio = V.ac.sampleRate / 16000; V.proc = proc; mute.gain.value = 0;
+    proc.onaudioprocess = ev => {
+      if (VOICE !== V) return;
+      const x = ev.inputBuffer.getChannelData(0);
+      let s = 0; for (let i = 0; i < x.length; i++) s += x[i] * x[i];
+      levelTick(V, Math.sqrt(s / x.length));
+      const n = Math.floor(x.length / ratio), out = new Int16Array(n);
+      for (let i = 0; i < n; i++) { const a = Math.floor(i * ratio), b = Math.min(x.length, Math.floor((i + 1) * ratio)); let m = 0; for (let k = a; k < b; k++) m += x[k]; m /= Math.max(1, b - a); out[i] = Math.max(-1, Math.min(1, m)) * 0x7fff; }
+      V.pcm.push(out); V.pcmLen += n;
+    };
+    src.connect(proc); proc.connect(mute); mute.connect(V.ac.destination);
+  } catch (e) { V.proc = null; }
+  if (!V.mr && !V.proc) { stream.getTracks().forEach(t => t.stop()); VOICE = null; startListenSR(opts); return; }
+  listening = true; ringState("on"); hint(listenHint(opts)); $("live").innerHTML = "";
+  $("acts").classList.add("show"); $("alt").style.display = "none";
+  vib(12);
+  V.tick = setInterval(() => recTick(V), 250);
+}
+function levelTick(V, rms){
+  /* bruit de fond : descend vite, monte lentement et reste plafonné, pour que ta voix passe toujours au-dessus */
+  V.max = Math.max(V.max || 0, rms);
+  if (V.floor == null) V.floor = .006;
+  if (rms < V.floor) V.floor = V.floor * .6 + rms * .4; else V.floor = Math.min(.03, V.floor * .995 + rms * .005);
+  const thr = Math.max(.014, V.floor * 3);
+  if (rms > thr) {
+    V.loud++; V.lastLoud = Date.now(); if (V.loud >= 2) V.spoke = true;
+    const t = performance.now(); if (t - kickT > 110) { kickT = t; const R = $("ring"); R.classList.add("kick"); clearTimeout(R._k); R._k = setTimeout(() => R.classList.remove("kick"), 140); }
+  }
+}
+function recTick(V){
+  if (VOICE !== V) return;
+  const el = (Date.now() - V.t0) / 1000, max = +CFG.vMax || 120;
+  hint(listenHint(V.opts) + " · " + fmtSec(el) + (el > max - 15 ? " · fin dans " + Math.max(0, Math.ceil(max - el)) + " s" : ""));
+  if (el >= max) { vib([30, 60, 30]); toast("dictée max atteinte · j'envoie"); validate(); return; }
+  if (V.proc && !V.spoke && V.opts.noSpeech && Date.now() - V.t0 > V.opts.noSpeech) { stopRec(); idle(); return; }
+  if (V.proc && V.spoke && CFG.silence > 0 && Date.now() - V.lastLoud > CFG.silence * 1000) validate();
+}
+function stopRec(){
+  const V = VOICE; if (!V) return Promise.resolve(null);
+  VOICE = null; clearInterval(V.tick);
+  const dur = (Date.now() - V.t0) / 1000;
+  return new Promise(res => {
+    const fin = () => {
+      try { V.stream.getTracks().forEach(t => t.stop()); } catch (e) {}
+      try { V.proc && V.proc.disconnect(); V.ac && V.ac.close(); } catch (e) {}
+      res({ blob: V.chunks.length ? new Blob(V.chunks, { type: V.mime }) : null, mime: V.mime || "", pcm: V.pcm, pcmLen: V.pcmLen, dur, spoke: V.spoke || !V.proc, hasLevel: !!V.proc, max: V.max || 0 });
+    };
+    if (V.mr && V.mr.state !== "inactive") { V.mr.onstop = fin; try { V.mr.stop(); } catch (e) { fin(); } } else fin();
+  });
+}
+function wavFrom(chunks, len){
+  const buf = new ArrayBuffer(44 + len * 2), v = new DataView(buf);
+  const w = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+  w(0, "RIFF"); v.setUint32(4, 36 + len * 2, true); w(8, "WAVE"); w(12, "fmt "); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+  v.setUint32(24, 16000, true); v.setUint32(28, 32000, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true); w(36, "data"); v.setUint32(40, len * 2, true);
+  let o = 44; for (const c of chunks) for (let i = 0; i < c.length; i++, o += 2) v.setInt16(o, c[i], true);
+  return new Blob([buf], { type: "audio/wav" });
+}
+/* vocabulaire envoyé à Voxtral pour bien écrire tes chantiers, tes contacts et ton métier */
+function voxBias(){
+  const set = new Set(), add = s => { s = (s || "").trim(); if (s && s.length > 1 && s.length < 60) set.add(s); };
+  for (const sp of ["pro", "perso"]) {
+    const c = sp === SPACE ? CFG : ((CFG.sp && CFG.sp[sp]) || {});
+    (c.ch || "").split("\n").forEach(l => add(l.split(":")[0]));
+    (c.team || "").split(",").forEach(add);
+    (c.contacts || "").split("\n").forEach(l => add(l.split(":")[0]));
+  }
+  ["OCI Connect", "2N", "VPI", "DOE", "SAV", "PoE", "baie de brassage", "contrôle d'accès", "vidéoprotection", "interphonie", "ventouse", "Ubiquiti", "Cambium", "ePMP", "nacelle", "devis", "Tempo"].forEach(add);
+  return ["Dictée en français de Raphaël, référent technique courant faible, qui note ses tâches, appels, mails et rendez-vous."].concat([...set].slice(0, 70));
+}
+async function sendVox(r, o, forceWav){
+  if (!r || (!r.blob && !r.pcmLen)) { idle(); return; }
+  if (r.dur < 0.8 || (r.hasLevel && r.max < .005)) { idle(); if (r.dur >= 0.8) toast("je n'ai rien entendu"); return; }   // micro muet : rien envoyé, rien payé
+  ringState("think"); hint("je transcris…");
+  const useWav = forceWav || LS.get("tempo_voxfmt", "") === "wav" || !r.blob;
+  const ext = /mp4/.test(r.mime) ? "m4a" : /ogg/.test(r.mime) ? "ogg" : "webm";
+  const file = useWav ? new File([wavFrom(r.pcm, r.pcmLen)], "dictee.wav", { type: "audio/wav" }) : new File([r.blob], "dictee." + ext, { type: (r.mime || "audio/webm").split(";")[0] });
+  const fd = new FormData();
+  fd.append("key", CFG.mkey); fd.append("device", DEVICE); fd.append("dur", String(Math.ceil(r.dur))); fd.append("file", file);
+  voxBias().forEach(b => fd.append("bias", b));
+  let j = null;
+  try { const resp = await fetch(V_FN, { method: "POST", headers: { Authorization: "Bearer " + G_KEY, apikey: G_KEY }, body: fd }); j = await resp.json(); } catch (e) { j = null; }
+  if (j && j.error === "format" && !useWav && r.pcmLen) { LS.set("tempo_voxfmt", "wav"); return sendVox(r, o, true); }
+  if (j && (j.ok || j.capped)) voxStore(j);
+  if (j && j.ok) {
+    const t = (j.text || "").replace(/[\s.,]*(c'?est tout|fin de la note)[\s.!]*$/i, "").trim();
+    voxWarn();
+    if (!t) { idle(); toast("je n'ai rien entendu"); return; }
+    $("live").textContent = t;
+    capture(t, "voix", undefined, o && o.cr ? { cr: o.cr } : undefined);
+    return;
+  }
+  idle();
+  if (j && j.capped) { toast("Voxtral : plafond du mois atteint · je repasse sur Google", "redire", () => startListen(o), 9000); return; }
+  LAST_AUDIO = { r, o };
+  const why = !j ? "réseau" : j.error === "key" ? "clé Mistral refusée" : j.error === "mistral_limit" ? "limite Mistral atteinte" : j.error === "format" ? "audio refusé" : j.error === "too_big" ? "dictée trop longue" : "erreur serveur";
+  toast(`Voxtral : ${why}`, "réessayer", () => { const a = LAST_AUDIO; LAST_AUDIO = null; if (a) sendVox(a.r, a.o); }, 12000);
+}
+function voxStore(j){ LS.set("tempo_vox", { month: curMonth(), usd: +j.month_usd || 0, sec: +j.month_sec || 0, cap: +j.cap_usd || +CFG.vCap || 2, n: j.n }); }
+function voxWarn(){
+  const u = voxUse(), w = LS.get("tempo_voxwarn", "");
+  if (u.cap && u.usd / u.cap >= .8 && w !== u.month) { LS.set("tempo_voxwarn", u.month); setTimeout(() => toast(`Voxtral : 80 % du plafond du mois (${eur(u.usd)} sur ${eur(u.cap)})`, "", null, 6000), 2800); }
+}
+async function voxSync(setcap){
+  if (!CFG.mkey) return null;
+  try {
+    const r = await fetch(V_FN, { method: "POST", headers: { "content-type": "application/json", Authorization: "Bearer " + G_KEY, apikey: G_KEY }, body: JSON.stringify({ action: setcap ? "setcap" : "usage", key: CFG.mkey, cap: +CFG.vCap || 2 }) });
+    const j = await r.json(); if (j.ok) { voxStore(j); return j; }
+  } catch (e) {}
+  return null;
+}
+function paintVox(){
+  const on = $("vMode").value === "voxtral"; $("vBox").style.display = on ? "" : "none";
+  if (!on) return;
+  const u = voxUse(), min = u.sec / 60, cap = u.cap || +CFG.vCap || 2;
+  $("vUse").innerHTML = (CFG.mkey ? `Ce mois-ci : ${min < 1 ? Math.round(u.sec) + " s" : Math.round(min) + " min"} dictées · ≈ ${eur(u.usd)} sur ${eur(cap)} de plafond.${voxCapped() ? " <b>Plafond atteint : Tempo est repassé sur Google jusqu'au 1er du mois.</b>" : ""}<br>` : "") +
+    `Tarif : 0,0035 $ la minute (≈ 0,35 centime). 10 min de dictée par jour ≈ 1 € par mois. Tempo compte 1 $ = 1 € pour garder de la marge, n'envoie rien si tu n'as rien dit, et repasse tout seul sur Google quand le plafond approche.`;
 }
 function startType(){
   typing = true; ringState("on"); hint(""); $("alt").style.display = "none";
   $("typed").style.display = "block"; $("acts").classList.add("show"); setTimeout(() => $("typed").focus(), 60);
 }
-$("ring").onclick = () => { if (listening || typing) validate(); else startListen(); };
+$("ring").onclick = () => { if (listening || typing) validate(); else { try { window.speechSynthesis && speechSynthesis.cancel(); } catch (e) {} startListen(); } };
 $("aYes").onclick = validate;
 $("aNo").onclick = () => { stopListen(); idle(); };
 $("bType").onclick = startType;
@@ -1826,12 +2384,27 @@ async function enablePush(){
     paintPush();
   } catch (e) { toast("échec de l'activation des rappels"); }
 }
+/* l'abonnement aux notifications peut mourir côté Google (c'est arrivé le 20/11) : Tempo le vérifie et le refait seul */
+async function pushHeal(force, renew){
+  if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window) || Notification.permission !== "granted") return;
+  const k = renew ? "tempo_pushrenew" : "tempo_pushheal", last = LS.get(k, 0);
+  if (Date.now() - last < (renew ? 10 * 60000 : force ? 0 : 3 * 3600000)) return;
+  LS.set(k, Date.now());
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if (sub && renew) { try { await sub.unsubscribe(); } catch (e) {} sub = null; }
+    if (!sub) { const { key } = await pFn({ action: "key" }); if (!key) return; sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: u8(key) }); }
+    const r = await pFn({ action: "subscribe", sub: sub.toJSON() });
+    if (r.ok) { if (!pushOn()) LS.set("tempo_push", true); paintPush(); if (renew || force) syncReminders(true); }
+  } catch (e) {}
+}
 function spaceState(sp){ return sp === SPACE ? S : (LS.get(SKEY(sp), null) || { items: [], doneDays: [] }); }
 function putSpace(sp, st){ if (sp === SPACE) { S = st; save(); } else LS.set(SKEY(sp), st); }
 const RIT = () => Object.assign({ on: true, matin: "08:00", soir: "18:30", semaine: "19:00" }, LS.get("tempo_ritcfg", {}));
 var pushT = null;
 function schedulePushSync(){ if (!pushOn()) return; clearTimeout(pushT); pushT = setTimeout(() => syncReminders(), 2500); }
-async function syncReminders(){
+async function syncReminders(healed){
   if (!pushOn()) return;
   const list = [], now = Date.now(), dt = (d, t) => new Date(`${d}T${t}:00`);
   for (const sp of ["pro", "perso"]) {
@@ -1839,7 +2412,7 @@ async function syncReminders(){
       if (i.done || !i.due || !i.time || isMemo(i) || isList(i)) continue;
       const at = dt(i.due, i.time);
       const tag = (sp === "perso" ? "Perso · " : "") + (i.ch ? i.ch : CATS_PRO[i.cat] || "");
-      if (i.cat === "rdv") list.push({ at: new Date(at.getTime() - 30 * 60000).toISOString(), title: "Dans 30 min · " + i.title, body: tag, url: `./?task=${i.id}&sp=${sp}`, tag: i.id + "-30" });
+      if (i.cat === "rdv") list.push({ at: new Date(at.getTime() - 30 * 60000).toISOString(), title: "Dans 30 min · " + i.title, body: (tag ? tag + " · " : "") + "touche pour ta fiche avant d'y aller", url: `./?fiche=${i.id}&sp=${sp}`, tag: i.id + "-30" });
       list.push({ at: at.toISOString(), title: i.title, body: tag || "c'est l'heure", url: `./?task=${i.id}&sp=${sp}`, tag: i.id });
     }
   }
@@ -1852,7 +2425,10 @@ async function syncReminders(){
   }
   const F = LS.get("tempo_focus", null);
   if (F && F.end > now) list.push({ at: new Date(F.end).toISOString(), title: "Focus terminé", body: F.title, url: "./?focus=end", tag: "focus" });
-  try { await pFn({ action: "sync", reminders: list.filter(r => Date.parse(r.at) > now - 30000) }); } catch (e) {}
+  try {
+    const j = await pFn({ action: "sync", reminders: list.filter(r => Date.parse(r.at) > now - 30000) });
+    if (j && j.sub === false && !healed) pushHeal(true, true);   // le serveur n'a plus d'abonnement : on en refait un
+  } catch (e) {}
 }
 function paintPush(){
   const b = $("sNotif"); if (!b) return;
@@ -1978,6 +2554,7 @@ async function ritSemaine(){
     <p class="ritMsg">${esc(msg)}</p>
     <div class="bars">${days.map((v, k) => `<div class="bar"><i style="height:${Math.round(8 + 80 * v / mx)}px;opacity:${v ? 1 : .25}"></i><b>${v || ""}</b><span>${lbl[k]}</span></div>`).join("")}</div>
     <div class="two" style="margin-top:20px"><div><div class="lab">Pro</div><div class="ritBig">${sp2.pro}</div></div><div><div class="lab">Perso</div><div class="ritBig">${sp2.perso}</div></div></div>
+    ${STARS.length ? `<p class="small" style="margin-top:14px">ta constellation : ${STARS.length} étoile${STARS.length > 1 ? "s" : ""} dorée${STARS.length > 1 ? "s" : ""} allumée${STARS.length > 1 ? "s" : ""} depuis lundi. elle repart de zéro lundi matin.</p>` : ""}
     ${top.length ? `<div class="lab">Là où tu as avancé</div><p style="font-size:15px;line-height:1.7">${top.map(([k, v]) => `${esc(k)} · ${v}`).join("<br>")}</p>` : ""}
     ${stuck.length ? `<div class="lab">Repoussées plusieurs fois</div>` + stuck.slice(0, 5).map(i => `<div class="it u${i.u}"><span class="dot"></span><div class="tx"><div class="tt">${esc(i.title)}</div><div class="sub">reportée ${i.ppN} fois</div></div></div>`).join("") : ""}
     <div class="foot"><div class="l"></div><button class="ok" id="ritGo">nouvelle semaine</button></div>`;
@@ -2020,10 +2597,10 @@ function autoRitual(){
 
 /* ===== D. MODE FOCUS ===== */
 let FOC = null, focT = null, wake = null;
-async function startFocus(id, sp){
+async function startFocus(id, sp, minutes){
   sp = sp || SPACE;
   const st = spaceState(sp), it = st.items.find(x => x.id === id); if (!it) return;
-  const min = +(CFG.focusMin || 25);
+  const min = +(minutes || CFG.focusMin || 25);
   FOC = { id, sp, title: it.title, end: Date.now() + min * 60000, total: min * 60000, paused: 0 };
   LS.set("tempo_focus", { id, sp, title: it.title, end: FOC.end }); schedulePushSync();
   $("fTitle").textContent = it.title; $("fStep").textContent = "…"; $("fPause").textContent = "pause";
@@ -2242,7 +2819,12 @@ function handleShare(){
   const p = new URLSearchParams(location.search);
   const parts = [p.get("title"), p.get("text"), p.get("url")].filter(Boolean);
   if (parts.length) { history.replaceState(null, "", location.pathname); capture(parts.join(" — "), "partage"); }
-  else if (p.get("quick")) { history.replaceState(null, "", location.pathname); startListen(); }
+  else if (p.get("quick")) { history.replaceState(null, "", location.pathname); startListen({ auto: true }); }
+  else if (p.get("fiche")) {
+    history.replaceState(null, "", location.pathname);
+    const sp = p.get("sp") === "perso" ? "perso" : "pro"; if (sp !== SPACE) switchSpace(sp);
+    const it = S.items.find(i => i.id === p.get("fiche")); if (it) setTimeout(() => openFiche(it), 300);
+  }
   else if (p.get("ritual")) { history.replaceState(null, "", location.pathname); setTimeout(() => openRitual(p.get("ritual")), 300); }
   else if (p.get("task")) {
     history.replaceState(null, "", location.pathname);
@@ -2268,13 +2850,32 @@ gHandleRedirect();
 autoSpace();
 handleImport();
 window.addEventListener("hashchange", handleImport);
+/* ouvrir Tempo = il t'écoute (réglage), sauf si on revient d'une action ou qu'une fenêtre est ouverte */
+const autoListenOK = () => CFG.vAuto && !listening && !typing && !S.pendingAck && !FOC && !document.querySelector(".sheet.show") && !$("ring").classList.contains("think");
 msHandleRedirect().then(was => {
-  if (!was) { const had = handleShare(); autoMail(); if (!had) { const F = LS.get("tempo_focus", null); if (F && F.end > Date.now()) startFocus(F.id, F.sp); else setTimeout(autoRitual, 900); } }
-  paintMailBtn(); if (pushOn()) syncReminders();
+  if (!was) {
+    const had = handleShare(); autoMail();
+    if (!had) { const F = LS.get("tempo_focus", null); if (F && F.end > Date.now()) startFocus(F.id, F.sp); else if (autoListenOK()) setTimeout(() => { if (autoListenOK()) startListen({ auto: true, noSpeech: 7000 }); }, 350); else setTimeout(autoRitual, 900); }
+  }
+  paintMailBtn(); if (pushOn()) syncReminders(); pushHeal();
+  pullInbox();
 });
 checkReminders();
-setInterval(() => { checkReminders(); if (!listening && !typing && !cur) render(); }, 60000);
-document.addEventListener("visibilitychange", () => { if (!document.hidden) { autoSpace(); render(); checkReminders(); autoMail(); askAck(); setTimeout(autoRitual, 700); } });
+setInterval(() => { checkReminders(); if (!listening && !typing && !cur) render(); pullInbox(); }, 60000);
+let hiddenAt = 0;
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) {
+    hiddenAt = Date.now();
+    /* tu quittes Tempo en pleine dictée : on envoie ce qui a été dit, sinon on coupe le micro */
+    if (listening && !typing) { if ((VOICE && VOICE.spoke) || (!VOICE && (finalTxt || interim))) validate(); else { stopListen(); idle(); } }
+    try { window.speechSynthesis && speechSynthesis.cancel(); } catch (e) {}
+    return;
+  }
+  const away = hiddenAt ? Date.now() - hiddenAt : 0, wantAuto = away > 45000 && autoListenOK();
+  autoSpace(); render(); checkReminders(); autoMail(); askAck(); pushHeal(); pullInbox();
+  if (wantAuto) setTimeout(() => { if (autoListenOK()) startListen({ auto: true, noSpeech: 7000 }); }, 300);
+  else setTimeout(autoRitual, 700);
+});
 </script>
 </body>
 </html>

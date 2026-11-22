@@ -1,0 +1,45 @@
+BRANCHER VOXTRAL (MISTRAL) SUR TEMPO (≈ 10 min, plutôt sur PC)
+
+Pourquoi : la reconnaissance Google du téléphone coupe au premier silence et écorche les noms
+(Arvato, Siebert, 2N…). Voxtral enregistre toute ta dictée, même si tu réfléchis à voix haute,
+puis la transcrit d'un coup, avec la liste de tes chantiers, contacts et termes métier.
+
+CE QUE ÇA COÛTE
+- Tarif Mistral : 0,0035 $ la minute de dictée (≈ 0,35 centime).
+- Une dictée de 20 secondes ≈ 0,1 centime.
+- 5 min de dictée par jour ≈ 0,50 € / mois · 10 min/jour ≈ 1 € / mois · 20 min/jour ≈ 2 € / mois.
+
+TES TROIS VERROUS SUR LA DÉPENSE
+1. Dans Tempo : un plafond par mois (1, 2, 3, 5 ou 10 €). Il est tenu côté serveur et partagé
+   entre tes appareils. Tempo compte 1 $ = 1 €, donc tu dépenses un peu moins que ce qui est affiché.
+   Quand il ne reste plus de quoi payer une dictée, Tempo repasse tout seul sur Google (gratuit)
+   jusqu'au 1er du mois, et te prévient à 80 %.
+2. Dans Tempo : une durée max par dictée (1, 2 ou 3 min). Rien n'est envoyé si tu n'as rien dit.
+3. Chez Mistral : un plafond mensuel sur ton espace de travail (étape 3 ci-dessous). Même si
+   quelque chose dérapait, Mistral refuse au-delà.
+Le compteur du mois est visible dans Tempo > réglages > Reconnaissance vocale.
+
+ÉTAPES
+1. console.mistral.ai > crée ton compte (connexion avec rac4st@gmail.com possible).
+   Ajoute un moyen de paiement si on te le demande (facturation à l'usage).
+2. Crée une clé : « API Keys » > « Create new key » > nom : Tempo > copie-la.
+   Elle ne s'affiche qu'une fois. NE ME L'ENVOIE PAS dans la conversation.
+3. Plafond Mistral : Admin > Workspaces > ton espace > Settings
+   > « Monthly spending limit » : 3 (un peu au-dessus de celui de Tempo) > Save.
+4. Sur le téléphone : Tempo > ··· > réglages > « Reconnaissance vocale » : Voxtral
+   > colle la clé > plafond par mois : 2 € > dictée max : 2 min > OK.
+   Tempo affiche « Voxtral branché · plafond 2,00 € par mois ».
+5. Touche le rond, parle, touche le rond pour finir (ou laisse la fin par silence).
+   Pendant l'écoute, la constellation réagit à ta voix et un compteur s'affiche (0:12…).
+
+Confidentialité : la clé Mistral reste dans le téléphone (comme la clé Claude). Elle passe par
+le serveur Tempo juste le temps de l'appel, n'y est jamais enregistrée : le serveur ne garde
+qu'une empreinte de la clé pour compter les minutes du mois. L'audio est envoyé à Mistral (entreprise française)
+pour la transcription.
+
+Si ça coince
+- « clé Mistral refusée » : recolle la clé (sans espace avant/après).
+- « limite Mistral atteinte » : c'est le plafond de l'étape 3 ou une limite de débit Mistral.
+- « réseau » : le bouton « réessayer » renvoie la même dictée, rien n'est perdu tant que Tempo
+  reste ouvert.
+- Tu peux revenir à Google à tout moment dans les réglages.

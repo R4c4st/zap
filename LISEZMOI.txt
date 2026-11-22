@@ -20,7 +20,21 @@ TRI PAR CLAUDE (optionnel, recommandé)
 console.anthropic.com > API Keys > créer une clé > la coller dans ⚙️.
 Quelques euros par mois à ton usage. Sans clé : tri automatique par règles.
 
-LIMITES V1
-- Les rappels se déclenchent quand Tempo est ouvert ou revient au premier plan. Pour un rappel à heure
-  fixe garanti, utilise 📅 (agenda Google). La V2 aura de vrais rappels poussés (Supabase).
+NOUVEAU DANS LA V39
+- Rappels réparés : si l'abonnement aux notifications meurt (c'est arrivé le 20/11), Tempo le refait seul.
+- Voxtral (Mistral) en option pour la voix, avec plafond de dépense mensuel : voir VOXTRAL.txt.
+- Tempo te répond à voix haute (« Noté : appeler Christelle, demain à 9 heures ») et réécoute
+  5 secondes : « non, plutôt jeudi » corrige ce que tu viens de dicter.
+- « Ouvrir Tempo = il m'écoute » (réglages) + double appui sur la touche latérale du S25 :
+  Paramètres > Fonctions avancées > Touche latérale > Appuyer deux fois > Ouvrir l'application > Tempo.
+- Retour d'appel : réglé / réglé + compte rendu dicté / pas joint (rappel dans 1 h ou demain matin).
+- Pont téléphone : appels manqués, SMS, WhatsApp → actions, via MacroDroid : voir MACRODROID.txt.
+- Fiche « avant d'y aller » : 30 min avant un rendez-vous, la notification ouvre tout ce qui touche
+  le chantier ou le contact (ce qui reste, ce qui a été fait, les infos notées). Aussi : « fiche » sur une tâche.
+- Constellation vivante : chaque chose réglée allume une étoile dorée, reliée à la précédente.
+  Elle repart de zéro chaque lundi.
+- Au 3e report d'une tâche, Tempo propose « 2 minutes, maintenant » ou « juste le 1er pas ».
+
+LIMITES
 - Les données sont sur le téléphone : pense à 💾 Sauvegarder de temps en temps.
+- Pas encore de widget d'écran d'accueil ni de vrai réveil : il faudra la version « appli Android ».
