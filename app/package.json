@@ -1,0 +1,13 @@
+{
+  "name": "tempo-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Tempo — appli Android (Capacitor) de l'outil de rappel et d'organisation Tempo",
+  "dependencies": {
+    "@capacitor/android": "8.6.2",
+    "@capacitor/app": "8.1.2",
+    "@capacitor/cli": "8.6.2",
+    "@capacitor/core": "8.6.2",
+    "@capacitor/local-notifications": "8.3.1"
+  }
+}

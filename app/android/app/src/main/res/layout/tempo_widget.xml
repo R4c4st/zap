@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/w_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <!-- fond (clair ou sombre), transparence réglable dans Tempo -->
+    <ImageView
+        android:id="@+id/w_bg"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="fitXY"
+        android:src="@drawable/widget_bg"
+        android:contentDescription="@null" />
+
+    <!-- la constellation (dessinée par Tempo, avec les étoiles de la semaine) -->
+    <ImageView
+        android:id="@+id/w_img"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="6dp"
+        android:scaleType="fitCenter"
+        android:src="@drawable/widget_constellation"
+        android:contentDescription="@string/app_name" />
+</FrameLayout>
