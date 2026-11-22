@@ -1,0 +1,12 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Tempo</string>
+    <string name="title_activity_main">Tempo</string>
+    <string name="package_name">fr.rc4st.tempo</string>
+    <string name="custom_url_scheme">tempo</string>
+    <string name="widget_hint">touche pour parler</string>
+    <string name="widget_desc">La constellation de Tempo : un appui et il t\'écoute</string>
+    <string name="sc_noter">Noter</string>
+    <string name="sc_noter_long">Noter à la voix</string>
+    <string name="notif_listener">Tempo : appels manqués, SMS et WhatsApp</string>
+</resources>

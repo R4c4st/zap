@@ -6,7 +6,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 // Tempo les relève à l'ouverture puis les efface d'ici (rien n'est gardé plus de 7 jours).
 // Accès MacroDroid : lien secret (?k=…) propre au téléphone. Accès appli : identifiant d'appareil.
 const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
-const ORIGINS = ["https://r4c4st.github.io"];
+const ORIGINS = ["https://r4c4st.github.io", "https://localhost", "http://localhost", "capacitor://localhost"];
 const MAX_PER_DAY = 400;
 const KINDS: Record<string, string> = { appel: "appel", missed: "appel", manque: "appel", sms: "sms", texto: "sms", whatsapp: "whatsapp", wa: "whatsapp", fin: "fin_appel", fin_appel: "fin_appel", notif: "notif" };
 const MISSED = /appels? (?:vocal |vid[ée]o )?manqu|missed (?:voice |video )?call|appels? en absence|appels? non r[ée]pondu/i;

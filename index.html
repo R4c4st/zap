@@ -9,13 +9,14 @@
 <link rel="icon" href="icon-192.png">
 <style>
 :root{
+  --sat:max(env(safe-area-inset-top,0px),var(--safe-area-inset-top,0px));--sab:max(env(safe-area-inset-bottom,0px),var(--safe-area-inset-bottom,0px));
   --bg:#f7fbfc;--fg:#0f2229;--mut:#8aa3ac;--faint:#e1edf0;--sheet:#ffffff;
   --u3:#ec5f5f;--u2:#eea64c;--u1:#c3d3d8;--glow:46,184,196;--ok:#36c08f;
   --air1:#e6f6f7;--air2:#f7fbfc;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0}
 html,body{background:var(--bg);color:var(--fg);font-family:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-weight:300;overscroll-behavior:none;-webkit-font-smoothing:antialiased}
-body{padding:env(safe-area-inset-top) 0 calc(60px + env(safe-area-inset-bottom));min-height:100vh}
+body{padding:var(--sat) 0 calc(60px + var(--sab));min-height:100vh}
 button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;padding:0}
 input,select,textarea{font:inherit;font-weight:300;color:var(--fg);background:transparent;border:0;border-bottom:1px solid var(--faint);border-radius:0;padding:10px 0;width:100%;outline:none}
 textarea{resize:none}
@@ -113,7 +114,7 @@ body.const .ring.on{transform:none}
 /* sheet */
 .mask{position:fixed;inset:0;background:rgba(0,0,0,.45);opacity:0;pointer-events:none;transition:.3s;z-index:20}
 .mask.show{opacity:1;pointer-events:auto}
-.sheet{position:fixed;left:0;right:0;bottom:0;background:var(--sheet);border-radius:26px 26px 0 0;padding:28px 26px calc(26px + env(safe-area-inset-bottom));z-index:30;transform:translateY(105%);transition:transform .35s cubic-bezier(.2,.8,.2,1);max-height:90vh;overflow:auto}
+.sheet{position:fixed;left:0;right:0;bottom:0;background:var(--sheet);border-radius:26px 26px 0 0;padding:28px 26px calc(26px + var(--sab));z-index:30;transform:translateY(105%);transition:transform .35s cubic-bezier(.2,.8,.2,1);max-height:90vh;overflow:auto}
 .sheet{visibility:hidden;transition:transform .35s cubic-bezier(.2,.8,.2,1),visibility 0s .35s}.sheet.show{transform:none;visibility:visible;transition:transform .35s cubic-bezier(.2,.8,.2,1)}
 .lab{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--mut);margin:22px 0 8px}
 .sl{display:flex;flex-wrap:wrap;gap:8px}
@@ -144,7 +145,7 @@ body.const .ring.on{transform:none}
 .menu{display:flex;flex-direction:column}
 .menu button{text-align:left;font-size:19px;padding:16px 0;border-bottom:1px solid var(--faint)}
 .menu button:last-child{border-bottom:0}
-.sheet.full{top:env(safe-area-inset-top);max-height:none;border-radius:26px 26px 0 0}
+.sheet.full{top:var(--sat);max-height:none;border-radius:26px 26px 0 0}
 .tabs{display:flex;gap:22px}
 .tabs button{font-size:22px;color:var(--mut)} .tabs button.on{color:var(--fg)}
 #hist .it{padding:11px 0}
@@ -184,7 +185,7 @@ body.const .ring.on{transform:none}
 .bar b{font-weight:400;color:var(--fg);font-size:12px}
 #focus{position:fixed;inset:0;z-index:55;background:linear-gradient(180deg,var(--air1),#fff);display:none;flex-direction:column;align-items:center;justify-content:center;padding:30px}
 #focus.show{display:flex}
-.fX{position:absolute;top:calc(22px + env(safe-area-inset-top));right:26px;font-size:14px;color:var(--mut)}
+.fX{position:absolute;top:calc(22px + var(--sat));right:26px;font-size:14px;color:var(--mut)}
 .fSvg{width:min(78vw,320px);height:min(78vw,320px);transform:rotate(-90deg)}
 .fBg{fill:none;stroke:rgba(var(--glow),.12);stroke-width:3}
 .fArc{fill:none;stroke:rgb(var(--glow));stroke-width:3;stroke-linecap:round;transition:stroke-dashoffset .25s linear;filter:drop-shadow(0 0 6px rgba(var(--glow),.6))}
@@ -194,7 +195,7 @@ body.const .ring.on{transform:none}
 .fStep{margin-top:14px;font-size:15px;color:var(--mut);text-align:center;line-height:1.5;max-width:460px;min-height:22px}
 .fBtns{display:flex;gap:30px;align-items:center;margin-top:36px;font-size:15px}
 .fBtns .ok{padding:13px 28px;border-radius:999px;background:var(--fg);color:var(--bg);font-weight:500}
-.toast{position:fixed;left:50%;bottom:calc(26px + env(safe-area-inset-bottom));transform:translate(-50%,20px);opacity:0;transition:.3s;font-size:14px;display:flex;gap:18px;padding:12px 20px;border-radius:999px;background:var(--sheet);border:1px solid var(--faint);z-index:60;white-space:nowrap;letter-spacing:.2px}
+.toast{position:fixed;left:50%;bottom:calc(26px + var(--sab));transform:translate(-50%,20px);opacity:0;transition:.3s;font-size:14px;display:flex;gap:18px;padding:12px 20px;border-radius:999px;background:var(--sheet);border:1px solid var(--faint);z-index:60;white-space:nowrap;letter-spacing:.2px}
 .toast.show{opacity:1;transform:translate(-50%,0)}
 .toast button{color:rgb(var(--glow));font-weight:500}
 </style>
@@ -262,6 +263,11 @@ body.const .ring.on{transform:none}
 <div class="sheet" id="set">
   <div class="lab" style="margin-top:0">Claude</div>
   <input type="password" id="sKey" placeholder="clé API Anthropic (sk-ant-…)">
+  <div id="appBox">
+    <div class="lab">Appli Android</div>
+    <p class="small" id="appState"></p>
+    <div class="foot" style="margin-top:10px"><div class="l"><button id="appGet" style="color:var(--fg)">installer l'appli</button><button id="appMove" style="color:var(--fg)">transférer mes données</button><button id="appUpd">mettre à jour</button></div></div>
+  </div>
   <p class="small">Sans clé, Tempo trie seul avec ses règles. Avec, c'est Claude qui comprend, découpe et range — en s'appuyant sur la fiche ci-dessous et sur tes corrections.</p>
   <div class="lab" id="lProf">Qui je suis (lu par Claude à chaque tri)</div>
   <textarea id="sProfile" rows="7"></textarea>
@@ -316,7 +322,7 @@ body.const .ring.on{transform:none}
     <button class="ok" id="sSave">OK</button>
   </div>
   <input type="file" id="sFile" accept=".json" hidden>
-  <p class="small" style="margin-top:24px;text-align:center">Tempo v39 · Rc4st</p>
+  <p class="small" style="margin-top:24px;text-align:center">Tempo v40 · Rc4st</p>
 </div>
 
 <div class="sheet" id="menu">
@@ -454,6 +460,64 @@ const esc = s => (s || "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;",
 const nowHM = () => { const d = new Date(); return pad(d.getHours()) + ":" + pad(d.getMinutes()); };
 const WD = ["dimanche","lundi","mardi","mercredi","jeudi","vendredi","samedi"];
 const MO = ["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
+
+/* ===== APPLI ANDROID (Capacitor) : la même page, avec les pouvoirs du téléphone ===== */
+const TEMPO_BUILD = 40;
+const CAP = window.Capacitor;
+const NATIVE = !!(CAP && CAP.isNativePlatform && CAP.isNativePlatform());
+const TN = NATIVE && CAP.Plugins ? CAP.Plugins.TempoNative : null;
+const LN = NATIVE && CAP.Plugins ? CAP.Plugins.LocalNotifications : null;
+const CAPP = NATIVE && CAP.Plugins ? CAP.Plugins.App : null;
+const PWA_URL = "https://r4c4st.github.io/zap/";
+const APK_URL = "https://github.com/R4c4st/zap/releases/download/app/tempo.apk";
+const tn = async (m, a) => { try { return TN && TN[m] ? await TN[m](a || {}) : null; } catch (e) { return null; } };
+function hush(){ try { if (NATIVE) tn("stopSpeak"); else if (window.speechSynthesis) speechSynthesis.cancel(); } catch (e) {} }
+/* reconnaissance vocale Google native, présentée comme celle du navigateur (que la WebView n'a pas) */
+class NativeSR {
+  constructor(){ this.lang = "fr-FR"; this.continuous = true; this.interimResults = true; this.onresult = null; this.onend = null; this.onerror = null; this._h = null; this._on = false; }
+  async start(){
+    if (this._on) return; this._on = true;
+    try { if (!this._h) this._h = await TN.addListener("sr", d => this._ev(d)); await TN.srStart({ lang: this.lang }); }
+    catch (e) { const m = String((e && e.message) || e); if (this.onerror) this.onerror({ error: /not-allowed/.test(m) ? "not-allowed" : "aborted" }); this._end(); }
+  }
+  stop(){ tn("srStop"); }
+  abort(){ tn("srCancel"); }
+  _ev(d){
+    const res = fin => ({ resultIndex: 0, results: [Object.assign([{ transcript: d.text || "" }], { isFinal: fin })] });
+    if (d.type === "partial" && this.onresult) this.onresult(res(false));
+    else if (d.type === "final" && this.onresult) this.onresult(res(true));
+    else if (d.type === "error" && this.onerror) this.onerror({ error: d.code === 9 ? "not-allowed" : "network" });
+    else if (d.type === "end") this._end();
+  }
+  _end(){ if (!this._on) return; this._on = false; if (this._h) { try { this._h.remove(); } catch (e) {} this._h = null; } if (this.onend) this.onend(); }
+}
+/* une notification (appli, titre, texte) → un événement Tempo (même logique que le serveur MacroDroid) */
+const MISSED_RX = /appels? (?:vocal |vid[ée]o )?manqu|missed (?:voice |video )?call|appels? en absence|appels? non r[ée]pondu/i;
+const isNumS = s => /^[+\d][\d\s.()-]{5,}$/.test(s || "");
+function fromNotification(app, title, text){
+  const a = (app || "").toLowerCase(); title = (title || "").trim(); text = (text || "").trim();
+  if (/whatsapp/.test(a)) {
+    if (!title || /^whatsapp( business)?$/i.test(title) || /^\d+ (nouveaux? )?messages?\b/i.test(text) && /discussions?|chats?/i.test(text)) return null;
+    if (/^(appel|call)|appel (vocal|vidéo) (manqué|entrant)/i.test(text) && !MISSED_RX.test(text)) return null;
+    const who = title.replace(/\s*\(\d+ messages?\)$/i, "");
+    return MISSED_RX.test(text) ? { kind: "appel", who, num: "", body: "appel WhatsApp manqué", app: "WhatsApp" } : { kind: "whatsapp", who, num: "", body: text, app: "WhatsApp" };
+  }
+  if (/t[ée]l[ée]phone|phone|dialer|appel|contacts?$/.test(a)) {
+    const tm = MISSED_RX.test(title), xm = MISSED_RX.test(text);
+    if (!tm && !xm) return null;
+    let who = (tm ? text : title).replace(MISSED_RX, "").replace(/^[\s:·,-]+|[\s:·,-]+$/g, "").trim(), num = "";
+    if (/masqu|inconnu|priv[ée]|unknown|private/i.test(who)) who = "";
+    const m = (title + " " + text).match(/(?:\+\d{2}\s?|0)\d(?:[\s.-]?\d{2}){4}|\+\d{8,15}/);
+    if (isNumS(who)) { num = who.replace(/[^\d+]/g, ""); who = ""; } else if (m) num = m[0].replace(/[^\d+]/g, "");
+    return who || num ? { kind: "appel", who, num, body: "", app: "Téléphone" } : null;
+  }
+  if (/messag|sms|mms/.test(a)) {
+    if (!title || /^\d+ (nouveaux? )?messages?$/i.test(title)) return null;
+    const num = isNumS(title) ? title.replace(/[^\d+]/g, "") : "";
+    return { kind: "sms", who: num ? "" : title, num, body: text, app: "Messages" };
+  }
+  return title || text ? { kind: "notif", who: title, num: "", body: text, app } : null;
+}
 
 function chantiers(){
   return (CFG.ch || "").split("\n").map(l => l.trim()).filter(Boolean).map(l => {
@@ -812,9 +876,40 @@ function localDone(text){
   return { done, rest: rest.join(". ") };
 }
 
+/* « réveille-moi à 6h30 », « mets un minuteur de 10 minutes » : l'appli règle l'Horloge du téléphone */
+const ALARM_RX = /\b(reveille[- ]?moi|reveiller moi|(mets?|regle|programme|ajoute|cale)[- ]?(moi )?(un|une|le|mon) (reveil|alarme)|(un|une) (reveil|alarme) (a|pour|demain|ce|tous|chaque|en semaine))\b/;
+const TIMER_RX = /\b((mets?|lance|regle|demarre|programme)[- ]?(moi )?(un|le) (minuteur|timer|compte a rebours)|minuteur (de )?(\d+|un|une|deux|trois|cinq|dix|quinze|vingt|trente))\b/;
+const NUMS = { un: 1, une: 1, deux: 2, trois: 3, quatre: 4, cinq: 5, six: 6, sept: 7, huit: 8, neuf: 9, dix: 10, quinze: 15, vingt: 20, trente: 30, quarante: 40, cinquante: 50 };
+async function alarmIntent(text){
+  const n = norm(text); if (n.length > 160) return false;
+  if (TIMER_RX.test(n)) {
+    let sec = 0; const re = /(\d+|un|une|deux|trois|quatre|cinq|six|sept|huit|neuf|dix|quinze|vingt|trente|quarante|cinquante)\s*(heures?|h|minutes?|min|secondes?|s)\b/g; let m;
+    while ((m = re.exec(n))) { const v = NUMS[m[1]] || +m[1]; sec += /^h/.test(m[2]) ? v * 3600 : /^m/.test(m[2]) ? v * 60 : v; }
+    if (/et demie?\b/.test(n)) sec += /heure/.test(n) ? 1800 : 30;
+    if (!sec) return false;
+    if (!NATIVE) { toast("les minuteurs se règlent depuis l'appli Android"); return false; }
+    const ok = await tn("setTimer", { seconds: sec, label: "Tempo" }) !== null;
+    const lab = sec >= 3600 ? Math.floor(sec / 3600) + " h" + (sec % 3600 ? " " + Math.round(sec % 3600 / 60) + " min" : "") : sec >= 60 ? Math.round(sec / 60) + " min" : sec + " s";
+    idle(); flashOk(); vib(18); toast(ok ? `⏱ minuteur ${lab} lancé` : "l'Horloge n'a pas répondu");
+    if (ok && shouldSpeak()) speak(`Minuteur de ${lab.replace("min", "minutes").replace(" h", " heure")} lancé.`);
+    return true;
+  }
+  if (!ALARM_RX.test(n)) return false;
+  const w = parseWhen(text); if (!w.time) return false;
+  if (!NATIVE) { toast("les réveils se règlent depuis l'appli Android"); return false; }
+  const [h, mi] = w.time.split(":").map(Number);
+  const days = /\b(en semaine|du lundi au vendredi|jours ouvres|les jours de semaine)\b/.test(n) ? [2, 3, 4, 5, 6] : /\b(tous les jours|chaque jour|tous les matins)\b/.test(n) ? [1, 2, 3, 4, 5, 6, 7] : [];
+  const label = (text.match(/\b(?:pour|:)\s+(.{3,40})$/i) || [])[1] || "Tempo";
+  const ok = await tn("setAlarm", { hour: h, minute: mi, label, days }) !== null;
+  const hh = h + "h" + (mi ? pad(mi) : "");
+  idle(); flashOk(); vib(18); toast(ok ? `⏰ réveil ${hh} réglé${days.length ? days.length === 5 ? " en semaine" : " tous les jours" : ""}` : "l'Horloge n'a pas répondu", ok ? "voir" : "", () => tn("showAlarms"));
+  if (ok && shouldSpeak()) speak(`Réveil réglé à ${h} heures${mi ? " " + mi : ""}.`);
+  return true;
+}
 async function capture(text, src, kind, ctx){
   text = (text || "").trim(); if (!text) { idle(); return; }
   if (ctx && ctx.cr) return captureCR(text, ctx.cr);
+  if (!kind && (src === "voix" || src === "texte") && (await alarmIntent(text))) return true;
   if (!kind && isReportReq(text)) { openReport(text); return true; }
   /* correction rapide sans Claude : « non, jeudi 14h » juste après une dictée */
   if (!kind && !CFG.key && /^(non|plutot|en fait|attends|corrige|change)\b/.test(norm(text)) && lastItems().length) {
@@ -917,7 +1012,7 @@ async function captureCR(text, cr){
 
 /* ===== Tempo parle : confirmation courte, puis il réécoute quelques secondes pour une correction ===== */
 let HANDS_FREE = false, FOLLOW = 0;
-const shouldSpeak = () => "speechSynthesis" in window && (CFG.vSay === "1" || (CFG.vSay !== "0" && HANDS_FREE));
+const shouldSpeak = () => (NATIVE || "speechSynthesis" in window) && (CFG.vSay === "1" || (CFG.vSay !== "0" && HANDS_FREE));
 const lc = t => (t || "").charAt(0).toLowerCase() + (t || "").slice(1);
 function sayWhen(i){
   const b = bucket(i), tm = i.time ? " à " + (i.time.endsWith(":00") ? i.time.slice(0, 2).replace(/^0/, "") + " heures" : i.time.replace(":", " h ").replace(/^0/, "")) : "";
@@ -945,7 +1040,9 @@ function sayBack(added, U, viaAI){
 function speak(t, then){
   let fired = false; const done = () => { if (fired) return; fired = true; then && then(); };
   try {
-    if (!("speechSynthesis" in window) || !t) return done();
+    if (!t) return done();
+    if (NATIVE) { TN.speak({ text: t, rate: 1.05 }).then(done, done); setTimeout(done, 4000 + t.length * 90); return; }
+    if (!("speechSynthesis" in window)) return done();
     speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(t); u.lang = "fr-FR"; u.rate = 1.07; u.pitch = 1;
     const v = speechSynthesis.getVoices().filter(v => /^fr[-_]FR/i.test(v.lang)); if (v.length) u.voice = v.find(x => /google/i.test(x.name)) || v[0];
@@ -1023,9 +1120,19 @@ function render(fresh){
   $("list").innerHTML = h;
   const GL = { now: "maintenant", matin: "matin", aprem: "aprem", soir: "soir", today: "aujourd'hui", demain: "demain", semaine: "semaine", tard: "plus tard" };
   $("glance").innerHTML = SLOTS.map(([k]) => { const a = open.filter(i => bucket(i) === k); return a.length ? `<button class="gl${a.some(i => i.u === 3) ? " hot" : ""}" data-g="${k}"><b>${a.length}</b>${GL[k]}</button>` : ""; }).join("") + (shop.length ? `<button class="gl" data-g="courses"><b>${shop.length}</b>courses</button>` : "") + (memoN ? `<button class="gl" data-g="memos"><b>${toPay ? eur(toPay).replace(",00", "") : memoN}</b>${toPay ? (SPACE === "pro" ? "à rembourser" : "dépensés") : "mémos"}</button>` : "");
-  paintPoint(); scheduleBrief(); refreshStars();
+  paintPoint(); scheduleBrief(); refreshStars(); if (NATIVE) widgetSync();
   if (fresh.length) requestAnimationFrame(() => requestAnimationFrame(() => document.querySelectorAll(".it[style]").forEach((e, n) => setTimeout(() => e.removeAttribute("style"), n * 70))));
   if (!listening && !typing) idleHint();
+}
+/* appli : le widget d'écran d'accueil affiche ce qui presse */
+let wLast = "";
+function widgetSync(){
+  const open = S.items.filter(i => !i.done && !isMemo(i) && !isList(i)), now = open.filter(i => bucket(i) === "now");
+  const first = now[0] || open.slice().sort((a, b) => SLOTS.findIndex(x => x[0] === bucket(a)) - SLOTS.findIndex(x => x[0] === bucket(b)) || sortIn(a, b))[0];
+  const tod = open.filter(i => ["now", "matin", "aprem", "soir", "today"].includes(bucket(i)));
+  const big = now.length ? `${now.length} maintenant` : tod.length ? `${tod.length} aujourd'hui` : STARS.length ? `${STARS.length} étoile${STARS.length > 1 ? "s" : ""}` : "Tempo";
+  const small = first ? first.title : "touche pour parler";
+  const k = big + "|" + small; if (k === wLast) return; wLast = k; tn("updateWidget", { big, small });
 }
 function idleHint(){
   const open = S.items.filter(i => !i.done && !isMemo(i)), now = open.filter(i => bucket(i) === "now").length;
@@ -1154,7 +1261,8 @@ const G_SCOPE = "https://www.googleapis.com/auth/calendar.events";
 let G = LS.get("tempo_g", {});
 const saveG = () => LS.set("tempo_g", G);
 const gOn = () => !!G.rt;
-const gRedirect = () => location.origin + location.pathname;
+/* dans l'appli, Google refuse la connexion « embarquée » : on passe par Chrome, qui renvoie le code à l'appli (tempo://gauth) */
+const gRedirect = () => NATIVE ? PWA_URL : location.origin + location.pathname;
 async function gFn(body){
   const r = await fetch(G_FN, { method: "POST", headers: { "content-type": "application/json", Authorization: "Bearer " + G_KEY, apikey: G_KEY }, body: JSON.stringify(body) });
   let j = {}; try { j = await r.json(); } catch (e) {} return { ok: r.ok, j };
@@ -1162,14 +1270,14 @@ async function gFn(body){
 async function gLogin(){
   let c; try { c = await gFn({ action: "config" }); } catch (e) { return toast("serveur injoignable"); }
   if (!c.j.ready) return toast("Google pas encore configuré côté serveur");
-  const st = "gs_" + b64u(crypto.getRandomValues(new Uint8Array(12)));
+  const st = (NATIVE ? "gsa_" : "gs_") + b64u(crypto.getRandomValues(new Uint8Array(12)));
   LS.set("tempo_gstate", st);
-  location.href = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(c.j.client_id)}&redirect_uri=${encodeURIComponent(gRedirect())}&response_type=code&scope=${encodeURIComponent(G_SCOPE)}&access_type=offline&prompt=consent&state=${st}`;
+  const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(c.j.client_id)}&redirect_uri=${encodeURIComponent(gRedirect())}&response_type=code&scope=${encodeURIComponent(G_SCOPE)}&access_type=offline&prompt=consent&state=${st}`;
+  if (NATIVE) { await tn("openUrl", { url }); toast("connecte-toi dans Chrome, Tempo reprend la main ensuite", "", null, 7000); }
+  else location.href = url;
 }
-async function gHandleRedirect(){
-  const p = new URLSearchParams(location.search), st = p.get("state") || "";
-  if (!st.startsWith("gs_")) return false;
-  history.replaceState(null, "", location.pathname);
+async function gFinish(p){
+  const st = p.get("state") || "";
   if (p.get("error")) { toast("connexion Google annulée"); return true; }
   if (st !== LS.get("tempo_gstate", "")) { toast("connexion Google invalide, recommence"); return true; }
   try {
@@ -1181,6 +1289,13 @@ async function gHandleRedirect(){
     S.items.filter(gWants).forEach(i => gSync(i));
   } catch (e) { toast("échec connexion Google"); }
   LS.set("tempo_gstate", ""); return true;
+}
+async function gHandleRedirect(){
+  const p = new URLSearchParams(location.search), st = p.get("state") || "";
+  if (st.startsWith("gsa_")) { history.replaceState(null, "", location.pathname); location.href = "tempo://gauth?" + p.toString(); return true; }   // Chrome → retour dans l'appli
+  if (!st.startsWith("gs_")) return false;
+  history.replaceState(null, "", location.pathname);
+  return gFinish(p);
 }
 async function gToken(){
   if (G.at && G.exp > Date.now()) return G.at;
@@ -1333,7 +1448,7 @@ document.addEventListener("pointerup", endSwipe);
 document.addEventListener("pointercancel", endSwipe);
 
 /* répertoire du téléphone (Contact Picker, Chrome Android) */
-const PICK = !!(navigator.contacts && navigator.contacts.select);
+const PICK = NATIVE || !!(navigator.contacts && navigator.contacts.select);
 function upsertContact(name, email, phone){
   const all = contacts(), first = norm(name).split(" ")[0];
   let c = all.find(x => norm(x.name).split(" ")[0] === first);
@@ -1347,10 +1462,15 @@ function fromPicked(k, wanted){
   return upsertContact(name, (k.email || [])[0] || "", (k.tel || [])[0] || "");
 }
 async function pickOne(wanted){
+  if (NATIVE) {
+    const r = await tn("pickContact"); if (!r || r.cancelled || !r.name) return null;
+    const c = fromPicked({ name: [r.name], tel: r.phone ? [r.phone] : [], email: [] }, wanted); toast(`${c.name} ajouté à tes contacts`); return c;
+  }
   try { const r = await navigator.contacts.select(["name", "email", "tel"], { multiple: false }); if (!r || !r.length) return null; const c = fromPicked(r[0], wanted); toast(`${c.name} ajouté à tes contacts`); return c; }
   catch (e) { return null; }
 }
 async function pickMany(){
+  if (NATIVE) { const c = await pickOne(""); if (c) $("sContacts").value = CFG.contacts; return; }
   try {
     const r = await navigator.contacts.select(["name", "email", "tel"], { multiple: true });
     (r || []).forEach(k => fromPicked(k));
@@ -1363,7 +1483,7 @@ function sendSms(it, picked){
   const num = (m.phone || (c && c.phone) || "").replace(/[^\d+]/g, "");
   if (m.via === "wa") {
     const intl = num.replace(/^\+/, "").replace(/^0(\d{9})$/, "33$1");
-    location.href = `https://wa.me/${intl}?text=${encodeURIComponent(m.body || "")}`;
+    location.href = NATIVE ? `whatsapp://send?phone=${intl}&text=${encodeURIComponent(m.body || "")}` : `https://wa.me/${intl}?text=${encodeURIComponent(m.body || "")}`;
     waitAck(it, "WhatsApp", m.to);
     return;
   }
@@ -1378,6 +1498,7 @@ function sendSms(it, picked){
 function act(it){
   if (it.cat === "appel") {
     const tx = it.title + " " + (it.note || ""), c = contactOf(it), num = (c && c.phone) || (tx.match(/(?:\+33|0)[1-9](?:[ .-]?\d{2}){4}/) || tx.match(/\+\d{8,15}/) || [])[0];
+    if (!num && NATIVE) { callFromPhoneBook(it, c); return; }
     if (!num && PICK) {
       toast(c ? `pas de numéro pour ${c.name}` : "à qui ?", "choisir le contact", async () => {
         const k = await pickOne(c ? c.name : ""); if (!k || !k.phone) return;
@@ -1399,6 +1520,19 @@ function act(it){
   if (it.mail) { cur = it; sendMail(it); return; }
   if (it.cat === "mail") { openEdit(it); makeMail(); return; }
   openEdit(it);
+}
+/* appli : « Appeler Christelle » sans numéro → on cherche dans le répertoire du téléphone */
+async function callFromPhoneBook(it, c){
+  const who = c ? c.name : ((it.title.match(/(?:[aA]ppeler|[rR]appeler|[jJ]oindre|[tT][ée]l[ée]phoner [àa]|[rR][ée]pondre [àa])\s+([A-ZÀ-ÖØ-Þ][\p{L}'-]+(?:\s+[A-ZÀ-ÖØ-Þ][\p{L}'-]+)?)/u) || [])[1] || "");
+  const dial = (name, phone) => { S.pendingAck = { id: it.id, at: Date.now(), who: name }; save(); location.href = "tel:" + phone.replace(/[^\d+]/g, ""); };
+  const pick = async () => { const k = await pickOne(who); if (k && k.phone) dial(k.name, k.phone); };
+  if (!who) { toast("à qui ?", "choisir le contact", pick); return; }
+  const r = await tn("searchContacts", { q: who.split(" ")[0] });
+  const list = ((r && r.contacts) || []).filter(x => x.phones && x.phones.length);
+  const f = norm(who), exact = list.filter(x => norm(x.name) === f || norm(x.name).split(" ")[0] === f.split(" ")[0]);
+  const one = list.length === 1 ? list[0] : exact.length === 1 ? exact[0] : null;
+  if (one) { const k = upsertContact(who.includes(" ") ? who : who.split(" ")[0], (one.emails || [])[0] || "", one.phones[0]); dial(k.name, one.phones[0]); return; }
+  toast(list.length ? `plusieurs « ${who} » dans ton répertoire` : `« ${who} » introuvable dans ton répertoire`, "choisir", pick, 8000);
 }
 /* on ne coche qu'après confirmation : la tâche reste tant que tu n'as pas dit « oui » */
 function waitAck(it, kind, who){ S.pendingAck = { id: it.id, at: Date.now(), who: who || "", kind }; save(); hide(); render(); }
@@ -1457,7 +1591,17 @@ async function inboxOff(){
   try { await iFn({ action: "off" }); } catch (e) {}
   LS.set("tempo_itok", ""); LS.set("tempo_ilast", null); paintInbox(); toast("pont téléphone coupé");
 }
-function paintInbox(){
+let NOTIF_OK = null;
+async function paintInbox(){
+  if (NATIVE) {
+    const r = await tn("info"); NOTIF_OK = !!(r && r.notifAccess);
+    $("iState").textContent = NOTIF_OK
+      ? "Activé ✓ Tempo lit tes appels manqués, SMS et WhatsApp, directement dans le téléphone (rien ne passe par un serveur). Appel manqué → « Rappeler … » ; message → Claude ne garde que ce qui demande une action."
+      : "Pour que Tempo voie tes appels manqués, SMS et WhatsApp : touche « activer », puis allume Tempo dans la liste « Accès aux notifications ».";
+    $("iGo").textContent = NOTIF_OK ? "réglages Android" : "activer";
+    $("iCopy").style.display = "none"; $("iOff").style.display = "none";
+    return;
+  }
   const on = !!LS.get("tempo_itok", ""), last = LS.get("tempo_ilast", null);
   $("iState").textContent = on
     ? `Lien actif${last ? " · dernier événement reçu " + new Date(last).toLocaleString("fr-FR", { weekday: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : " · rien reçu pour l'instant"}. Appel manqué → « Rappeler … » ; SMS / WhatsApp → Claude ne garde que ce qui demande une action ; fin d'appel avec un contact → Tempo propose le compte rendu.`
@@ -1465,12 +1609,14 @@ function paintInbox(){
   $("iGo").textContent = on ? "recréer le lien" : "créer mon lien MacroDroid";
   $("iCopy").style.display = on ? "" : "none"; $("iOff").style.display = on ? "" : "none";
 }
-$("iGo").onclick = () => { if (LS.get("tempo_itok", "")) toast("l'ancien lien ne marchera plus", "recréer", inboxCreate, 6000); else inboxCreate(); };
+$("iGo").onclick = () => { if (NATIVE) { tn("openNotifAccess"); return; } if (LS.get("tempo_itok", "")) toast("l'ancien lien ne marchera plus", "recréer", inboxCreate, 6000); else inboxCreate(); };
 $("iCopy").onclick = inboxCopy;
 $("iOff").onclick = inboxOff;
 let inboxBusy = false;
 async function pullInbox(){
-  if (inboxBusy || !LS.get("tempo_itok", "") || document.hidden) return;
+  if (inboxBusy || document.hidden) return;
+  if (NATIVE) { inboxBusy = true; await pullNativeInbox(); inboxBusy = false; if (NOTIF_OK || !LS.get("tempo_itok", "")) { await processInbox(); return; } }
+  if (!LS.get("tempo_itok", "")) return;
   inboxBusy = true;
   try {
     const j = await iFn({ action: "pull" });
@@ -1482,6 +1628,17 @@ async function pullInbox(){
   } catch (e) {}
   inboxBusy = false;
   await processInbox();
+}
+/* appli : les notifications lues par le téléphone, mises au même format que celles de MacroDroid */
+async function pullNativeInbox(){
+  const r = await tn("getInbox"); if (!r) return;
+  NOTIF_OK = !!r.notifAccess;
+  const evs = (r.events || []).map(e => { const v = fromNotification(e.app, e.title, e.text); return v ? Object.assign(v, { at: new Date(+e.at || Date.now()).toISOString() }) : null; }).filter(Boolean);
+  if (!evs.length) return;
+  const now = Date.now(), seen = LS.get("tempo_isig", []).filter(x => now - x.t < 15 * 60000), keep = [];
+  for (const e of evs) { const sg = [e.kind, e.who, e.num, e.body].join("|"); if (seen.some(x => x.s === sg)) continue; seen.push({ s: sg, t: now }); keep.push(e); }
+  LS.set("tempo_isig", seen.slice(-80));
+  if (keep.length) { LS.set("tempo_iq", LS.get("tempo_iq", []).concat(keep).slice(-150)); LS.set("tempo_ilast", new Date().toISOString()); }
 }
 function parseContactsTxt(t){
   return (t || "").split("\n").map(l => l.trim()).filter(Boolean).map(l => {
@@ -1866,6 +2023,11 @@ async function agendaFile(o){
   toast("fichier agenda téléchargé · ouvre-le depuis la notification");
 }
 function openAgenda(o){
+  if (NATIVE) {
+    const dv = o.due || today(), dur = o.cat === "rdv" ? 60 : 30, b = o.time ? new Date(`${dv}T${o.time}:00`) : new Date(`${dv}T00:00:00`);
+    tn("calendarInsert", { title: (o.ch ? "[" + o.ch + "] " : "") + o.title, description: o.note || "", begin: b.getTime(), end: b.getTime() + (o.time ? dur * 60000 : 86400000), allDay: !o.time });
+    return;
+  }
   if (!IS_ANDROID) { window.open(agendaUrl(o), "_blank"); return; }
   let left = false; const mark = () => { left = true; };
   document.addEventListener("visibilitychange", mark, { once: true });
@@ -1886,6 +2048,7 @@ $("eCal").onclick = () => {
 $("eFocus").onclick = () => { if (!cur) return; const id = cur.id; hide(); setTimeout(() => startFocus(id, SPACE), 150); };
 $("eShare").onclick = async () => {
   const txt = ($("eCh").value ? "[" + $("eCh").value + "] " : "") + $("eTitle").value + ($("eNote").value ? "\n" + $("eNote").value : "");
+  if (NATIVE) { tn("share", { text: txt, title: "Envoyer" }); return; }
   try { if (navigator.share) await navigator.share({ text: txt }); else { await navigator.clipboard.writeText(txt); toast("copié"); } } catch (e) {}
 };
 
@@ -1957,7 +2120,7 @@ const openSettings = () => {
   $("vMode").value = CFG.vMode === "voxtral" ? "voxtral" : "google"; $("vKey").value = CFG.mkey || ""; $("vCap").value = String(CFG.vCap || 2); $("vMax").value = String(CFG.vMax || 120);
   $("vSay").value = ["auto", "1", "0"].includes(CFG.vSay) ? CFG.vSay : "auto"; $("vAuto").checked = !!CFG.vAuto;
   paintVox(); if (CFG.mkey) voxSync().then(paintVox);
-  paintInbox();
+  paintInbox(); paintApp();
   show("set");
 };
 $("vMode").onchange = paintVox;
@@ -1973,11 +2136,14 @@ $("rTry2").onclick = () => { hide(); setTimeout(() => openRitual("soir"), 150); 
 $("rTry3").onclick = () => { hide(); setTimeout(() => openRitual("semaine"), 150); };
 $("sForget").onclick = () => { CFG.learn = []; saveCfg(); $("sLearn").textContent = "Corrections oubliées."; };
 $("sNotif").onclick = async () => {
+  if (NATIVE) { lnReady = false; LS.set("tempo_push", false); return enablePush(); }
   if (pushOn()) { const t = await pFn({ action: "test" }); if (!t.ok) { LS.set("tempo_push", false); return enablePush(); } toast("notification de test envoyée"); return; }
   enablePush();
 };
 $("sExp").onclick = () => {
-  const b = new Blob([JSON.stringify({ S, CFG: Object.assign({}, CFG, { key: "", mkey: "" }) }, null, 1)], { type: "application/json" });
+  const json = JSON.stringify({ S, CFG: Object.assign({}, CFG, { key: "", mkey: "" }) }, null, 1);
+  if (NATIVE) { tn("shareFile", { name: "tempo-" + today() + ".json", text: json, mime: "application/json", title: "Enregistrer la sauvegarde" }); return; }
+  const b = new Blob([json], { type: "application/json" });
   const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = "tempo-" + today() + ".json"; a.click();
 };
 $("sImp").onclick = () => $("sFile").click();
@@ -1998,7 +2164,7 @@ function closeEdit(){
 $("mask").onclick = hide;
 
 /* ===== voice ===== */
-const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+const SR = NATIVE ? NativeSR : (window.SpeechRecognition || window.webkitSpeechRecognition);
 let rec = null, finalTxt = "", interim = "", listening = false, typing = false, silT = null;
 const hint = t => { $("hint").textContent = t; };
 /* pulsar : des vagues de lumière à un rythme libre, comme des pensées */
@@ -2136,7 +2302,7 @@ function startListen(opts){
   LISTEN_OPTS = opts;
   if (!opts.follow) FOLLOW = 0;
   if (opts.auto) HANDS_FREE = true; else if (!opts.keepHF) HANDS_FREE = false;
-  try { window.speechSynthesis && speechSynthesis.cancel(); } catch (e) {}
+  hush();
   if (voxOn()) return startRec(opts);
   startListenSR(opts);
 }
@@ -2328,7 +2494,7 @@ function startType(){
   typing = true; ringState("on"); hint(""); $("alt").style.display = "none";
   $("typed").style.display = "block"; $("acts").classList.add("show"); setTimeout(() => $("typed").focus(), 60);
 }
-$("ring").onclick = () => { if (listening || typing) validate(); else { try { window.speechSynthesis && speechSynthesis.cancel(); } catch (e) {} startListen(); } };
+$("ring").onclick = () => { if (listening || typing) validate(); else { hush(); startListen(); } };
 $("aYes").onclick = validate;
 $("aNo").onclick = () => { stopListen(); idle(); };
 $("bType").onclick = startType;
@@ -2369,7 +2535,40 @@ async function pFn(body){
 }
 function pushOn(){ return !!LS.get("tempo_push", false); }
 function u8(b64){ const p = "=".repeat((4 - b64.length % 4) % 4), s = atob((b64 + p).replace(/-/g, "+").replace(/_/g, "/")); return Uint8Array.from(s, c => c.charCodeAt(0)); }
+/* appli : les rappels sont des notifications programmées dans le téléphone (alarmes exactes, sans réseau) */
+let lnReady = false;
+async function lnSetup(){
+  if (!LN) return false; if (lnReady) return true;
+  try {
+    let p = await LN.checkPermissions(); if (p.display !== "granted") p = await LN.requestPermissions();
+    if (p.display !== "granted") return false;
+    await LN.createChannel({ id: "rappels", name: "Rappels Tempo", description: "Rappels, rendez-vous et rituels", importance: 5, visibility: 1, vibration: true, lights: true, lightColor: "#2EB8C4" });
+    lnReady = true;
+  } catch (e) {}
+  return lnReady;
+}
+const nid = s => { let h = 7; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return (Math.abs(h) % 2000000000) + 1; };
+async function nativeSchedule(list){
+  if (!(await lnSetup())) return;
+  try {
+    const pend = await LN.getPending();
+    if (pend && pend.notifications && pend.notifications.length) await LN.cancel({ notifications: pend.notifications.map(n => ({ id: n.id })) });
+    const now = Date.now(), used = new Set();
+    const ns = list.filter(r => Date.parse(r.at) > now + 3000).slice(0, 250).map(r => {
+      let id = nid((r.tag || "") + "|" + r.at); while (used.has(id)) id++; used.add(id);
+      return { id, title: r.title, body: r.body || "", schedule: { at: new Date(r.at), allowWhileIdle: true }, channelId: "rappels", smallIcon: "ic_stat_tempo", iconColor: "#2EB8C4", autoCancel: true, extra: { url: r.url || "./" } };
+    });
+    if (ns.length) await LN.schedule({ notifications: ns });
+  } catch (e) {}
+}
 async function enablePush(){
+  if (NATIVE) {
+    if (!(await lnSetup())) return toast("autorise les notifications pour Tempo", "réglages", () => tn("openAppSettings"), 8000);
+    LS.set("tempo_push", true); paintPush(); syncReminders(true);
+    try { await LN.schedule({ notifications: [{ id: 99, title: "Tempo", body: "Les rappels fonctionnent. Je sonnerai au bon moment.", schedule: { at: new Date(Date.now() + 4000), allowWhileIdle: true }, channelId: "rappels", smallIcon: "ic_stat_tempo" }] }); } catch (e) {}
+    toast("rappels activés ✓ — une notification de test arrive", "", null, 6000);
+    return;
+  }
   if (!("serviceWorker" in navigator) || !("PushManager" in window)) return toast("notifications impossibles ici");
   const perm = await Notification.requestPermission();
   if (perm !== "granted") return toast("autorise les notifications pour Tempo dans Android", "", null, 7000);
@@ -2405,9 +2604,9 @@ function spaceState(sp){ return sp === SPACE ? S : (LS.get(SKEY(sp), null) || { 
 function putSpace(sp, st){ if (sp === SPACE) { S = st; save(); } else LS.set(SKEY(sp), st); }
 const RIT = () => Object.assign({ on: true, matin: "08:00", soir: "18:30", semaine: "19:00" }, LS.get("tempo_ritcfg", {}));
 var pushT = null;
-function schedulePushSync(){ if (!pushOn()) return; clearTimeout(pushT); pushT = setTimeout(() => syncReminders(), 2500); }
+function schedulePushSync(){ if (!pushOn() && !NATIVE) return; clearTimeout(pushT); pushT = setTimeout(() => syncReminders(), 2500); }
 async function syncReminders(healed){
-  if (!pushOn()) return;
+  if (!pushOn() && !NATIVE) return;
   const list = [], now = Date.now(), dt = (d, t) => new Date(`${d}T${t}:00`);
   for (const sp of ["pro", "perso"]) {
     for (const i of spaceState(sp).items || []) {
@@ -2427,6 +2626,7 @@ async function syncReminders(healed){
   }
   const F = LS.get("tempo_focus", null);
   if (F && F.end > now) list.push({ at: new Date(F.end).toISOString(), title: "Focus terminé", body: F.title, url: "./?focus=end", tag: "focus" });
+  if (NATIVE) return nativeSchedule(list);
   try {
     const j = await pFn({ action: "sync", reminders: list.filter(r => Date.parse(r.at) > now - 30000) });
     if (j && j.sub === false && !healed) pushHeal(true, true);   // le serveur n'a plus d'abonnement : on en refait un
@@ -2434,7 +2634,7 @@ async function syncReminders(healed){
 }
 function paintPush(){
   const b = $("sNotif"); if (!b) return;
-  b.textContent = pushOn() ? "tester les rappels" : "activer les rappels";
+  b.textContent = pushOn() || NATIVE ? "tester les rappels" : "activer les rappels";
 }
 
 /* ===== C. AGENDA DU JOUR (lecture Google) ===== */
@@ -2756,8 +2956,10 @@ function paintReport(){
 $("report").addEventListener("click", async e => {
   if (!REPORT) return;
   if (e.target.closest("#rpClose")) { hide(); return; }
+  if (e.target.closest("#rpPdf") && NATIVE) { tn("print", { name: `Etat ${REPORT.R.what} ${fdt(Date.now()).replace(/\//g, "-")}` }); return; }
   if (e.target.closest("#rpPdf")) { document.title = `Etat ${REPORT.R.what} ${fdt(Date.now()).replace(/\//g, "-")}`; window.print(); setTimeout(() => document.title = "Tempo", 1500); return; }
   const txt = reportText(), name = `etat-${norm(REPORT.R.what).replace(/[^a-z0-9]+/g, "-")}-${today()}.txt`;
+  if (e.target.closest("#rpTxt") && NATIVE) { tn("shareFile", { name, text: txt, title: "Envoyer l'état" }); return; }
   if (e.target.closest("#rpTxt")) {
     const f = new File([txt], name, { type: "text/plain" });
     try { if (navigator.canShare && navigator.canShare({ files: [f] })) { await navigator.share({ files: [f], title: name }); return; } } catch (er) { if (er && er.name === "AbortError") return; }
@@ -2837,7 +3039,7 @@ function handleShare(){
   else return false;
   return true;
 }
-if ("serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).catch(() => {});
+if (!NATIVE && "serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).catch(() => {});
 const autoMail = () => { if (CFG.msId && MS.rt && CFG.key && Date.now() - (S.lastMailCheck || 0) > 20 * 60000) checkMail(false); };
 /* week-end : on ouvre en perso ; lundi on repasse au boulot */
 function autoSpace(){
@@ -2859,25 +3061,128 @@ msHandleRedirect().then(was => {
     const had = handleShare(); autoMail();
     if (!had) { const F = LS.get("tempo_focus", null); if (F && F.end > Date.now()) startFocus(F.id, F.sp); else if (autoListenOK()) setTimeout(() => { if (autoListenOK()) startListen({ auto: true, noSpeech: 7000 }); }, 350); else setTimeout(autoRitual, 900); }
   }
-  paintMailBtn(); if (pushOn()) syncReminders(); pushHeal();
+  paintMailBtn(); if (pushOn() || NATIVE) syncReminders(); pushHeal();
   pullInbox();
 });
 checkReminders();
 setInterval(() => { checkReminders(); if (!listening && !typing && !cur) render(); pullInbox(); }, 60000);
-let hiddenAt = 0;
-document.addEventListener("visibilitychange", () => {
-  if (document.hidden) {
-    hiddenAt = Date.now();
-    /* tu quittes Tempo en pleine dictée : on envoie ce qui a été dit, sinon on coupe le micro */
-    if (listening && !typing) { if ((VOICE && VOICE.spoke) || (!VOICE && (finalTxt || interim))) validate(); else { stopListen(); idle(); } }
-    try { window.speechSynthesis && speechSynthesis.cancel(); } catch (e) {}
-    return;
-  }
+let hiddenAt = 0, isAway = false;
+function onHidden(){
+  if (isAway) return; isAway = true;
+  hiddenAt = Date.now();
+  /* tu quittes Tempo en pleine dictée : on envoie ce qui a été dit, sinon on coupe le micro */
+  if (listening && !typing) { if ((VOICE && VOICE.spoke) || (!VOICE && (finalTxt || interim))) validate(); else { stopListen(); idle(); } }
+  hush();
+}
+function onVisible(){
+  if (!isAway) return; isAway = false;
   const away = hiddenAt ? Date.now() - hiddenAt : 0, wantAuto = away > 45000 && autoListenOK();
   autoSpace(); render(); checkReminders(); autoMail(); askAck(); pushHeal(); pullInbox();
   if (wantAuto) setTimeout(() => { if (autoListenOK()) startListen({ auto: true, noSpeech: 7000 }); }, 300);
   else setTimeout(autoRitual, 700);
-});
+}
+document.addEventListener("visibilitychange", () => { if (document.hidden) onHidden(); else onVisible(); });
+
+/* ===== APPLI ANDROID : liens tempo://, partage, notifications touchées, bouton retour, mises à jour ===== */
+const T_FN = "https://jifaszjdhretgorxlpvs.supabase.co/functions/v1/tempo-transfer";
+const toB64 = u8 => { let x = ""; for (let i = 0; i < u8.length; i += 32768) x += String.fromCharCode.apply(null, u8.subarray(i, i + 32768)); return btoa(x); };
+const fromB64 = b => Uint8Array.from(atob(b), c => c.charCodeAt(0));
+const fromB64u = b => fromB64(b.replace(/-/g, "+").replace(/_/g, "/") + "=".repeat((4 - b.length % 4) % 4));
+async function tFn(body){
+  const r = await fetch(T_FN, { method: "POST", headers: { "content-type": "application/json", Authorization: "Bearer " + G_KEY, apikey: G_KEY }, body: JSON.stringify(body) });
+  let j = {}; try { j = await r.json(); } catch (e) {} return j;
+}
+/* Chrome → appli : tout Tempo (tâches, réglages, clés) chiffré ici, la clé ne passe que par le lien vers l'appli */
+async function transferOut(){
+  try {
+    const data = {};
+    for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (/^(zap_|tempo_)/.test(k)) data[k] = localStorage.getItem(k); }
+    const key = crypto.getRandomValues(new Uint8Array(32)), iv = crypto.getRandomValues(new Uint8Array(12));
+    const ck = await crypto.subtle.importKey("raw", key, "AES-GCM", false, ["encrypt"]);
+    const ct = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv }, ck, new TextEncoder().encode(JSON.stringify(data))));
+    const r = await tFn({ action: "put", blob: toB64(ct), iv: toB64(iv) });
+    if (!r.id) { toast("transfert impossible · réessaie"); return; }
+    LS.set("tempo_moved", Date.now()); paintApp();
+    const link = `intent://transfert?id=${r.id}&k=${b64u(key)}#Intent;scheme=tempo;package=fr.rc4st.tempo;S.browser_fallback_url=${encodeURIComponent(APK_URL)};end`;
+    location.href = link;
+    setTimeout(() => { if (document.visibilityState === "visible") toast("l'appli ne s'est pas ouverte ?", "ouvrir l'appli", () => { location.href = link; }, 15000); }, 2500);
+  } catch (e) { toast("transfert impossible · réessaie"); }
+}
+async function transferIn(id, k){
+  if (!id || !k) return;
+  try {
+    const r = await tFn({ action: "get", id });
+    if (!r.blob) { toast("transfert expiré ou déjà utilisé · relance-le depuis Chrome", "", null, 8000); return; }
+    const key = await crypto.subtle.importKey("raw", fromB64u(k), "AES-GCM", false, ["decrypt"]);
+    const data = JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({ name: "AES-GCM", iv: fromB64(r.iv) }, key, fromB64(r.blob))));
+    const apply = () => {
+      Object.entries(data).forEach(([kk, v]) => { if (!/^tempo_(push|pushheal|pushrenew|moved|isig|iq|launch)$/.test(kk) && typeof v === "string") localStorage.setItem(kk, v); });
+      localStorage.setItem("tempo_arrived", JSON.stringify(Date.now()));
+      location.reload();
+    };
+    if (S.items.length) toast("remplacer les données de l'appli par celles de Chrome ?", "remplacer", apply, 15000); else apply();
+  } catch (e) { toast("transfert illisible · relance-le depuis Chrome"); }
+}
+async function paintApp(){
+  if (NATIVE) {
+    const r = (await tn("info")) || {};
+    $("appState").textContent = `Appli ${r.versionName || ""} · Tempo v${TEMPO_BUILD}${r.web ? " (mis à jour)" : ""}. Les nouveautés de l'écran arrivent toutes seules ; quand l'appli elle-même change, Tempo te propose de l'installer.` + (S.items.length ? "" : " Tes tâches sont dans Chrome ? Ouvre Tempo dans Chrome > ··· > réglages > « transférer mes données ».");
+    $("appGet").style.display = "none"; $("appMove").style.display = "none"; $("appUpd").style.display = ""; $("appUpd").textContent = "chercher une mise à jour";
+    return;
+  }
+  const moved = LS.get("tempo_moved", 0);
+  $("appState").textContent = moved
+    ? `Données envoyées à l'appli le ${new Date(moved).toLocaleString("fr-FR", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}. Si tout y est, coupe les rappels ici pour ne pas les recevoir en double.`
+    : "Tempo existe en vraie appli Android : widget, réveils, appels manqués et messages lus directement, rappels même sans réseau. 1) installer l'appli, 2) transférer tes données (tâches, réglages, clés) en un appui.";
+  $("appGet").style.display = ""; $("appMove").style.display = ""; $("appUpd").style.display = moved ? "" : "none"; $("appUpd").textContent = "couper les rappels ici";
+}
+$("appGet").onclick = () => { location.href = APK_URL; toast("téléchargement de Tempo… ouvre-le depuis la notification", "", null, 8000); };
+$("appMove").onclick = transferOut;
+$("appUpd").onclick = async () => {
+  if (NATIVE) { webUpdate(true); return; }
+  LS.set("tempo_push", false); paintPush(); try { await pFn({ action: "sync", reminders: [] }); } catch (e) {}
+  toast("rappels coupés dans Chrome · l'appli prend le relais");
+};
+/* l'intérieur de l'appli se met à jour tout seul (version.json), l'appli elle-même quand il faut */
+async function webUpdate(manual){
+  if (!NATIVE) return;
+  const info = (await tn("webReady")) || {};
+  let v = null; try { v = await (await fetch(PWA_URL + "version.json?t=" + Date.now(), { cache: "no-store" })).json(); } catch (e) {}
+  if (!v) { if (manual) toast("pas de réseau"); return; }
+  if (v.apk && (info.native || 0) < v.apk) {
+    if (manual || LS.get("tempo_apkask", "") !== today()) { LS.set("tempo_apkask", today()); toast("nouvelle version de l'appli", "installer", () => tn("openUrl", { url: APK_URL }), 12000); }
+    return;
+  }
+  if (v.build > TEMPO_BUILD && (info.native || 0) >= (v.minNative || 0)) {
+    const go = () => { if (listening || typing || document.querySelector(".sheet.show") || $("ring").classList.contains("think")) { setTimeout(go, 20000); return; } toast("mise à jour de Tempo…"); tn("updateWeb", { base: PWA_URL, files: ["index.html"], version: String(v.build) }); };
+    go();
+  } else if (manual) toast("Tempo est à jour ✓");
+}
+function openInternal(url){ try { const u = new URL(url || "./", location.href); history.replaceState(null, "", location.pathname + u.search); handleShare(); } catch (e) {} }
+function appUrl(url){
+  let u; try { u = new URL(url); } catch (e) { return; }
+  const what = (u.host || u.pathname.replace(/^\/+/, "")).toLowerCase();
+  if (what === "ecoute") { if (FOC) return; hide(); if (!listening && !typing) setTimeout(() => startListen({ auto: true, noSpeech: 8000 }), 250); }
+  else if (what === "transfert") transferIn(u.searchParams.get("id"), u.searchParams.get("k"));
+  else if (what === "gauth") gFinish(u.searchParams);
+}
+if (NATIVE) {
+  document.body.classList.add("native");
+  CAPP.addListener("appUrlOpen", d => d && d.url && appUrl(d.url));
+  CAPP.getLaunchUrl().then(d => { if (d && d.url && sessionStorage.getItem("tempo_launch") !== d.url) { sessionStorage.setItem("tempo_launch", d.url); appUrl(d.url); } }).catch(() => {});
+  CAPP.addListener("appStateChange", st => st && st.isActive ? onVisible() : onHidden());
+  CAPP.addListener("backButton", () => {
+    if (FOC) return;
+    if (document.querySelector(".sheet.show")) { hide(); return; }
+    if (listening || typing) { stopListen(); idle(); return; }
+    CAPP.minimizeApp();
+  });
+  TN.addListener("shared", d => { if (d && d.text) capture(d.text, "partage"); });
+  if (LN) LN.addListener("localNotificationActionPerformed", a => openInternal(a && a.notification && a.notification.extra && a.notification.extra.url));
+  const arrived = LS.get("tempo_arrived", 0) > Date.now() - 60000;
+  if (arrived) { LS.set("tempo_arrived", 0); setTimeout(() => toast("tes données de Chrome sont arrivées ✓", "", null, 5000), 900); }
+  setTimeout(webUpdate, arrived ? 7000 : 1500);
+}
 </script>
 </body>
 </html>

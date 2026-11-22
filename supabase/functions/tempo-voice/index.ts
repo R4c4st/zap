@@ -5,7 +5,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 // La clé Mistral reste dans le téléphone : elle transite ici pour l'appel, n'est jamais stockée
 // (seule son empreinte SHA-256 sert à compter la dépense et à retenir le plafond).
 const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
-const ORIGINS = ["https://r4c4st.github.io"];
+const ORIGINS = ["https://r4c4st.github.io", "https://localhost", "http://localhost", "capacitor://localhost"];
 const MODEL = "voxtral-mini-transcribe-3";
 const USD_PER_MIN = 0.0035;          // tarif Mistral de ce modèle
 const CAP_MIN = 0.5, CAP_MAX = 20;   // le plafond réglable reste entre 0,50 et 20 $

@@ -1,0 +1,19 @@
+{
+  "appId": "fr.rc4st.tempo",
+  "appName": "Tempo",
+  "webDir": "www",
+  "android": {
+    "allowMixedContent": false,
+    "captureInput": true,
+    "webContentsDebuggingEnabled": false
+  },
+  "plugins": {
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_tempo",
+      "iconColor": "#2EB8C4"
+    },
+    "SystemBars": {
+      "style": "LIGHT"
+    }
+  }
+}
